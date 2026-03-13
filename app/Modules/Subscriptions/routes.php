@@ -17,7 +17,10 @@ return function (Router $router): void {
         $router->get('/current', ['App\\Modules\\Subscriptions\\SubscriptionController', 'current']);
         $router->get('/{id}', ['App\\Modules\\Subscriptions\\SubscriptionController', 'show']);
         $router->post('/', ['App\\Modules\\Subscriptions\\SubscriptionController', 'subscribe']);
+        $router->post('/create-for-org', ['App\\Modules\\Subscriptions\\SubscriptionController', 'subscribeForOrg']);
         $router->post('/{id}/cancel', ['App\\Modules\\Subscriptions\\SubscriptionController', 'cancel']);
+        $router->put('/{id}/change-plan', ['App\\Modules\\Subscriptions\\SubscriptionController', 'changePlan']);
+        $router->post('/{id}/reactivate', ['App\\Modules\\Subscriptions\\SubscriptionController', 'reactivate']);
     });
 
     $router->get('/api/invoices', ['App\\Modules\\Subscriptions\\SubscriptionController', 'invoices']);

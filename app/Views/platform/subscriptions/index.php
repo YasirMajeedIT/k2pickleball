@@ -7,7 +7,7 @@ $apiUrl = ($baseUrl ?? '') . '/api/subscriptions';
 $columns = [
     ['key' => 'id', 'label' => 'ID', 'sortable' => true],
     ['key' => 'organization_name', 'label' => 'Organization', 'sortable' => true],
-    ['key' => 'plan_id', 'label' => 'Plan'],
+    ['key' => 'plan_id', 'label' => 'Plan', 'render' => "function(row) { return row.plan_name || row.plan?.name || 'Plan #' + row.plan_id; }"],
     ['key' => 'billing_cycle', 'label' => 'Cycle', 'render' => "function(row) { return '<span class=\"capitalize\">' + (row.billing_cycle || '-') + '</span>'; }"],
     ['key' => 'status', 'label' => 'Status', 'render' => "function(row) {
         const colors = { active: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400', cancelled: 'bg-red-100 text-red-700', past_due: 'bg-yellow-100 text-yellow-700', trialing: 'bg-blue-100 text-blue-700' };

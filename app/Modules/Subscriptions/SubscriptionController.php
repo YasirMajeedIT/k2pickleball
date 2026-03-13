@@ -157,6 +157,155 @@ final class SubscriptionController extends Controller
         return $this->success($sub, 'Subscription canceled');
     }
 
+    /**
+     * PUT /api/subscriptions/{id}/change-plan — upgrade or downgrade
+     */
+    public function changePlan(Request $request, int $id): Response
+    {
+        $sub = $this->repo->findById($id);
+        if (!$sub) {
+            throw new NotFoundException('Subscription not found');
+        }
+        if ($sub['status'] !== 'active' && $sub['status'] !== 'trialing') {
+            return $this->error('Can only change plan on active or trialing subscriptions', 409);
+        }
+
+        $data = Validator::validate($request->all(), [
+            'plan_id' => 'required|integer',
+            'billing_cycle' => 'nullable|in:monthly,yearly',
+        ]);
+
+        $newPlan = $this->repo->findPlanById((int) $data['plan_id']);
+        if (!$newPlan) {
+            throw new NotFoundException('Plan not found');
+        }
+
+        $cycle = $data['billing_cycle'] ?? $sub['billing_cycle'];
+        $price = $cycle === 'yearly' ? (float) $newPlan['price_yearly'] : (float) $newPlan['price_monthly'];
+        $endDate = $cycle === 'yearly'
+            ? date('Y-m-d', strtotime('+1 year'))
+            : date('Y-m-d', strtotime('+1 month'));
+
+        $this->repo->update($id, [
+            'plan_id' => $data['plan_id'],
+            'billing_cycle' => $cycle,
+            'current_period_start' => date('Y-m-d'),
+            'current_period_end' => $endDate,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        // Create prorated invoice
+        $this->repo->createInvoice([
+            'uuid' => $this->generateUuid(),
+            'organization_id' => $sub['organization_id'],
+            'subscription_id' => $id,
+            'invoice_number' => 'INV-' . strtoupper(bin2hex(random_bytes(4))),
+            'subtotal' => $price,
+            'tax' => 0,
+            'total' => $price,
+            'status' => 'paid',
+            'due_date' => date('Y-m-d'),
+            'paid_at' => date('Y-m-d H:i:s'),
+            'notes' => 'Plan change to ' . $newPlan['name'],
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $sub = $this->repo->findWithPlan($id);
+        return $this->success($sub, 'Subscription plan changed to ' . $newPlan['name']);
+    }
+
+    /**
+     * POST /api/subscriptions/{id}/reactivate
+     */
+    public function reactivate(Request $request, int $id): Response
+    {
+        $sub = $this->repo->findById($id);
+        if (!$sub) {
+            throw new NotFoundException('Subscription not found');
+        }
+        if ($sub['status'] === 'active') {
+            return $this->error('Subscription is already active', 409);
+        }
+
+        $endDate = $sub['billing_cycle'] === 'yearly'
+            ? date('Y-m-d', strtotime('+1 year'))
+            : date('Y-m-d', strtotime('+1 month'));
+
+        $this->repo->update($id, [
+            'status' => 'active',
+            'cancelled_at' => null,
+            'cancel_reason' => null,
+            'current_period_start' => date('Y-m-d'),
+            'current_period_end' => $endDate,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $sub = $this->repo->findWithPlan($id);
+        return $this->success($sub, 'Subscription reactivated');
+    }
+
+    /**
+     * POST /api/subscriptions/create-for-org — platform admin creates for a specific org
+     */
+    public function subscribeForOrg(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'organization_id' => 'required|integer',
+            'plan_id' => 'required|integer',
+            'billing_cycle' => 'required|in:monthly,yearly',
+        ]);
+
+        $orgId = (int) $data['organization_id'];
+        $plan = $this->repo->findPlanById((int) $data['plan_id']);
+        if (!$plan) {
+            throw new NotFoundException('Plan not found');
+        }
+
+        $existing = $this->repo->findActiveByOrganization($orgId);
+        if ($existing) {
+            return $this->error('Organization already has an active subscription', 409);
+        }
+
+        $price = $data['billing_cycle'] === 'yearly'
+            ? (float) $plan['price_yearly']
+            : (float) $plan['price_monthly'];
+
+        $startDate = date('Y-m-d');
+        $endDate = $data['billing_cycle'] === 'yearly'
+            ? date('Y-m-d', strtotime('+1 year'))
+            : date('Y-m-d', strtotime('+1 month'));
+
+        $subId = $this->repo->create([
+            'organization_id' => $orgId,
+            'plan_id' => $data['plan_id'],
+            'status' => 'active',
+            'billing_cycle' => $data['billing_cycle'],
+            'current_period_start' => $startDate,
+            'current_period_end' => $endDate,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $this->repo->createInvoice([
+            'uuid' => $this->generateUuid(),
+            'organization_id' => $orgId,
+            'subscription_id' => $subId,
+            'invoice_number' => 'INV-' . strtoupper(bin2hex(random_bytes(4))),
+            'subtotal' => $price,
+            'tax' => 0,
+            'total' => $price,
+            'status' => 'paid',
+            'due_date' => $startDate,
+            'paid_at' => date('Y-m-d H:i:s'),
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $sub = $this->repo->findWithPlan($subId);
+        return $this->created($sub, 'Subscription created for organization');
+    }
+
     // -- Plan CRUD (Platform Admin) --
 
     public function storePlan(Request $request): Response

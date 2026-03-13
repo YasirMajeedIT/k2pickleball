@@ -25,7 +25,7 @@ A production-ready **multi-tenant SaaS platform** for sports facility and club m
 
 ### Admin Panels
 - **Organization Admin** — Full CRUD for all modules, charts, data tables
-- **Platform Super Admin** — Cross-organization management, plans, revenue overview
+- **Platform Super Admin** — Cross-organization management, plans, revenue, extensions, announcements, invoices, user impersonation
 
 ## Tech Stack
 
@@ -97,11 +97,11 @@ k2pickleball/
 │   │   ├── AuditLogs/         # Audit trail
 │   │   ├── Settings/          # Key-value settings
 │   │   ├── Admin/             # Admin panel controller
-│   │   └── Platform/          # Super admin controller
+│   │   └── Platform/          # Super admin (extensions, announcements, impersonation)
 │   └── Views/                 # Admin/Platform UI templates
 ├── config/                    # App, DB, Auth, CORS, Payments, Permissions
 ├── database/
-│   ├── schema.sql             # 25 tables
+│   ├── schema.sql             # 28 tables
 │   ├── migrate.php            # Migration runner
 │   └── seed.php               # Demo data seeder
 ├── docs/                      # API Reference, Architecture, Deployment, Security
@@ -139,7 +139,7 @@ See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for complete API documentatio
 
 ## Database
 
-25 tables covering:
+28 tables covering:
 - `organizations`, `organization_domains` — Multi-tenant orgs
 - `facilities`, `courts` — Facility management
 - `users`, `roles`, `permissions`, `role_permissions`, `user_roles` — RBAC
@@ -148,6 +148,8 @@ See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for complete API documentatio
 - `payment_methods`, `payments`, `transactions` — Payment processing
 - `notifications`, `files`, `activity_logs` — System services
 - `api_tokens`, `settings` — Configuration
+- `extensions`, `organization_extensions` — Extension marketplace & org installs
+- `announcements` — Platform-wide announcements
 - `refresh_tokens`, `password_resets`, `rate_limits` — Auth infrastructure
 
 ## Security

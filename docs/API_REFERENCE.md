@@ -220,6 +220,72 @@ Content-Type: application/json
 | PUT | `/api/settings/{group}/{key}` | Set setting value |
 | DELETE | `/api/settings/{group}/{key}` | Delete setting |
 
+### Platform — Organizations (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/organizations/{id}/details` | Get org with users, facilities, extensions, subscription |
+| PATCH | `/api/organizations/{id}/status` | Change org status (active/inactive/suspended/trial/cancelled) |
+
+### Platform — Subscriptions (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/subscriptions/create-for-org` | Create subscription for an organization |
+| PUT | `/api/subscriptions/{id}/change-plan` | Upgrade or downgrade subscription plan |
+| POST | `/api/subscriptions/{id}/reactivate` | Reactivate a cancelled subscription |
+
+### Platform — Users (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/platform/users` | List all users across organizations |
+| GET | `/api/platform/users/{id}` | Get user detail with org & roles |
+| PATCH | `/api/platform/users/{id}/status` | Change user status |
+
+### Platform — Invoices (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/platform/invoices` | List all invoices across organizations |
+
+### Platform — Extensions (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/platform/extensions` | List all extensions |
+| POST | `/api/platform/extensions` | Create extension |
+| PUT | `/api/platform/extensions/{id}` | Update extension |
+| DELETE | `/api/platform/extensions/{id}` | Delete extension |
+| GET | `/api/platform/organizations/{id}/extensions` | List org's installed extensions |
+| POST | `/api/platform/organizations/{id}/extensions` | Install extension for org |
+| DELETE | `/api/platform/organizations/{id}/extensions/{extId}` | Uninstall extension from org |
+
+### Platform — Announcements (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/platform/announcements` | List all announcements |
+| POST | `/api/platform/announcements` | Create announcement |
+| PUT | `/api/platform/announcements/{id}` | Update announcement |
+| DELETE | `/api/platform/announcements/{id}` | Delete announcement |
+
+### Platform — Impersonation (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/platform/impersonate/{id}` | Generate token to login as a user |
+
+### Platform — Settings & Dashboard (Super Admin)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/platform/stats` | Dashboard statistics |
+| GET | `/api/platform/revenue` | Revenue analytics |
+| GET | `/api/platform/settings` | Get platform settings |
+| PUT | `/api/platform/settings` | Update platform settings |
+| GET | `/api/platform/audit-logs` | Cross-org audit logs |
+
 ---
 
 ## Response Format

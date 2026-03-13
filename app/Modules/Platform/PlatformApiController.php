@@ -8,6 +8,9 @@ use App\Core\Http\Controller;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Database\Connection;
+use App\Core\Security\Sanitizer;
+use App\Core\Security\Validator;
+use App\Core\Exceptions\NotFoundException;
 
 final class PlatformApiController extends Controller
 {
@@ -262,5 +265,481 @@ final class PlatformApiController extends Controller
 
         $settings = $this->db->fetchAll("SELECT * FROM settings WHERE organization_id IS NULL ORDER BY `group` ASC, `key` ASC");
         return $this->success($settings, 'Settings updated');
+    }
+
+    // =========================================================================
+    // User Management
+    // =========================================================================
+
+    /**
+     * GET /api/platform/users/{id}
+     */
+    public function userDetail(Request $request, int $id): Response
+    {
+        $user = $this->db->fetch(
+            "SELECT u.*, o.name as organization_name, o.slug as organization_slug
+             FROM users u LEFT JOIN organizations o ON u.organization_id = o.id
+             WHERE u.id = ?",
+            [$id]
+        );
+        if (!$user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Get user roles
+        $user['roles'] = $this->db->fetchAll(
+            "SELECT r.name, r.slug FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ?",
+            [$id]
+        );
+
+        unset($user['password_hash']);
+        return $this->success($user);
+    }
+
+    /**
+     * PATCH /api/platform/users/{id}/status
+     */
+    public function updateUserStatus(Request $request, int $id): Response
+    {
+        $user = $this->db->fetch("SELECT id, status FROM users WHERE id = ?", [$id]);
+        if (!$user) {
+            throw new NotFoundException('User not found');
+        }
+
+        $data = Validator::validate($request->all(), [
+            'status' => 'required|in:active,inactive,suspended,pending',
+        ]);
+
+        $this->db->update('users', [
+            'status' => $data['status'],
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], ['id' => $id]);
+
+        $user = $this->db->fetch(
+            "SELECT u.id, u.first_name, u.last_name, u.email, u.status, o.name as organization_name
+             FROM users u LEFT JOIN organizations o ON u.organization_id = o.id WHERE u.id = ?",
+            [$id]
+        );
+        return $this->success($user, 'User status updated');
+    }
+
+    // =========================================================================
+    // Invoices (cross-org)
+    // =========================================================================
+
+    /**
+     * GET /api/platform/invoices
+     */
+    public function invoices(Request $request): Response
+    {
+        $page = max(1, (int) ($request->input('page', 1)));
+        $perPage = min(100, max(1, (int) ($request->input('per_page', 20))));
+        $search = trim($request->input('search', ''));
+        $offset = ($page - 1) * $perPage;
+
+        $where = '';
+        $params = [];
+        if ($search !== '') {
+            $where = "WHERE i.invoice_number LIKE ? OR o.name LIKE ?";
+            $params = ["%{$search}%", "%{$search}%"];
+        }
+
+        $total = $this->db->fetch(
+            "SELECT COUNT(*) as cnt FROM invoices i LEFT JOIN organizations o ON i.organization_id = o.id {$where}",
+            $params
+        );
+
+        $data = $this->db->fetchAll(
+            "SELECT i.*, o.name as organization_name
+             FROM invoices i
+             LEFT JOIN organizations o ON i.organization_id = o.id
+             {$where}
+             ORDER BY i.created_at DESC LIMIT ? OFFSET ?",
+            array_merge($params, [$perPage, $offset])
+        );
+
+        return $this->paginated($data, (int) ($total['cnt'] ?? 0), $page, $perPage);
+    }
+
+    // =========================================================================
+    // Extensions Management
+    // =========================================================================
+
+    /**
+     * GET /api/platform/extensions
+     */
+    public function extensions(Request $request): Response
+    {
+        $page = max(1, (int) ($request->input('page', 1)));
+        $perPage = min(100, max(1, (int) ($request->input('per_page', 20))));
+        $offset = ($page - 1) * $perPage;
+
+        $total = $this->db->fetch("SELECT COUNT(*) as cnt FROM extensions");
+        $data = $this->db->fetchAll(
+            "SELECT e.*, (SELECT COUNT(*) FROM organization_extensions oe WHERE oe.extension_id = e.id AND oe.is_active = 1) as active_installs
+             FROM extensions e ORDER BY e.sort_order ASC, e.name ASC LIMIT ? OFFSET ?",
+            [$perPage, $offset]
+        );
+
+        return $this->paginated($data, (int) ($total['cnt'] ?? 0), $page, $perPage);
+    }
+
+    /**
+     * POST /api/platform/extensions
+     */
+    public function createExtension(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'name' => 'required|string|max:255',
+            'slug' => 'required|slug|max:100',
+            'description' => 'nullable|string',
+            'version' => 'nullable|string|max:20',
+            'category' => 'nullable|string|max:100',
+            'price_monthly' => 'nullable|numeric',
+            'price_yearly' => 'nullable|numeric',
+            'is_active' => 'nullable|integer',
+            'settings_schema' => 'nullable|json',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['name'] = Sanitizer::string($data['name']);
+        $data['slug'] = Sanitizer::slug($data['slug']);
+
+        $existing = $this->db->fetch("SELECT id FROM extensions WHERE slug = ?", [$data['slug']]);
+        if ($existing) {
+            return $this->validationError(['slug' => ['Extension slug already exists']]);
+        }
+
+        $data['is_active'] = (int) ($data['is_active'] ?? 1);
+        $data['price_monthly'] = (float) ($data['price_monthly'] ?? 0);
+        $data['price_yearly'] = (float) ($data['price_yearly'] ?? 0);
+        $data['created_at'] = date('Y-m-d H:i:s');
+        $data['updated_at'] = date('Y-m-d H:i:s');
+
+        $id = $this->db->insert('extensions', $data);
+        $ext = $this->db->fetch("SELECT * FROM extensions WHERE id = ?", [$id]);
+        return $this->created($ext, 'Extension created');
+    }
+
+    /**
+     * PUT /api/platform/extensions/{id}
+     */
+    public function updateExtension(Request $request, int $id): Response
+    {
+        $ext = $this->db->fetch("SELECT * FROM extensions WHERE id = ?", [$id]);
+        if (!$ext) {
+            throw new NotFoundException('Extension not found');
+        }
+
+        $data = Validator::validate($request->all(), [
+            'name' => 'required|string|max:255',
+            'slug' => 'required|slug|max:100',
+            'description' => 'nullable|string',
+            'version' => 'nullable|string|max:20',
+            'category' => 'nullable|string|max:100',
+            'price_monthly' => 'nullable|numeric',
+            'price_yearly' => 'nullable|numeric',
+            'is_active' => 'nullable|integer',
+            'settings_schema' => 'nullable|json',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['name'] = Sanitizer::string($data['name']);
+        $data['slug'] = Sanitizer::slug($data['slug']);
+
+        $dup = $this->db->fetch("SELECT id FROM extensions WHERE slug = ? AND id != ?", [$data['slug'], $id]);
+        if ($dup) {
+            return $this->validationError(['slug' => ['Extension slug already exists']]);
+        }
+
+        $data['updated_at'] = date('Y-m-d H:i:s');
+        $this->db->update('extensions', $data, ['id' => $id]);
+
+        $ext = $this->db->fetch("SELECT * FROM extensions WHERE id = ?", [$id]);
+        return $this->success($ext, 'Extension updated');
+    }
+
+    /**
+     * DELETE /api/platform/extensions/{id}
+     */
+    public function deleteExtension(Request $request, int $id): Response
+    {
+        $ext = $this->db->fetch("SELECT * FROM extensions WHERE id = ?", [$id]);
+        if (!$ext) {
+            throw new NotFoundException('Extension not found');
+        }
+
+        $installs = $this->db->fetch(
+            "SELECT COUNT(*) as cnt FROM organization_extensions WHERE extension_id = ? AND is_active = 1",
+            [$id]
+        );
+        if ((int) ($installs['cnt'] ?? 0) > 0) {
+            return $this->error('Cannot delete extension with active installations. Uninstall from all organizations first.', 409);
+        }
+
+        $this->db->delete('extensions', ['id' => $id]);
+        return $this->success(null, 'Extension deleted');
+    }
+
+    /**
+     * GET /api/platform/organizations/{id}/extensions
+     */
+    public function orgExtensions(Request $request, int $id): Response
+    {
+        $org = $this->db->fetch("SELECT id FROM organizations WHERE id = ?", [$id]);
+        if (!$org) {
+            throw new NotFoundException('Organization not found');
+        }
+
+        $installed = $this->db->fetchAll(
+            "SELECT oe.*, e.name, e.slug, e.description, e.version, e.category, e.price_monthly, e.price_yearly
+             FROM organization_extensions oe
+             JOIN extensions e ON oe.extension_id = e.id
+             WHERE oe.organization_id = ?
+             ORDER BY e.name ASC",
+            [$id]
+        );
+
+        return $this->success($installed);
+    }
+
+    /**
+     * POST /api/platform/organizations/{id}/extensions — install extension for org
+     */
+    public function installExtension(Request $request, int $id): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'extension_id' => 'required|integer',
+        ]);
+
+        $org = $this->db->fetch("SELECT id FROM organizations WHERE id = ?", [$id]);
+        if (!$org) {
+            throw new NotFoundException('Organization not found');
+        }
+
+        $ext = $this->db->fetch("SELECT * FROM extensions WHERE id = ? AND is_active = 1", [$data['extension_id']]);
+        if (!$ext) {
+            throw new NotFoundException('Extension not found or inactive');
+        }
+
+        $existing = $this->db->fetch(
+            "SELECT id, is_active FROM organization_extensions WHERE organization_id = ? AND extension_id = ?",
+            [$id, $data['extension_id']]
+        );
+
+        if ($existing && $existing['is_active']) {
+            return $this->error('Extension already installed for this organization', 409);
+        }
+
+        if ($existing) {
+            $this->db->update('organization_extensions', [
+                'is_active' => 1,
+                'installed_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], ['id' => $existing['id']]);
+        } else {
+            $this->db->insert('organization_extensions', [
+                'organization_id' => $id,
+                'extension_id' => $data['extension_id'],
+                'is_active' => 1,
+                'settings' => null,
+                'installed_at' => date('Y-m-d H:i:s'),
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return $this->success(null, 'Extension installed for organization');
+    }
+
+    /**
+     * DELETE /api/platform/organizations/{id}/extensions/{extId} — uninstall
+     */
+    public function uninstallExtension(Request $request, int $id, int $extId): Response
+    {
+        $row = $this->db->fetch(
+            "SELECT id FROM organization_extensions WHERE organization_id = ? AND extension_id = ? AND is_active = 1",
+            [$id, $extId]
+        );
+        if (!$row) {
+            throw new NotFoundException('Extension not installed for this organization');
+        }
+
+        $this->db->update('organization_extensions', [
+            'is_active' => 0,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], ['id' => $row['id']]);
+
+        return $this->success(null, 'Extension uninstalled');
+    }
+
+    // =========================================================================
+    // Announcements
+    // =========================================================================
+
+    /**
+     * GET /api/platform/announcements
+     */
+    public function announcements(Request $request): Response
+    {
+        $page = max(1, (int) ($request->input('page', 1)));
+        $perPage = min(100, max(1, (int) ($request->input('per_page', 20))));
+        $offset = ($page - 1) * $perPage;
+
+        $total = $this->db->fetch("SELECT COUNT(*) as cnt FROM announcements");
+        $data = $this->db->fetchAll(
+            "SELECT * FROM announcements ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            [$perPage, $offset]
+        );
+
+        return $this->paginated($data, (int) ($total['cnt'] ?? 0), $page, $perPage);
+    }
+
+    /**
+     * POST /api/platform/announcements
+     */
+    public function createAnnouncement(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'nullable|in:info,warning,critical,maintenance',
+            'target' => 'nullable|in:all,specific',
+            'target_org_ids' => 'nullable|string',
+            'starts_at' => 'nullable|string',
+            'ends_at' => 'nullable|string',
+            'is_active' => 'nullable|integer',
+        ]);
+
+        $data['title'] = Sanitizer::string($data['title']);
+        $data['type'] = $data['type'] ?? 'info';
+        $data['target'] = $data['target'] ?? 'all';
+        $data['is_active'] = (int) ($data['is_active'] ?? 1);
+        $data['created_by'] = $request->userId();
+        $data['created_at'] = date('Y-m-d H:i:s');
+        $data['updated_at'] = date('Y-m-d H:i:s');
+
+        $id = $this->db->insert('announcements', $data);
+        $ann = $this->db->fetch("SELECT * FROM announcements WHERE id = ?", [$id]);
+        return $this->created($ann, 'Announcement created');
+    }
+
+    /**
+     * PUT /api/platform/announcements/{id}
+     */
+    public function updateAnnouncement(Request $request, int $id): Response
+    {
+        $ann = $this->db->fetch("SELECT * FROM announcements WHERE id = ?", [$id]);
+        if (!$ann) {
+            throw new NotFoundException('Announcement not found');
+        }
+
+        $data = Validator::validate($request->all(), [
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'nullable|in:info,warning,critical,maintenance',
+            'target' => 'nullable|in:all,specific',
+            'target_org_ids' => 'nullable|string',
+            'starts_at' => 'nullable|string',
+            'ends_at' => 'nullable|string',
+            'is_active' => 'nullable|integer',
+        ]);
+
+        $data['title'] = Sanitizer::string($data['title']);
+        $data['updated_at'] = date('Y-m-d H:i:s');
+
+        $this->db->update('announcements', $data, ['id' => $id]);
+        $ann = $this->db->fetch("SELECT * FROM announcements WHERE id = ?", [$id]);
+        return $this->success($ann, 'Announcement updated');
+    }
+
+    /**
+     * DELETE /api/platform/announcements/{id}
+     */
+    public function deleteAnnouncement(Request $request, int $id): Response
+    {
+        $ann = $this->db->fetch("SELECT * FROM announcements WHERE id = ?", [$id]);
+        if (!$ann) {
+            throw new NotFoundException('Announcement not found');
+        }
+
+        $this->db->delete('announcements', ['id' => $id]);
+        return $this->success(null, 'Announcement deleted');
+    }
+
+    // =========================================================================
+    // Impersonation (Login As)
+    // =========================================================================
+
+    /**
+     * POST /api/platform/impersonate/{userId}
+     */
+    public function impersonate(Request $request, int $userId): Response
+    {
+        $user = $this->db->fetch(
+            "SELECT u.*, o.name as organization_name, o.slug as organization_slug
+             FROM users u LEFT JOIN organizations o ON u.organization_id = o.id
+             WHERE u.id = ?",
+            [$userId]
+        );
+        if (!$user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Get user's roles
+        $roles = $this->db->fetchAll(
+            "SELECT r.slug FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ?",
+            [$userId]
+        );
+        $rolesList = array_column($roles, 'slug');
+
+        // Get user's permissions
+        $permissions = $this->db->fetchAll(
+            "SELECT DISTINCT p.slug FROM user_roles ur
+             JOIN role_permissions rp ON rp.role_id = ur.role_id
+             JOIN permissions p ON p.id = rp.permission_id
+             WHERE ur.user_id = ?",
+            [$userId]
+        );
+        $permsList = array_column($permissions, 'slug');
+
+        // Generate impersonation token (short-lived, 1 hour)
+        $secret = $_ENV['JWT_SECRET'] ?? 'default-secret';
+        $payload = [
+            'iss' => 'k2pickleball',
+            'sub' => $userId,
+            'org' => $user['organization_id'],
+            'roles' => $rolesList,
+            'permissions' => $permsList,
+            'impersonated_by' => $request->userId(),
+            'iat' => time(),
+            'exp' => time() + 3600,
+        ];
+
+        $token = \Firebase\JWT\JWT::encode($payload, $secret, 'HS256');
+
+        // Log impersonation in audit trail
+        $this->db->insert('activity_logs', [
+            'organization_id' => $user['organization_id'],
+            'user_id' => $request->userId(),
+            'action' => 'impersonate',
+            'entity_type' => 'user',
+            'entity_id' => $userId,
+            'description' => 'Super admin impersonated user: ' . $user['email'],
+            'ip_address' => $request->ip(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->success([
+            'access_token' => $token,
+            'user' => [
+                'id' => $user['id'],
+                'email' => $user['email'],
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'organization_id' => $user['organization_id'],
+                'organization_name' => $user['organization_name'],
+            ],
+        ], 'Impersonation token generated');
     }
 }

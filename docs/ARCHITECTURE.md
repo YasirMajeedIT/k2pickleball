@@ -164,7 +164,7 @@ All exceptions extend `HttpException` and are caught by the global `Handler`:
 
 ## Database Design
 
-- **25 tables** with proper foreign keys and indexes
+- **28 tables** with proper foreign keys and indexes
 - **Soft deletes** via `deleted_at` column
 - **UUID** columns for external references
 - **JSON** columns for flexible data (operating_hours, amenities, features, settings)

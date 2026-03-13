@@ -154,9 +154,52 @@ final class OrganizationController extends Controller
             throw new NotFoundException('Organization not found');
         }
 
+        $counts = $this->repo->getRelatedCounts($id);
+        if ($counts['subscriptions'] > 0) {
+            return $this->error('Cannot delete organization with active subscriptions. Cancel subscriptions first.', 409);
+        }
+        if ($counts['users'] > 0) {
+            return $this->error(
+                "Organization has {$counts['users']} user(s) and {$counts['facilities']} facility(ies). Use force=1 to confirm deletion.",
+                409
+            );
+        }
+
         $this->repo->delete($id);
 
         return $this->success(null, 'Organization deleted');
+    }
+
+    /**
+     * PATCH /api/organizations/{id}/status
+     */
+    public function updateStatus(Request $request, int $id): Response
+    {
+        $org = $this->repo->findById($id);
+        if (!$org) {
+            throw new NotFoundException('Organization not found');
+        }
+
+        $data = Validator::validate($request->all(), [
+            'status' => 'required|in:active,inactive,suspended,trial,cancelled',
+        ]);
+
+        $this->repo->updateStatus($id, $data['status']);
+        $org = $this->repo->findById($id);
+
+        return $this->success($org, 'Organization status updated to ' . $data['status']);
+    }
+
+    /**
+     * GET /api/organizations/{id}/details — full details for platform view
+     */
+    public function details(Request $request, int $id): Response
+    {
+        $org = $this->repo->findWithDetails($id);
+        if (!$org) {
+            throw new NotFoundException('Organization not found');
+        }
+        return $this->success($org);
     }
 
     private function generateUuid(): string

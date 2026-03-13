@@ -27,7 +27,9 @@ ob_start();
     <!-- Revenue Chart -->
     <div class="rounded-2xl bg-white dark:bg-surface-800/60 p-6 shadow-soft border border-surface-200/60 dark:border-surface-700/50">
         <h3 class="text-base font-semibold text-surface-900 dark:text-white mb-4">Monthly Revenue (Last 12 Months)</h3>
-        <canvas id="revenueLineChart" height="300"></canvas>
+        <div class="relative h-72">
+            <canvas id="revenueLineChart"></canvas>
+        </div>
     </div>
 
     <!-- Revenue by Plan & Top Orgs -->
@@ -120,7 +122,7 @@ function revenueView() {
             const ctx = document.getElementById('revenueLineChart');
             if (!ctx) return;
 
-            const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 288);
             gradient.addColorStop(0, 'rgba(168,85,247,0.15)');
             gradient.addColorStop(1, 'rgba(168,85,247,0)');
 

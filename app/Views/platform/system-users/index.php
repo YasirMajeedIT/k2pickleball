@@ -15,7 +15,9 @@ $columns = [
     }"],
     ['key' => 'created_at', 'label' => 'Created', 'sortable' => true, 'render' => "function(row) { return row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'; }"],
 ];
-$actions = [];
+$actions = [
+    ['label' => 'View', 'url' => ($baseUrl ?? '') . '/platform/system-users/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
+];
 $createUrl = null;
 $createLabel = null;
 

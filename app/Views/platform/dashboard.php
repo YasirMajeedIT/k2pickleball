@@ -74,11 +74,15 @@ ob_start();
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="rounded-2xl bg-white dark:bg-surface-800/60 p-6 shadow-soft border border-surface-200/60 dark:border-surface-700/50">
             <h3 class="text-base font-semibold text-surface-900 dark:text-white mb-4">Revenue Overview</h3>
-            <canvas id="revenueChart" height="250"></canvas>
+            <div class="relative h-64">
+                <canvas id="revenueChart"></canvas>
+            </div>
         </div>
         <div class="rounded-2xl bg-white dark:bg-surface-800/60 p-6 shadow-soft border border-surface-200/60 dark:border-surface-700/50">
             <h3 class="text-base font-semibold text-surface-900 dark:text-white mb-4">Plan Distribution</h3>
-            <canvas id="planChart" height="250"></canvas>
+            <div class="relative h-64">
+                <canvas id="planChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -183,7 +187,7 @@ function platformDashboard() {
             const revCtx = document.getElementById('revenueChart');
             if (revCtx) {
                 const history = this.revenueHistory || [];
-                const gradient = revCtx.getContext('2d').createLinearGradient(0, 0, 0, 250);
+                const gradient = revCtx.getContext('2d').createLinearGradient(0, 0, 0, 256);
                 gradient.addColorStop(0, 'rgba(168,85,247,0.15)');
                 gradient.addColorStop(1, 'rgba(168,85,247,0)');
                 new Chart(revCtx, {

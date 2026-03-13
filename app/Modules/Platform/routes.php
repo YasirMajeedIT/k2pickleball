@@ -23,14 +23,47 @@ return function (Router $router): void {
     $router->get('/platform/subscriptions/{id}', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/revenue', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/system-users', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/system-users/{id}', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/invoices', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/extensions', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/announcements', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/system-settings', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/audit-logs', [PlatformController::class, 'handleRequest']);
 
-    // Platform API endpoints
+    // Platform API endpoints — Stats & Dashboard
     $router->get('/api/platform/stats', [PlatformApiController::class, 'stats']);
-    $router->get('/api/platform/users', [PlatformApiController::class, 'users']);
-    $router->get('/api/platform/audit-logs', [PlatformApiController::class, 'auditLogs']);
     $router->get('/api/platform/revenue', [PlatformApiController::class, 'revenue']);
+
+    // Platform API — Users
+    $router->get('/api/platform/users', [PlatformApiController::class, 'users']);
+    $router->get('/api/platform/users/{id}', [PlatformApiController::class, 'userDetail']);
+    $router->patch('/api/platform/users/{id}/status', [PlatformApiController::class, 'updateUserStatus']);
+
+    // Platform API — Invoices
+    $router->get('/api/platform/invoices', [PlatformApiController::class, 'invoices']);
+
+    // Platform API — Extensions
+    $router->get('/api/platform/extensions', [PlatformApiController::class, 'extensions']);
+    $router->post('/api/platform/extensions', [PlatformApiController::class, 'createExtension']);
+    $router->put('/api/platform/extensions/{id}', [PlatformApiController::class, 'updateExtension']);
+    $router->delete('/api/platform/extensions/{id}', [PlatformApiController::class, 'deleteExtension']);
+
+    // Platform API — Org Extensions (install/uninstall)
+    $router->get('/api/platform/organizations/{id}/extensions', [PlatformApiController::class, 'orgExtensions']);
+    $router->post('/api/platform/organizations/{id}/extensions', [PlatformApiController::class, 'installExtension']);
+    $router->delete('/api/platform/organizations/{id}/extensions/{extId}', [PlatformApiController::class, 'uninstallExtension']);
+
+    // Platform API — Announcements
+    $router->get('/api/platform/announcements', [PlatformApiController::class, 'announcements']);
+    $router->post('/api/platform/announcements', [PlatformApiController::class, 'createAnnouncement']);
+    $router->put('/api/platform/announcements/{id}', [PlatformApiController::class, 'updateAnnouncement']);
+    $router->delete('/api/platform/announcements/{id}', [PlatformApiController::class, 'deleteAnnouncement']);
+
+    // Platform API — Impersonation
+    $router->post('/api/platform/impersonate/{id}', [PlatformApiController::class, 'impersonate']);
+
+    // Platform API — Settings & Audit
     $router->get('/api/platform/settings', [PlatformApiController::class, 'settings']);
     $router->put('/api/platform/settings', [PlatformApiController::class, 'updateSettings']);
+    $router->get('/api/platform/audit-logs', [PlatformApiController::class, 'auditLogs']);
 };

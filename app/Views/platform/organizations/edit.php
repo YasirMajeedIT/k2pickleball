@@ -14,6 +14,13 @@ $fields = [
     ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => true, 'placeholder' => 'admin@acme.com', 'cols' => 'half'],
     ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'placeholder' => '+1 555-0100', 'cols' => 'half'],
     ['name' => 'website', 'label' => 'Website', 'type' => 'text', 'placeholder' => 'https://acme.com', 'cols' => 'full'],
+    ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => [
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+        'suspended' => 'Suspended',
+        'trial' => 'Trial',
+        'cancelled' => 'Cancelled',
+    ], 'cols' => 'full'],
     ['name' => 'address_line1', 'label' => 'Address Line 1', 'placeholder' => '123 Main St'],
     ['name' => 'address_line2', 'label' => 'Address Line 2', 'placeholder' => 'Suite 100'],
     ['name' => 'city', 'label' => 'City', 'placeholder' => 'Springfield', 'cols' => 'half'],
@@ -42,7 +49,7 @@ function orgEditForm() {
 
     return {
         form: {
-            name: '', slug: '', email: '', phone: '', website: '',
+            name: '', slug: '', email: '', phone: '', website: '', status: 'active',
             address_line1: '', address_line2: '', city: '', state: '',
             zip_code: '', country: '', timezone: '', settings: '{}'
         },
@@ -62,6 +69,7 @@ function orgEditForm() {
                     email: d.email || '',
                     phone: d.phone || '',
                     website: d.website || '',
+                    status: d.status || 'active',
                     address_line1: d.address_line1 || '',
                     address_line2: d.address_line2 || '',
                     city: d.city || '',
