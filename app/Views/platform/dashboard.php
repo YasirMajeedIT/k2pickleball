@@ -143,53 +143,54 @@ function platformDashboard() {
     return {
         stats: {},
         recentOrgs: [],
+        planDistribution: [],
+        revenueHistory: [],
 
         async loadStats() {
             try {
-                const [orgsRes] = await Promise.all([
-                    fetch(APP_BASE + '/api/organizations', { headers })
-                ]);
-                const orgsJson = await orgsRes.json();
-                const orgs = orgsJson.data || [];
+                const res = await fetch(APP_BASE + '/api/platform/stats', { headers });
+                if (res.status === 401) { window.location.href = APP_BASE + '/admin/login'; return; }
+                const json = await res.json();
+                const d = json.data || {};
 
                 this.stats = {
-                    organizations: orgs.length,
-                    activeSubscriptions: orgs.filter(o => o.status === 'active').length,
-                    monthlyRevenue: '0.00',
-                    totalUsers: 0,
-                    newOrgsThisMonth: 0,
-                    revenueGrowth: 0,
-                    churnRate: '0%'
+                    organizations: d.organizations || 0,
+                    activeSubscriptions: d.activeSubscriptions || 0,
+                    monthlyRevenue: d.monthlyRevenue || '0.00',
+                    totalUsers: d.totalUsers || 0,
+                    newOrgsThisMonth: d.newOrgsThisMonth || 0,
+                    revenueGrowth: d.revenueGrowth || 0,
+                    churnRate: d.churnRate || '0%'
                 };
-                this.recentOrgs = orgs.slice(0, 10);
+
+                // Load recent orgs
+                const orgsRes = await fetch(APP_BASE + '/api/organizations?per_page=10', { headers });
+                const orgsJson = await orgsRes.json();
+                this.recentOrgs = orgsJson.data || [];
+
+                this.planDistribution = d.planDistribution || [];
+                this.revenueHistory = d.revenueHistory || [];
             } catch (e) { console.error(e); }
 
             this.$nextTick(() => { this.initCharts(); });
         },
 
         initCharts() {
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const now = new Date();
-            const last6 = [];
-            for (let i = 5; i >= 0; i--) {
-                const d = new Date(now.getFullYear(), now.getMonth() - i);
-                last6.push(months[d.getMonth()]);
-            }
-
             const gridColor = isDark ? 'rgba(148,163,184,0.08)' : 'rgba(148,163,184,0.15)';
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
             // Revenue Chart
             const revCtx = document.getElementById('revenueChart');
             if (revCtx) {
+                const history = this.revenueHistory || [];
                 const gradient = revCtx.getContext('2d').createLinearGradient(0, 0, 0, 250);
                 gradient.addColorStop(0, 'rgba(168,85,247,0.15)');
                 gradient.addColorStop(1, 'rgba(168,85,247,0)');
                 new Chart(revCtx, {
                     type: 'line',
                     data: {
-                        labels: last6,
-                        datasets: [{ label: 'Revenue ($)', data: [0, 0, 0, 0, 0, 0], borderColor: '#a855f7', backgroundColor: gradient, fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#a855f7' }]
+                        labels: history.map(h => h.month),
+                        datasets: [{ label: 'Revenue ($)', data: history.map(h => h.revenue), borderColor: '#a855f7', backgroundColor: gradient, fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#a855f7' }]
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
@@ -202,11 +203,15 @@ function platformDashboard() {
             // Plan Distribution Chart
             const planCtx = document.getElementById('planChart');
             if (planCtx) {
+                const dist = this.planDistribution || [];
+                const labels = dist.map(p => p.name);
+                const data = dist.map(p => p.count);
+                const colors = ['#94a3b8', '#3b82f6', '#a855f7', '#f59e0b', '#10b981', '#ef4444'];
                 new Chart(planCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Free', 'Starter', 'Professional', 'Enterprise'],
-                        datasets: [{ data: [this.stats.organizations || 1, 0, 0, 0], backgroundColor: ['#94a3b8', '#3b82f6', '#a855f7', '#f59e0b'], borderWidth: 0, hoverOffset: 6 }]
+                        labels: labels.length ? labels : ['No Data'],
+                        datasets: [{ data: data.length ? data : [1], backgroundColor: labels.length ? colors.slice(0, labels.length) : ['#94a3b8'], borderWidth: 0, hoverOffset: 6 }]
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false, cutout: '65%',

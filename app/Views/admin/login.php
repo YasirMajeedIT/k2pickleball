@@ -116,6 +116,10 @@
     </div>
 
     <script>
+    // Clear any stale tokens when visiting login page
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
     function loginForm() {
         return {
             email: '',

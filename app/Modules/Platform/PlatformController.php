@@ -11,13 +11,23 @@ use App\Core\Http\Response;
 class PlatformController extends Controller
 {
     private array $viewMap = [
-        'dashboard'                 => 'platform/dashboard.php',
-        'organizations'             => 'platform/organizations/index.php',
-        'plans'                     => 'platform/plans/index.php',
-        'subscriptions'             => 'platform/subscriptions/index.php',
+        'dashboard'                     => 'platform/dashboard.php',
+        'organizations'                 => 'platform/organizations/index.php',
+        'organizations/create'          => 'platform/organizations/create.php',
+        'organizations/{id}'            => 'platform/organizations/show.php',
+        'organizations/{id}/edit'       => 'platform/organizations/edit.php',
+        'plans'                         => 'platform/plans/index.php',
+        'plans/create'                  => 'platform/plans/create.php',
+        'plans/{id}/edit'               => 'platform/plans/edit.php',
+        'subscriptions'                 => 'platform/subscriptions/index.php',
+        'subscriptions/{id}'            => 'platform/subscriptions/show.php',
+        'revenue'                       => 'platform/revenue/index.php',
+        'system-users'                  => 'platform/system-users/index.php',
+        'system-settings'               => 'platform/system-settings/index.php',
+        'audit-logs'                    => 'platform/audit-logs/index.php',
     ];
 
-    public function handleRequest(Request $request): Response
+    public function handleRequest(Request $request, int|null $id = null): Response
     {
         $path = trim($request->path(), '/');
         $path = preg_replace('#^platform/?#', '', $path);

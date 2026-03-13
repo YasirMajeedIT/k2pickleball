@@ -32,6 +32,20 @@ final class OrganizationRepository extends Repository
     }
 
     /**
+     * Find all organizations (all statuses) with optional search.
+     */
+    public function findAllOrgs(?string $search = null, int $page = 1, int $perPage = 20): array
+    {
+        $q = $this->query();
+
+        if ($search) {
+            $q->whereLike('name', "%{$search}%");
+        }
+
+        return $q->orderBy('created_at', 'DESC')->paginate($page, $perPage);
+    }
+
+    /**
      * Find active organizations with optional search.
      */
     public function findActive(?string $search = null, int $page = 1, int $perPage = 20): array

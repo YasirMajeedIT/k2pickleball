@@ -30,7 +30,11 @@ final class OrganizationController extends Controller
         [$page, $perPage] = $this->pagination($request);
         $search = Sanitizer::string($request->input('search', ''));
 
-        $result = $this->repo->findActive($search ?: null, $page, $perPage);
+        if ($request->isSuperAdmin()) {
+            $result = $this->repo->findAllOrgs($search ?: null, $page, $perPage);
+        } else {
+            $result = $this->repo->findActive($search ?: null, $page, $perPage);
+        }
 
         return $this->paginated($result['data'], $result['total'], $page, $perPage);
     }

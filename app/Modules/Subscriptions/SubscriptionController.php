@@ -7,6 +7,7 @@ namespace App\Modules\Subscriptions;
 use App\Core\Http\Controller;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
+use App\Core\Security\Sanitizer;
 use App\Core\Security\Validator;
 use App\Core\Database\Connection;
 use App\Core\Exceptions\NotFoundException;
@@ -25,8 +26,11 @@ final class SubscriptionController extends Controller
 
     public function plans(Request $request): Response
     {
-        $plans = $this->repo->findAllPlans();
-        return $this->success($plans);
+        [$page, $perPage] = $this->pagination($request);
+        $search = Sanitizer::string($request->input('search', ''));
+
+        $result = $this->repo->findAllPlansPaginated($search ?: null, $page, $perPage);
+        return $this->paginated($result['data'], $result['total'], $page, $perPage);
     }
 
     public function showPlan(Request $request, int $id): Response
@@ -42,10 +46,16 @@ final class SubscriptionController extends Controller
 
     public function index(Request $request): Response
     {
-        $orgId = $request->organizationId();
         [$page, $perPage] = $this->pagination($request);
+        $search = Sanitizer::string($request->input('search', ''));
 
-        $result = $this->repo->findByOrganization($orgId, $page, $perPage);
+        if ($request->isSuperAdmin()) {
+            $result = $this->repo->findAllSubscriptions($search ?: null, $page, $perPage);
+        } else {
+            $orgId = $request->organizationId();
+            $result = $this->repo->findByOrganization($orgId, $page, $perPage);
+        }
+
         return $this->paginated($result['data'], $result['total'], $page, $perPage);
     }
 
@@ -145,6 +155,87 @@ final class SubscriptionController extends Controller
 
         $sub = $this->repo->findById($id);
         return $this->success($sub, 'Subscription canceled');
+    }
+
+    // -- Plan CRUD (Platform Admin) --
+
+    public function storePlan(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'name' => 'required|string|max:255',
+            'slug' => 'required|slug|max:100',
+            'description' => 'nullable|string',
+            'price_monthly' => 'required|numeric',
+            'price_yearly' => 'required|numeric',
+            'max_users' => 'nullable|integer',
+            'max_facilities' => 'nullable|integer',
+            'max_courts' => 'nullable|integer',
+            'features' => 'nullable|json',
+            'is_active' => 'nullable|integer',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['name'] = Sanitizer::string($data['name']);
+        $data['slug'] = Sanitizer::slug($data['slug']);
+
+        if ($this->repo->planSlugExists($data['slug'])) {
+            return $this->validationError(['slug' => ['Slug is already in use']]);
+        }
+
+        $data['created_at'] = date('Y-m-d H:i:s');
+        $data['updated_at'] = date('Y-m-d H:i:s');
+
+        $id = $this->repo->createPlan($data);
+        $plan = $this->repo->findPlanById($id);
+
+        return $this->created($plan, 'Plan created');
+    }
+
+    public function updatePlan(Request $request, int $id): Response
+    {
+        $plan = $this->repo->findPlanById($id);
+        if (!$plan) {
+            throw new NotFoundException('Plan not found');
+        }
+
+        $data = Validator::validate($request->all(), [
+            'name' => 'required|string|max:255',
+            'slug' => 'required|slug|max:100',
+            'description' => 'nullable|string',
+            'price_monthly' => 'required|numeric',
+            'price_yearly' => 'required|numeric',
+            'max_users' => 'nullable|integer',
+            'max_facilities' => 'nullable|integer',
+            'max_courts' => 'nullable|integer',
+            'features' => 'nullable|json',
+            'is_active' => 'nullable|integer',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['name'] = Sanitizer::string($data['name']);
+        $data['slug'] = Sanitizer::slug($data['slug']);
+
+        if ($this->repo->planSlugExists($data['slug'], $id)) {
+            return $this->validationError(['slug' => ['Slug is already in use']]);
+        }
+
+        $data['updated_at'] = date('Y-m-d H:i:s');
+
+        $this->repo->updatePlan($id, $data);
+        $plan = $this->repo->findPlanById($id);
+
+        return $this->success($plan, 'Plan updated');
+    }
+
+    public function destroyPlan(Request $request, int $id): Response
+    {
+        $plan = $this->repo->findPlanById($id);
+        if (!$plan) {
+            throw new NotFoundException('Plan not found');
+        }
+
+        $this->repo->deletePlan($id);
+        return $this->success(null, 'Plan deleted');
     }
 
     // -- Invoices --

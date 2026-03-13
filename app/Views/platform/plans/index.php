@@ -3,13 +3,13 @@ $title = 'Subscription Plans';
 $breadcrumbs = [['label' => 'Plans']];
 
 $tableId = 'platform-plans-table';
-$apiUrl = ($baseUrl ?? '') . '/api/subscriptions/plans';
+$apiUrl = ($baseUrl ?? '') . '/api/plans';
 $columns = [
     ['key' => 'id', 'label' => 'ID', 'sortable' => true],
     ['key' => 'name', 'label' => 'Plan Name', 'sortable' => true],
     ['key' => 'slug', 'label' => 'Slug'],
-    ['key' => 'monthly_price', 'label' => 'Monthly', 'render' => "function(row) { return row.monthly_price ? '$' + parseFloat(row.monthly_price).toFixed(2) : 'Free'; }"],
-    ['key' => 'annual_price', 'label' => 'Annual', 'render' => "function(row) { return row.annual_price ? '$' + parseFloat(row.annual_price).toFixed(2) : 'Free'; }"],
+    ['key' => 'price_monthly', 'label' => 'Monthly', 'render' => "function(row) { return row.price_monthly ? '$' + parseFloat(row.price_monthly).toFixed(2) : 'Free'; }"],
+    ['key' => 'price_yearly', 'label' => 'Annual', 'render' => "function(row) { return row.price_yearly ? '$' + parseFloat(row.price_yearly).toFixed(2) : 'Free'; }"],
     ['key' => 'max_facilities', 'label' => 'Max Facilities', 'render' => "function(row) { return row.max_facilities || '∞'; }"],
     ['key' => 'max_users', 'label' => 'Max Users', 'render' => "function(row) { return row.max_users || '∞'; }"],
     ['key' => 'is_active', 'label' => 'Active', 'render' => "function(row) {

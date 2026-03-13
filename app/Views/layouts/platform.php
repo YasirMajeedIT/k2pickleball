@@ -162,7 +162,7 @@
                                 Org Admin Panel
                             </a>
                             <hr class="my-1 border-surface-100 dark:border-surface-700">
-                            <button onclick="localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); window.location.href='<?= ($baseUrl ?? '') . '/admin/login' ?>'" class="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                            <button onclick="platformLogout()" class="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
                                 Logout
                             </button>
@@ -194,6 +194,18 @@
     <script>
         if (!localStorage.getItem('access_token')) {
             window.location.href = '<?= htmlspecialchars(($baseUrl ?? '') . '/admin/login', ENT_QUOTES) ?>';
+        }
+        function platformLogout() {
+            const token = localStorage.getItem('refresh_token');
+            fetch(APP_BASE + '/api/auth/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('access_token') },
+                body: JSON.stringify({ refresh_token: token })
+            }).finally(() => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = APP_BASE + '/admin/login';
+            });
         }
     </script>
 </body>
