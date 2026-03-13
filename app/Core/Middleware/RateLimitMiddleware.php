@@ -1,0 +1,101 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\Middleware;
+
+use App\Core\Database\Connection;
+use App\Core\Exceptions\RateLimitException;
+use App\Core\Http\MiddlewareInterface;
+use App\Core\Http\Request;
+use App\Core\Http\Response;
+use App\Core\Services\Config;
+
+/**
+ * Rate limiting middleware.
+ * Uses database-backed rate limiting with token bucket algorithm.
+ */
+final class RateLimitMiddleware implements MiddlewareInterface
+{
+    public function handle(Request $request, callable $next): Response
+    {
+        $key = $this->resolveKey($request);
+        $limit = $this->resolveLimit($request);
+        $window = (int) ($_ENV['RATE_LIMIT_WINDOW'] ?? 60);
+
+        $remaining = $this->checkRateLimit($key, $limit, $window);
+
+        if ($remaining < 0) {
+            throw new RateLimitException('Too many requests. Please try again later.');
+        }
+
+        /** @var Response $response */
+        $response = $next($request);
+
+        return $response
+            ->header('X-RateLimit-Limit', (string) $limit)
+            ->header('X-RateLimit-Remaining', (string) max(0, $remaining))
+            ->header('X-RateLimit-Reset', (string) (time() + $window));
+    }
+
+    private function resolveKey(Request $request): string
+    {
+        $ip = $request->ip();
+        $path = $request->path();
+        return "rate_limit:{$ip}:{$path}";
+    }
+
+    private function resolveLimit(Request $request): int
+    {
+        // Stricter limits for auth endpoints
+        if (str_starts_with($request->path(), '/api/auth/')) {
+            return (int) ($_ENV['RATE_LIMIT_AUTH'] ?? 5);
+        }
+
+        return (int) ($_ENV['RATE_LIMIT_DEFAULT'] ?? 60);
+    }
+
+    private function checkRateLimit(string $key, int $limit, int $window): int
+    {
+        $db = Connection::getInstance();
+
+        if ($db === null) {
+            // No database available, skip rate limiting
+            return $limit;
+        }
+
+        $now = date('Y-m-d H:i:s');
+
+        // Clean expired entries
+        $db->query(
+            "DELETE FROM `rate_limits` WHERE `reset_at` < ?",
+            [$now]
+        );
+
+        // Check current hits
+        $record = $db->fetch(
+            "SELECT `hits`, `reset_at` FROM `rate_limits` WHERE `key_name` = ?",
+            [$key]
+        );
+
+        if ($record === null) {
+            // First request — create a new record
+            $resetAt = date('Y-m-d H:i:s', time() + $window);
+            $db->insert('rate_limits', [
+                'key_name' => $key,
+                'hits' => 1,
+                'reset_at' => $resetAt,
+            ]);
+            return $limit - 1;
+        }
+
+        // Increment hits
+        $newHits = (int) $record['hits'] + 1;
+        $db->query(
+            "UPDATE `rate_limits` SET `hits` = ? WHERE `key_name` = ?",
+            [$newHits, $key]
+        );
+
+        return $limit - $newHits;
+    }
+}

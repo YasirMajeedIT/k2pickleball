@@ -1,0 +1,9 @@
+# Storage Directory
+
+This directory contains application runtime files:
+
+- `uploads/` — User-uploaded files (organized by org ID)
+- `logs/` — Application error and access logs
+- `cache/` — Compiled templates and cached data
+
+**Do not commit the contents of this directory to version control.**

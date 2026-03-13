@@ -1,0 +1,145 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Admin;
+
+use App\Core\Http\Controller;
+use App\Core\Http\Request;
+use App\Core\Http\Response;
+
+class AdminController extends Controller
+{
+    /**
+     * Map of admin routes to view files.
+     */
+    private array $viewMap = [
+        // Auth
+        'login'                     => 'admin/login.php',
+
+        // Dashboard
+        'dashboard'                 => 'admin/dashboard.php',
+
+        // Facilities
+        'facilities'                => 'admin/facilities/index.php',
+        'facilities/create'         => 'admin/facilities/create.php',
+        'facilities/{id}'           => 'admin/facilities/show.php',
+        'facilities/{id}/edit'      => 'admin/facilities/edit.php',
+
+        // Courts
+        'courts'                    => 'admin/courts/index.php',
+        'courts/create'             => 'admin/courts/create.php',
+        'courts/{id}/edit'          => 'admin/courts/edit.php',
+
+        // Users
+        'users'                     => 'admin/users/index.php',
+        'users/create'              => 'admin/users/create.php',
+        'users/{id}/edit'           => 'admin/users/edit.php',
+
+        // Roles
+        'roles'                     => 'admin/roles/index.php',
+        'roles/create'              => 'admin/roles/create.php',
+        'roles/{id}/edit'           => 'admin/roles/edit.php',
+
+        // Subscriptions
+        'subscriptions'             => 'admin/subscriptions/index.php',
+
+        // Payments
+        'payments'                  => 'admin/payments/index.php',
+
+        // Notifications
+        'notifications'             => 'admin/notifications/index.php',
+
+        // Files
+        'files'                     => 'admin/files/index.php',
+        'files/upload'              => 'admin/files/upload.php',
+
+        // API Tokens
+        'api-tokens'                => 'admin/api-tokens/index.php',
+        'api-tokens/create'         => 'admin/api-tokens/create.php',
+
+        // Audit Logs
+        'audit-logs'                => 'admin/audit-logs/index.php',
+
+        // Settings
+        'settings'                  => 'admin/settings/index.php',
+    ];
+
+    public function handleRequest(Request $request, int|null $id = null): Response
+    {
+        $path = trim($request->path(), '/');
+
+        // Strip 'admin' prefix
+        $path = preg_replace('#^admin/?#', '', $path);
+
+        // Default to dashboard
+        if ($path === '' || $path === null) {
+            $path = 'dashboard';
+        }
+
+        // Try exact match first
+        if (isset($this->viewMap[$path])) {
+            return $this->renderView($this->viewMap[$path]);
+        }
+
+        // Try pattern match for {id} routes
+        foreach ($this->viewMap as $pattern => $viewFile) {
+            if (!str_contains($pattern, '{id}')) {
+                continue;
+            }
+            $regex = '#^' . str_replace('{id}', '([a-zA-Z0-9_-]+)', $pattern) . '$#';
+            if (preg_match($regex, $path, $matches)) {
+                return $this->renderView($viewFile, ['id' => $matches[1]]);
+            }
+        }
+
+        // Fallback: 404
+        return Response::html($this->renderNotFound(), 404);
+    }
+
+    private function renderView(string $viewFile, array $params = []): Response
+    {
+        $viewPath = dirname(__DIR__, 2) . '/Views/' . $viewFile;
+
+        if (!file_exists($viewPath)) {
+            return Response::html($this->renderNotFound(), 404);
+        }
+
+        // Always inject the application base URL so views can build correct API paths
+        $scriptName  = $_SERVER['SCRIPT_NAME'] ?? '';
+        $basePath    = rtrim(dirname(dirname($scriptName)), '/\\');
+        $baseUrl     = ($basePath === '' || $basePath === '.') ? '' : $basePath;
+        $params['baseUrl'] = $baseUrl;
+
+        // Extract params into scope
+        extract($params);
+
+        ob_start();
+        include $viewPath;
+        $html = ob_get_clean();
+
+        return Response::html($html);
+    }
+
+    private function renderNotFound(): string
+    {
+        return <<<'HTML'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 flex items-center justify-center min-h-screen">
+    <div class="text-center">
+        <h1 class="text-6xl font-bold text-gray-300 dark:text-gray-700">404</h1>
+        <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">Page not found</p>
+        <a href="/admin" class="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700">Back to Dashboard</a>
+    </div>
+</body>
+</html>
+HTML;
+    }
+}
