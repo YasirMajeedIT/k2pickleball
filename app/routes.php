@@ -35,6 +35,7 @@ return function (Router $router): void {
         'Settings',
         'Admin',
         'Platform',
+        'Client',
     ];
 
     foreach ($modules as $module) {

@@ -58,12 +58,17 @@ k2pickleball/
 │   │   ├── AuditLogs/           # Audit trail
 │   │   ├── Settings/            # Key-value settings
 │   │   ├── Admin/               # Admin panel controller
-│   │   └── Platform/            # Super admin panel
+│   │   ├── Platform/            # Super admin panel
+│   │   └── Client/              # Client website & customer portal
 │   ├── Views/                   # PHP templates
-│   │   ├── layouts/             # Layout templates
+│   │   ├── layouts/             # Layout templates (admin, platform, client, portal)
 │   │   ├── components/          # Reusable UI components
 │   │   ├── admin/               # Org admin pages
-│   │   └── platform/            # Super admin pages
+│   │   ├── platform/            # Super admin pages
+│   │   └── client/              # Client-facing pages
+│   │       ├── home, product, about, contact, demo, pricing
+│   │       ├── auth/            # login, register, forgot/reset password
+│   │       └── portal/          # dashboard, subscription, invoices, settings
 │   └── routes.php               # Master route loader
 ├── config/                      # Configuration files
 ├── database/                    # Schema, migrations, seeds
@@ -124,6 +129,22 @@ ModuleName/
 ├── ModuleNameController.php    # HTTP handlers (extends Controller)
 └── routes.php                  # Route definitions (returns callable)
 ```
+
+### Client Website Architecture
+
+The Client module serves the public-facing website and authenticated customer portal:
+
+- **Marketing pages** (`/`, `/product`, `/pricing`, `/about`, `/contact`, `/demo`) use the `client.php` layout with transparent→solid sticky navbar, brand green theme (#10B981)
+- **Auth pages** (`/login`, `/register`, `/forgot-password`, `/reset-password`) are standalone full-page views — no layout wrapper
+- **Portal pages** (`/portal`, `/portal/subscription`, `/portal/invoices`, `/portal/settings`) use the `portal.php` layout with sidebar navigation and JWT auth guard
+
+Routing logic in `ClientController.renderView()` determines the layout based on `PORTAL_VIEWS`, `STANDALONE_VIEWS`, or default marketing.
+
+The registration flow is multi-step (Alpine.js):
+1. Create account → `POST /api/auth/register`
+2. Auto-login → `POST /api/auth/login`
+3. Create organization → `POST /api/organizations`
+4. Choose plan → `POST /api/subscriptions`
 
 ### Query Builder
 

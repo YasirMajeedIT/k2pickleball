@@ -36,6 +36,16 @@ final class AuthMiddleware implements MiddlewareInterface
     private const PUBLIC_PREFIXES = [
         '/admin',
         '/platform',
+        '/portal',
+        '/product',
+        '/about',
+        '/contact',
+        '/demo',
+        '/pricing',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
     ];
 
     public function __construct(JwtService $jwt, Connection $db)

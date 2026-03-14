@@ -23,6 +23,12 @@ A production-ready **multi-tenant SaaS platform** for sports facility and club m
 - **Audit Logs** — Full activity trail with old/new value tracking
 - **Settings** — Key-value settings with type casting and grouping
 
+### Client Website & Portal
+- **Marketing Pages** — Premium landing, product, pricing, about, contact, demo request
+- **User Onboarding** — Multi-step registration (account → organization → plan selection)
+- **Customer Portal** — Dashboard, subscription management, invoices, account settings
+- **Auth System** — Login, register, forgot/reset password with JWT token flow
+
 ### Admin Panels
 - **Organization Admin** — Full CRUD for all modules, charts, data tables
 - **Platform Super Admin** — Cross-organization management, plans, revenue, extensions, announcements, invoices, user impersonation
@@ -72,6 +78,9 @@ php database/seed.php
 
 | Panel | URL | Credentials |
 |-------|-----|-------------|
+| Client Website | http://localhost/k2pickleball/ | — (public) |
+| Client Login | http://localhost/k2pickleball/login | Register a new account |
+| Customer Portal | http://localhost/k2pickleball/portal | Requires login |
 | Admin Login | http://localhost/k2pickleball/admin/login | admin@k2pickleball.com / K2Admin!2024 |
 | Platform Admin | http://localhost/k2pickleball/platform | Same credentials |
 | API Health | http://localhost/k2pickleball/api/health | — |
@@ -82,7 +91,7 @@ php database/seed.php
 k2pickleball/
 ├── app/
 │   ├── Core/                  # Framework (Router, DB, Auth, Security, Middleware)
-│   ├── Modules/               # Business modules (15 modules)
+│   ├── Modules/               # Business modules (16 modules)
 │   │   ├── Auth/              # Login, register, password management
 │   │   ├── Organizations/     # Multi-tenant orgs
 │   │   ├── Facilities/        # Sports facilities
@@ -97,8 +106,17 @@ k2pickleball/
 │   │   ├── AuditLogs/         # Audit trail
 │   │   ├── Settings/          # Key-value settings
 │   │   ├── Admin/             # Admin panel controller
-│   │   └── Platform/          # Super admin (extensions, announcements, impersonation)
-│   └── Views/                 # Admin/Platform UI templates
+│   │   ├── Platform/          # Super admin (extensions, announcements, impersonation)
+│   │   └── Client/            # Client website & customer portal
+│   └── Views/
+│       ├── admin/             # Admin panel templates
+│       ├── platform/          # Platform admin templates
+│       ├── client/            # Client website & portal (14 views)
+│       │   ├── home.php, product.php, about.php, contact.php, demo.php, pricing.php
+│       │   ├── auth/          # login, register, forgot-password, reset-password
+│       │   └── portal/        # dashboard, subscription, invoices, settings
+│       ├── layouts/           # client.php (marketing), portal.php, admin.php, platform.php
+│       └── components/        # Shared UI components
 ├── config/                    # App, DB, Auth, CORS, Payments, Permissions
 ├── database/
 │   ├── schema.sql             # 28 tables
