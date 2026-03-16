@@ -15,10 +15,14 @@ return function (Router $router): void {
         $router->post('/refresh', ['App\\Modules\\Auth\\AuthController', 'refresh']);
         $router->post('/forgot-password', ['App\\Modules\\Auth\\AuthController', 'forgotPassword']);
         $router->post('/reset-password', ['App\\Modules\\Auth\\AuthController', 'resetPassword']);
+        $router->get('/verify-email', ['App\\Modules\\Auth\\AuthController', 'verifyEmail']);
+        $router->post('/resend-verification', ['App\\Modules\\Auth\\AuthController', 'resendVerification']);
+        $router->post('/google', ['App\\Modules\\Auth\\GoogleAuthController', 'handleGoogleToken']);
 
         // Authenticated routes
         $router->post('/logout', ['App\\Modules\\Auth\\AuthController', 'logout']);
         $router->post('/change-password', ['App\\Modules\\Auth\\AuthController', 'changePassword']);
         $router->get('/me', ['App\\Modules\\Auth\\AuthController', 'me']);
+        $router->put('/profile', ['App\\Modules\\Auth\\AuthController', 'updateProfile']);
     });
 };

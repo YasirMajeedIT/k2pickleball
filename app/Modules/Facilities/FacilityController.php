@@ -39,6 +39,10 @@ final class FacilityController extends Controller
         if (!$facility) {
             throw new NotFoundException('Facility not found');
         }
+        // Parse settings JSON for the client
+        if (isset($facility['settings']) && is_string($facility['settings'])) {
+            $facility['settings'] = json_decode($facility['settings'], true) ?: [];
+        }
         return $this->success($facility);
     }
 
@@ -46,6 +50,7 @@ final class FacilityController extends Controller
     {
         $data = Validator::validate($request->all(), [
             'name'            => 'required|string|max:255',
+            'tagline'         => 'nullable|string|max:255',
             'slug'            => 'required|string|max:255',
             'description'     => 'nullable|string|max:2000',
             'address_line1'   => 'nullable|string|max:255',
@@ -59,28 +64,27 @@ final class FacilityController extends Controller
             'phone'           => 'nullable|phone',
             'email'           => 'nullable|email|max:255',
             'timezone'        => 'nullable|string|max:100',
-            'operating_hours' => 'nullable|json',
-            'amenities'       => 'nullable|json',
+            'tax_rate'        => 'nullable|numeric',
+            'image_url'       => 'nullable|string|max:500',
+            'settings'        => 'nullable',
             'status'          => 'nullable|in:active,inactive,maintenance',
         ]);
 
         $data['name']            = Sanitizer::string($data['name']);
         $data['slug']            = Sanitizer::string($data['slug']);
+        if (isset($data['tagline'])) $data['tagline'] = Sanitizer::string($data['tagline']);
         $data['zip']             = $data['zip_code'] ?? null;
         unset($data['zip_code']);
+        $data['tax_rate']        = isset($data['tax_rate']) ? round((float) $data['tax_rate'], 2) : 0.00;
 
-        // Pack operating_hours and amenities into settings JSON
-        $settings = [];
-        if (isset($data['operating_hours'])) {
-            $settings['operating_hours'] = is_string($data['operating_hours']) ? json_decode($data['operating_hours'], true) : $data['operating_hours'];
-            unset($data['operating_hours']);
-        }
-        if (isset($data['amenities'])) {
-            $settings['amenities'] = is_string($data['amenities']) ? json_decode($data['amenities'], true) : $data['amenities'];
-            unset($data['amenities']);
-        }
-        if (!empty($settings)) {
-            $data['settings'] = json_encode($settings);
+        // Ensure settings is stored as JSON string
+        if (isset($data['settings'])) {
+            if (is_string($data['settings'])) {
+                $decoded = json_decode($data['settings'], true);
+                $data['settings'] = json_encode(is_array($decoded) ? $decoded : []);
+            } elseif (is_array($data['settings'])) {
+                $data['settings'] = json_encode($data['settings']);
+            }
         }
 
         $data['uuid']            = $this->generateUuid();
@@ -104,6 +108,7 @@ final class FacilityController extends Controller
 
         $data = Validator::validate($request->all(), [
             'name'            => 'required|string|max:255',
+            'tagline'         => 'nullable|string|max:255',
             'slug'            => 'required|string|max:255',
             'description'     => 'nullable|string|max:2000',
             'address_line1'   => 'nullable|string|max:255',
@@ -117,28 +122,27 @@ final class FacilityController extends Controller
             'phone'           => 'nullable|phone',
             'email'           => 'nullable|email|max:255',
             'timezone'        => 'nullable|string|max:100',
-            'operating_hours' => 'nullable|json',
-            'amenities'       => 'nullable|json',
+            'tax_rate'        => 'nullable|numeric',
+            'image_url'       => 'nullable|string|max:500',
+            'settings'        => 'nullable',
             'status'          => 'nullable|in:active,inactive,maintenance',
         ]);
 
         $data['name'] = Sanitizer::string($data['name']);
         $data['slug'] = Sanitizer::string($data['slug']);
+        if (isset($data['tagline'])) $data['tagline'] = Sanitizer::string($data['tagline']);
         $data['zip']  = $data['zip_code'] ?? null;
         unset($data['zip_code']);
+        $data['tax_rate'] = isset($data['tax_rate']) ? round((float) $data['tax_rate'], 2) : 0.00;
 
-        // Pack operating_hours and amenities into settings JSON
-        $settings = [];
-        if (isset($data['operating_hours'])) {
-            $settings['operating_hours'] = is_string($data['operating_hours']) ? json_decode($data['operating_hours'], true) : $data['operating_hours'];
-            unset($data['operating_hours']);
-        }
-        if (isset($data['amenities'])) {
-            $settings['amenities'] = is_string($data['amenities']) ? json_decode($data['amenities'], true) : $data['amenities'];
-            unset($data['amenities']);
-        }
-        if (!empty($settings)) {
-            $data['settings'] = json_encode($settings);
+        // Ensure settings is stored as JSON string
+        if (isset($data['settings'])) {
+            if (is_string($data['settings'])) {
+                $decoded = json_decode($data['settings'], true);
+                $data['settings'] = json_encode(is_array($decoded) ? $decoded : []);
+            } elseif (is_array($data['settings'])) {
+                $data['settings'] = json_encode($data['settings']);
+            }
         }
 
         $this->repo->update($id, $data);

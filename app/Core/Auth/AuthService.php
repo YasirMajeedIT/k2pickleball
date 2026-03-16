@@ -8,6 +8,7 @@ use App\Core\Database\Connection;
 use App\Core\Exceptions\AuthenticationException;
 use App\Core\Exceptions\ValidationException;
 use App\Core\Services\Config;
+use App\Core\Services\Mailer;
 
 /**
  * Authentication service.
@@ -43,6 +44,11 @@ final class AuthService
         // Check account lock
         if ($user['locked_until'] !== null && strtotime($user['locked_until']) > time()) {
             throw new AuthenticationException('Account is locked. Please try again later.');
+        }
+
+        // Check email verification
+        if (empty($user['email_verified_at'])) {
+            throw new AuthenticationException('Please verify your email address before signing in. Check your inbox for the verification link.');
         }
 
         // Check account status
@@ -115,17 +121,26 @@ final class AuthService
         ]);
 
         $userId = $this->db->insert('users', [
-            'uuid' => $uuid,
-            'organization_id' => $data['organization_id'] ?? null,
-            'email' => $data['email'],
-            'password_hash' => $passwordHash,
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'phone' => $data['phone'] ?? null,
-            'status' => 'active',
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+            'uuid'             => $uuid,
+            'organization_id'  => $data['organization_id'] ?? null,
+            'email'            => $data['email'],
+            'password_hash'    => $passwordHash,
+            'first_name'       => $data['first_name'],
+            'last_name'        => $data['last_name'],
+            'phone'            => $data['phone'] ?? null,
+            'status'           => 'active',
+            'email_verified_at'=> null,
+            'created_at'       => date('Y-m-d H:i:s'),
+            'updated_at'       => date('Y-m-d H:i:s'),
+        ]);  
+
+        // Send verification email
+        $verifyToken = $this->createEmailVerificationToken($data['email']);
+        $this->sendVerificationEmail(
+            $data['email'],
+            $data['first_name'],
+            $verifyToken
+        );
 
         // Assign default role if organization is specified
         if (!empty($data['organization_id']) && !empty($data['role_slug'])) {
@@ -154,11 +169,21 @@ final class AuthService
     }
 
     /**
-     * Logout: revoke the refresh token.
+     * Logout: revoke all refresh tokens for this user.
      */
     public function logout(string $refreshToken): void
     {
-        $this->jwt->revokeRefreshToken($refreshToken);
+        // Find the user from the refresh token, then revoke ALL their tokens
+        $tokenHash = hash('sha256', $refreshToken);
+        $record = $this->db->fetch(
+            "SELECT `user_id` FROM `refresh_tokens` WHERE `token_hash` = ?",
+            [$tokenHash]
+        );
+        if ($record) {
+            $this->jwt->revokeAllUserTokens((int) $record['user_id']);
+        } else {
+            $this->jwt->revokeRefreshToken($refreshToken);
+        }
     }
 
     /**
@@ -192,6 +217,10 @@ final class AuthService
             'expires_at' => $expiresAt,
             'created_at' => date('Y-m-d H:i:s'),
         ]);
+
+        // Send reset email (also fetch first_name for personalisation)
+        $userInfo = $this->db->fetch("SELECT `first_name` FROM `users` WHERE `email` = ? LIMIT 1", [$email]);
+        $this->sendPasswordResetEmail($email, $userInfo['first_name'] ?? '', $token);
 
         return $token;
     }
@@ -294,6 +323,161 @@ final class AuthService
 
         return $this->db->fetchAll($sql, $params);
     }
+
+    // ---- Email Verification ----
+
+    /**
+     * Create a verification token for the given email and store it.
+     */
+    public function createEmailVerificationToken(string $email): string
+    {
+        // Invalidate previous tokens
+        $this->db->query(
+            "UPDATE `email_verifications` SET `used_at` = NOW() WHERE `email` = ? AND `used_at` IS NULL",
+            [$email]
+        );
+
+        $token    = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+        $expiresAt = date('Y-m-d H:i:s', time() + 86400); // 24 hours
+
+        $this->db->insert('email_verifications', [
+            'email'      => $email,
+            'token_hash' => $tokenHash,
+            'expires_at' => $expiresAt,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $token;
+    }
+
+    /**
+     * Verify an email using a verification token.
+     * Returns the user record on success.
+     */
+    public function verifyEmail(string $token): array
+    {
+        $tokenHash = hash('sha256', $token);
+
+        $record = $this->db->fetch(
+            "SELECT * FROM `email_verifications` WHERE `token_hash` = ? AND `used_at` IS NULL AND `expires_at` > NOW() LIMIT 1",
+            [$tokenHash]
+        );
+
+        if ($record === null) {
+            throw new AuthenticationException('Invalid or expired verification link. Please request a new one.');
+        }
+
+        // Mark token as used
+        $this->db->query(
+            "UPDATE `email_verifications` SET `used_at` = NOW() WHERE `id` = ?",
+            [$record['id']]
+        );
+
+        // Mark user email as verified
+        $this->db->query(
+            "UPDATE `users` SET `email_verified_at` = NOW(), `updated_at` = NOW() WHERE `email` = ?",
+            [$record['email']]
+        );
+
+        $user = $this->db->fetch("SELECT * FROM `users` WHERE `email` = ? LIMIT 1", [$record['email']]);
+
+        // Send welcome email
+        try {
+            $this->sendWelcomeEmail(
+                $user['email'],
+                $user['first_name'] ?? '',
+                $user['last_name'] ?? ''
+            );
+        } catch (\Throwable $e) {
+            // Non-fatal: log but don't block verification
+            error_log('[Mailer] Welcome email failed: ' . $e->getMessage());
+        }
+
+        return $user;
+    }
+
+    /**
+     * Resend verification email.
+     */
+    public function resendVerification(string $email): void
+    {
+        $user = $this->db->fetch(
+            "SELECT `first_name`, `email_verified_at` FROM `users` WHERE `email` = ? LIMIT 1",
+            [$email]
+        );
+
+        if ($user === null) {
+            // Prevent email enumeration — silently return
+            return;
+        }
+
+        if (!empty($user['email_verified_at'])) {
+            throw new ValidationException(['email' => 'This email address is already verified.']);
+        }
+
+        $token = $this->createEmailVerificationToken($email);
+        $this->sendVerificationEmail($email, $user['first_name'] ?? '', $token);
+    }
+
+    // ---- Email Helpers ----
+
+    private function sendVerificationEmail(string $email, string $firstName, string $token): void
+    {
+        try {
+            $appUrl    = rtrim($_ENV['APP_URL'] ?? 'http://localhost/k2pickleball', '/');
+            $verifyUrl = $appUrl . '/verify-email?token=' . urlencode($token);
+            $mailer    = Mailer::getInstance();
+            $html      = $mailer->renderTemplate('verify-email', [
+                'firstName'      => $firstName,
+                'verifyUrl'      => $verifyUrl,
+                'appUrl'         => $appUrl,
+                'recipientEmail' => $email,
+                'expiresIn'      => '24 hours',
+                'subject'        => 'Verify your email address — K2 Pickleball',
+            ]);
+            $mailer->send($email, $firstName, 'Verify your email address — K2 Pickleball', $html);
+        } catch (\Throwable $e) {
+            error_log('[Mailer] Verification email failed to ' . $email . ': ' . $e->getMessage());
+        }
+    }
+
+    private function sendWelcomeEmail(string $email, string $firstName, string $lastName): void
+    {
+        $appUrl    = rtrim($_ENV['APP_URL'] ?? 'http://localhost/k2pickleball', '/');
+        $mailer    = Mailer::getInstance();
+        $html      = $mailer->renderTemplate('welcome', [
+            'firstName'      => $firstName,
+            'lastName'       => $lastName,
+            'appUrl'         => $appUrl,
+            'portalUrl'      => $appUrl . '/admin',
+            'recipientEmail' => $email,
+            'subject'        => 'Welcome to K2 Pickleball!',
+        ]);
+        $mailer->send($email, $firstName . ' ' . $lastName, 'Welcome to K2 Pickleball!', $html);
+    }
+
+    private function sendPasswordResetEmail(string $email, string $firstName, string $token): void
+    {
+        try {
+            $appUrl   = rtrim($_ENV['APP_URL'] ?? 'http://localhost/k2pickleball', '/');
+            $resetUrl = $appUrl . '/reset-password?token=' . urlencode($token);
+            $mailer   = Mailer::getInstance();
+            $html     = $mailer->renderTemplate('forgot-password', [
+                'firstName'      => $firstName,
+                'resetUrl'       => $resetUrl,
+                'appUrl'         => $appUrl,
+                'recipientEmail' => $email,
+                'expiresIn'      => '1 hour',
+                'subject'        => 'Reset your K2 Pickleball password',
+            ]);
+            $mailer->send($email, $firstName, 'Reset your K2 Pickleball password', $html);
+        } catch (\Throwable $e) {
+            error_log('[Mailer] Password reset email failed to ' . $email . ': ' . $e->getMessage());
+        }
+    }
+
+    // ---- Private helpers ----
 
     private function generateUuid(): string
     {

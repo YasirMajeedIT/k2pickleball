@@ -29,6 +29,7 @@ class AdminController extends Controller
         // Courts
         'courts'                    => 'admin/courts/index.php',
         'courts/create'             => 'admin/courts/create.php',
+        'courts/{id}'               => 'admin/courts/show.php',
         'courts/{id}/edit'          => 'admin/courts/edit.php',
 
         // Users
@@ -63,6 +64,49 @@ class AdminController extends Controller
 
         // Settings
         'settings'                  => 'admin/settings/index.php',
+
+        // Categories
+        'categories'                => 'admin/categories/index.php',
+        'categories/create'         => 'admin/categories/create.php',
+        'categories/{id}/edit'      => 'admin/categories/edit.php',
+
+        // Resources
+        'resources'                 => 'admin/resources/index.php',
+        'resources/create'          => 'admin/resources/create.php',
+        'resources/{id}'            => 'admin/resources/show.php',
+        'resources/{id}/edit'       => 'admin/resources/edit.php',
+
+        // Schedule Dashboard
+        'schedule-dashboard'        => 'admin/schedule-dashboard/index.php',
+
+        // Players
+        'players'                   => 'admin/players/index.php',
+        'players/create'            => 'admin/players/create.php',
+        'players/{id}'              => 'admin/players/show.php',
+        'players/{id}/edit'         => 'admin/players/edit.php',
+
+        // Credit Codes
+        'credit-codes'              => 'admin/credit-codes/index.php',
+        'credit-codes/create'       => 'admin/credit-codes/create.php',
+        'credit-codes/{id}'         => 'admin/credit-codes/show.php',
+        'credit-codes/{id}/edit'    => 'admin/credit-codes/edit.php',
+
+        // Gift Certificates
+        'gift-certificates'              => 'admin/gift-certificates/index.php',
+        'gift-certificates/create'       => 'admin/gift-certificates/create.php',
+        'gift-certificates/{id}'         => 'admin/gift-certificates/show.php',
+        'gift-certificates/{id}/edit'    => 'admin/gift-certificates/edit.php',
+
+        // Discounts
+        'discounts'                      => 'admin/discounts/index.php',
+
+        // Waivers
+        'waivers'                        => 'admin/waivers/index.php',
+
+        // My Account
+        'account'                   => 'admin/account/index.php',
+        'my-subscription'           => 'admin/my-subscription/index.php',
+        'my-invoices'               => 'admin/my-invoices/index.php',
     ];
 
     public function handleRequest(Request $request, int|null $id = null): Response

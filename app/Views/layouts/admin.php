@@ -14,7 +14,7 @@ $breadcrumbs = $breadcrumbs ?? [];
 $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
 ?>
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,7 +55,31 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
 
     <!-- Chart.js (for dashboard) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+
+    <!-- Quill.js (rich text editor) -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+
+    <!-- Flatpickr (date picker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>window.APP_BASE = '<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>';</script>
+    <script>
+        // Apply saved theme before first paint to avoid flash
+        (function() {
+            var t = localStorage.getItem('k2_theme') || 'light';
+            if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+        // Auth guard — redirect to admin login if no token
+        if (!localStorage.getItem('access_token')) {
+            window.location.href = (window.APP_BASE || '') + '/admin/login';
+        }
+    </script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -73,6 +97,19 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
         /* Smooth transitions */
         * { transition-property: background-color, border-color, color, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
         a, button { transition-duration: 200ms; }
+
+        /* Flatpickr dark mode */
+        .dark .flatpickr-calendar { background: #1e293b; border-color: #334155; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        .dark .flatpickr-months .flatpickr-month, .dark .flatpickr-current-month .flatpickr-monthDropdown-months { background: #1e293b; color: #e2e8f0; }
+        .dark .flatpickr-weekdays, .dark span.flatpickr-weekday { background: #1e293b; color: #94a3b8; }
+        .dark .flatpickr-day { color: #e2e8f0; }
+        .dark .flatpickr-day:hover { background: #334155; border-color: #334155; }
+        .dark .flatpickr-day.today { border-color: #6366f1; }
+        .dark .flatpickr-day.selected { background: #6366f1; border-color: #6366f1; }
+        .dark .flatpickr-day.flatpickr-disabled { color: #475569; }
+        .dark .flatpickr-current-month input.cur-year { color: #e2e8f0; }
+        .dark .flatpickr-months .flatpickr-prev-month svg, .dark .flatpickr-months .flatpickr-next-month svg { fill: #94a3b8; }
+        .dark .flatpickr-innerContainer { border-bottom: none; }
     </style>
 </head>
 <body class="font-sans text-surface-700 bg-surface-100 dark:bg-surface-950 dark:text-surface-300 antialiased" x-data="{ sidebarOpen: false }">
@@ -153,6 +190,28 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
     </div>
 
     <script>
+    function themeToggle() {
+        const THEMES = ['light', 'dark', 'system'];
+        const LABELS = { light: 'Light mode', dark: 'Dark mode', system: 'System theme' };
+
+        function applyTheme(t) {
+            const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.classList.toggle('dark', isDark);
+            localStorage.setItem('k2_theme', t);
+        }
+
+        const saved = localStorage.getItem('k2_theme') || 'light';
+        return {
+            theme: saved,
+            get label() { return LABELS[this.theme]; },
+            cycle() {
+                const next = THEMES[(THEMES.indexOf(this.theme) + 1) % THEMES.length];
+                this.theme = next;
+                applyTheme(next);
+            }
+        };
+    }
+
     function toasts() {
         return {
             list: [],
@@ -167,6 +226,51 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
                 setTimeout(() => { this.list = this.list.filter(x => x.id !== id); }, 300);
             }
         }
+    }
+
+    /**
+     * Centralized auth-aware fetch wrapper.
+     * Handles 401 → token refresh with mutex to prevent concurrent refresh races.
+     */
+    window._refreshing = null;
+
+    async function refreshAuth() {
+        const rt = localStorage.getItem('refresh_token');
+        if (!rt) return false;
+        try {
+            const res = await fetch(APP_BASE + '/api/auth/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: rt })
+            });
+            if (!res.ok) return false;
+            const rd = await res.json();
+            const d = rd.data || rd;
+            localStorage.setItem('access_token', d.access_token);
+            if (d.refresh_token) localStorage.setItem('refresh_token', d.refresh_token);
+            return true;
+        } catch { return false; }
+    }
+
+    async function authFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = 'Bearer ' + localStorage.getItem('access_token');
+        if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
+            options.headers['Content-Type'] = 'application/json';
+        }
+
+        let res = await fetch(url, options);
+        if (res.status === 401) {
+            if (!window._refreshing) {
+                window._refreshing = refreshAuth().finally(() => { window._refreshing = null; });
+            }
+            const ok = await window._refreshing;
+            if (ok) {
+                options.headers['Authorization'] = 'Bearer ' + localStorage.getItem('access_token');
+                res = await fetch(url, options);
+            }
+        }
+        return res;
     }
     </script>
 </body>

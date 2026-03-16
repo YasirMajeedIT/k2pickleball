@@ -15,10 +15,12 @@ use App\Core\Exceptions\NotFoundException;
 final class OrganizationController extends Controller
 {
     private OrganizationRepository $repo;
+    private Connection $db;
 
     public function __construct(Connection $db)
     {
         parent::__construct();
+        $this->db = $db;
         $this->repo = new OrganizationRepository($db);
     }
 
@@ -96,6 +98,18 @@ final class OrganizationController extends Controller
 
         $id = $this->repo->create($data);
         $org = $this->repo->findById($id);
+
+        // Link the creating user to this organization if they don't have one
+        $userId = $request->getAttribute('user_id');
+        if ($userId) {
+            $user = $request->getAttribute('user');
+            if (empty($user['organization_id'])) {
+                $this->db->query(
+                    "UPDATE `users` SET `organization_id` = ?, `updated_at` = NOW() WHERE `id` = ?",
+                    [$id, $userId]
+                );
+            }
+        }
 
         return $this->created($org, 'Organization created');
     }

@@ -167,7 +167,7 @@ final class PaymentController extends Controller
     {
         $data = Validator::validate($request->all(), [
             'type' => 'required|in:card,bank_account',
-            'square_card_id' => 'required|string',
+            'square_card_id' => 'nullable|string',
             'brand' => 'nullable|string|max:50',
             'last_four' => 'nullable|string|max:4',
             'exp_month' => 'nullable|integer',

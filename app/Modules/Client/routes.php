@@ -17,16 +17,13 @@ return function (Router $router): void {
     $router->get('/contact', [ClientController::class, 'handleRequest']);
     $router->get('/demo', [ClientController::class, 'handleRequest']);
     $router->get('/pricing', [ClientController::class, 'handleRequest']);
+    $router->get('/privacy-policy', [ClientController::class, 'handleRequest']);
+    $router->get('/terms', [ClientController::class, 'handleRequest']);
 
     // Auth pages
     $router->get('/login', [ClientController::class, 'handleRequest']);
     $router->get('/register', [ClientController::class, 'handleRequest']);
     $router->get('/forgot-password', [ClientController::class, 'handleRequest']);
     $router->get('/reset-password', [ClientController::class, 'handleRequest']);
-
-    // Customer portal (auth checked client-side via JS)
-    $router->get('/portal', [ClientController::class, 'handleRequest']);
-    $router->get('/portal/subscription', [ClientController::class, 'handleRequest']);
-    $router->get('/portal/invoices', [ClientController::class, 'handleRequest']);
-    $router->get('/portal/settings', [ClientController::class, 'handleRequest']);
+    $router->get('/verify-email', [ClientController::class, 'handleRequest']);
 };

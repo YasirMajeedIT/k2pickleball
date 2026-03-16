@@ -18,18 +18,15 @@ class ClientController extends Controller
         'contact'               => 'client/contact.php',
         'demo'                  => 'client/demo.php',
         'pricing'               => 'client/pricing.php',
+        'privacy-policy'        => 'client/privacy-policy.php',
+        'terms'                 => 'client/terms.php',
 
         // Auth pages
         'login'                 => 'client/auth/login.php',
         'register'              => 'client/auth/register.php',
         'forgot-password'       => 'client/auth/forgot-password.php',
         'reset-password'        => 'client/auth/reset-password.php',
-
-        // Customer portal
-        'portal'                => 'client/portal/dashboard.php',
-        'portal/subscription'   => 'client/portal/subscription.php',
-        'portal/invoices'       => 'client/portal/invoices.php',
-        'portal/settings'       => 'client/portal/settings.php',
+        'verify-email'          => 'client/auth/verify-email.php',
     ];
 
     public function handleRequest(Request $request): Response
@@ -49,20 +46,13 @@ class ClientController extends Controller
         return Response::html($this->renderNotFound(), 404);
     }
 
-    /** Views that use the portal layout (authenticated) */
-    private const PORTAL_VIEWS = [
-        'client/portal/dashboard.php',
-        'client/portal/subscription.php',
-        'client/portal/invoices.php',
-        'client/portal/settings.php',
-    ];
-
     /** Views that are standalone (no layout wrapper) */
     private const STANDALONE_VIEWS = [
         'client/auth/login.php',
         'client/auth/register.php',
         'client/auth/forgot-password.php',
         'client/auth/reset-password.php',
+        'client/auth/verify-email.php',
     ];
 
     private function renderView(string $viewFile, array $params = []): Response
@@ -87,11 +77,7 @@ class ClientController extends Controller
             return Response::html($html);
         }
 
-        if (in_array($viewFile, self::PORTAL_VIEWS, true)) {
-            $layoutPath = dirname(__DIR__, 2) . '/Views/layouts/portal.php';
-        } else {
-            $layoutPath = dirname(__DIR__, 2) . '/Views/layouts/client.php';
-        }
+        $layoutPath = dirname(__DIR__, 2) . '/Views/layouts/client.php';
 
         extract($params);
         ob_start();

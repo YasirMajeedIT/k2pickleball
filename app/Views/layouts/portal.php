@@ -126,6 +126,52 @@
     </div>
 
     <script>
+    /**
+     * Centralized auth-aware fetch wrapper.
+     * Handles 401 → token refresh with mutex to prevent concurrent refresh races.
+     */
+    window._refreshing = null;
+
+    async function refreshAuth() {
+        const rt = localStorage.getItem('refresh_token');
+        if (!rt) return false;
+        try {
+            const res = await fetch(APP_BASE + '/api/auth/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: rt })
+            });
+            if (!res.ok) return false;
+            const rd = await res.json();
+            const d = rd.data || rd;
+            localStorage.setItem('access_token', d.access_token);
+            if (d.refresh_token) localStorage.setItem('refresh_token', d.refresh_token);
+            return true;
+        } catch { return false; }
+    }
+
+    async function authFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = 'Bearer ' + localStorage.getItem('access_token');
+        if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
+            options.headers['Content-Type'] = 'application/json';
+        }
+
+        let res = await fetch(url, options);
+        if (res.status === 401) {
+            // Mutex: only one refresh at a time
+            if (!window._refreshing) {
+                window._refreshing = refreshAuth().finally(() => { window._refreshing = null; });
+            }
+            const ok = await window._refreshing;
+            if (ok) {
+                options.headers['Authorization'] = 'Bearer ' + localStorage.getItem('access_token');
+                res = await fetch(url, options);
+            }
+        }
+        return res;
+    }
+
     function portalShell() {
         return {
             sidebarOpen: false,
@@ -134,9 +180,7 @@
             userInitials: '',
             async init() {
                 try {
-                    const res = await fetch(APP_BASE + '/api/auth/me', {
-                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
-                    });
+                    const res = await authFetch(APP_BASE + '/api/auth/me');
                     if (!res.ok) { this.handleAuthError(); return; }
                     const data = await res.json();
                     const u = data.data || data;
@@ -148,17 +192,23 @@
             handleAuthError() {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
+                localStorage.removeItem('user');
                 window.location.href = APP_BASE + '/login';
             },
             async logout() {
                 try {
                     await fetch(APP_BASE + '/api/auth/logout', {
                         method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('access_token'),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') })
                     });
                 } catch {}
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
+                localStorage.removeItem('user');
                 window.location.href = APP_BASE + '/login';
             }
         }

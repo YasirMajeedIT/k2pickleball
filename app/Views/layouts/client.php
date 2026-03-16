@@ -164,6 +164,8 @@
                     <ul class="space-y-3">
                         <li><a href="<?= $baseUrl ?>/about" class="text-sm text-surface-400 hover:text-brand-400 transition-colors">About</a></li>
                         <li><a href="<?= $baseUrl ?>/contact" class="text-sm text-surface-400 hover:text-brand-400 transition-colors">Contact</a></li>
+                        <li><a href="<?= $baseUrl ?>/privacy-policy" class="text-sm text-surface-400 hover:text-brand-400 transition-colors">Privacy Policy</a></li>
+                        <li><a href="<?= $baseUrl ?>/terms" class="text-sm text-surface-400 hover:text-brand-400 transition-colors">Terms of Service</a></li>
                     </ul>
                 </div>
 

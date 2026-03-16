@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 return [
-    'environment' => $_ENV['SQUARE_ENVIRONMENT'] ?? 'sandbox',
-    'access_token' => $_ENV['SQUARE_ACCESS_TOKEN'] ?? '',
-    'application_id' => $_ENV['SQUARE_APPLICATION_ID'] ?? '',
-    'location_id' => $_ENV['SQUARE_LOCATION_ID'] ?? '',
-    'webhook_signature_key' => $_ENV['SQUARE_WEBHOOK_SIGNATURE_KEY'] ?? '',
+    'square' => [
+        'environment' => $_ENV['SQUARE_ENVIRONMENT'] ?? 'sandbox',
+        'access_token' => $_ENV['SQUARE_ACCESS_TOKEN'] ?? '',
+        'application_id' => $_ENV['SQUARE_APPLICATION_ID'] ?? '',
+        'location_id' => $_ENV['SQUARE_LOCATION_ID'] ?? '',
+        'webhook_signature_key' => $_ENV['SQUARE_WEBHOOK_SIGNATURE_KEY'] ?? '',
+        'webhook_url' => ($_ENV['APP_URL'] ?? '') . '/api/webhooks/square',
+    ],
     'currency' => 'USD',
 
     'sandbox' => [

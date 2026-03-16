@@ -144,19 +144,19 @@ function portalDashboard() {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             this.userName = user.first_name || '';
 
-            const token = localStorage.getItem('access_token');
-            if (!token) return;
-            const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-
             // Fetch subscription info
-            fetch(APP_BASE + '/api/subscriptions', { headers })
+            authFetch(APP_BASE + '/api/subscriptions/current')
                 .then(r => r.json())
                 .then(data => {
-                    const subs = data.data || data;
-                    if (Array.isArray(subs) && subs.length > 0) {
-                        this.subscription = subs[0];
-                    } else if (subs && subs.id) {
-                        this.subscription = subs;
+                    const sub = data.data || data;
+                    if (sub && sub.id) {
+                        this.subscription = sub;
+                        if (sub.plan) {
+                            this.subscription.plan_name = sub.plan.name || '';
+                            this.subscription.price = sub.billing_cycle === 'yearly'
+                                ? parseFloat(sub.plan.price_yearly || 0)
+                                : parseFloat(sub.plan.price_monthly || 0);
+                        }
                     }
                 })
                 .catch(() => {});

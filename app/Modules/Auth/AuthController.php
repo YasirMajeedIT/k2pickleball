@@ -55,7 +55,7 @@ final class AuthController extends Controller
             'password' => 'required|password|confirmed',
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'phone' => 'nullable|phone',
+            'phone' => 'required|phone',
             'organization_id' => 'nullable|integer',
             'role_slug' => 'nullable|string|max:50',
         ]);
@@ -138,6 +138,37 @@ final class AuthController extends Controller
     }
 
     /**
+     * GET /api/auth/verify-email?token=xxx
+     */
+    public function verifyEmail(Request $request): Response
+    {
+        $token = $request->query('token', '');
+        if (empty($token)) {
+            return $this->error('Verification token is required.', 422);
+        }
+
+        $user = $this->auth->verifyEmail($token);
+
+        return $this->success([
+            'email' => $user['email'],
+        ], 'Email verified successfully. You can now sign in.');
+    }
+
+    /**
+     * POST /api/auth/resend-verification
+     */
+    public function resendVerification(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'email' => 'required|email|max:255',
+        ]);
+
+        $this->auth->resendVerification(Sanitizer::email($data['email']));
+
+        return $this->success(null, 'If the email is registered and unverified, a new verification link has been sent.');
+    }
+
+    /**
      * POST /api/auth/change-password (authenticated)
      */
     public function changePassword(Request $request): Response
@@ -157,15 +188,58 @@ final class AuthController extends Controller
     }
 
     /**
+     * PUT /api/auth/profile (authenticated)
+     */
+    public function updateProfile(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'phone' => 'nullable|phone',
+        ]);
+
+        $userId = $request->userId();
+        $container = Container::getInstance();
+        $db = $container->make(\App\Core\Database\Connection::class);
+
+        $db->execute(
+            "UPDATE `users` SET `first_name` = ?, `last_name` = ?, `phone` = ?, `updated_at` = NOW() WHERE `id` = ?",
+            [
+                Sanitizer::string($data['first_name']),
+                Sanitizer::string($data['last_name']),
+                isset($data['phone']) ? Sanitizer::string($data['phone']) : null,
+                $userId,
+            ]
+        );
+
+        $user = $db->fetch(
+            "SELECT `id`, `email`, `first_name`, `last_name`, `phone`, `avatar_url` FROM `users` WHERE `id` = ? LIMIT 1",
+            [$userId]
+        );
+
+        return $this->success($user, 'Profile updated successfully');
+    }
+
+    /**
      * GET /api/auth/me (authenticated)
      */
     public function me(Request $request): Response
     {
+        $userId = $request->userId();
+        $container = Container::getInstance();
+        $db = $container->make(\App\Core\Database\Connection::class);
+        $user = $db->fetch("SELECT `id`, `uuid`, `email`, `first_name`, `last_name`, `phone`, `avatar_url`, `status`, `organization_id`, `created_at` FROM `users` WHERE `id` = ? LIMIT 1", [$userId]);
+
         return $this->success([
-            'user_id' => $request->userId(),
+            'user_id'         => $request->userId(),
             'organization_id' => $request->organizationId(),
-            'roles' => $request->userRoles(),
-            'permissions' => $request->getAttributes()['user_permissions'] ?? [],
+            'roles'           => $request->userRoles(),
+            'permissions'     => $request->getAttributes()['user_permissions'] ?? [],
+            'first_name'      => $user['first_name'] ?? '',
+            'last_name'       => $user['last_name'] ?? '',
+            'email'           => $user['email'] ?? '',
+            'phone'           => $user['phone'] ?? '',
+            'avatar_url'      => $user['avatar_url'] ?? '',
         ]);
     }
 }

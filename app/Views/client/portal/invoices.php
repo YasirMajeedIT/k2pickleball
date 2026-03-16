@@ -53,7 +53,7 @@
                             </td>
                             <td class="py-3 px-6 text-surface-400" x-text="new Date(inv.created_at || inv.issue_date).toLocaleDateString()"></td>
                             <td class="py-3 px-6 text-surface-300" x-text="inv.description || 'Subscription payment'"></td>
-                            <td class="py-3 px-6 text-right text-white font-medium" x-text="'$' + parseFloat(inv.amount || 0).toFixed(2)"></td>
+                            <td class="py-3 px-6 text-right text-white font-medium" x-text="'$' + parseFloat(inv.total || 0).toFixed(2)"></td>
                             <td class="py-3 px-6 text-center">
                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="{
                                     'bg-brand-500/10 text-brand-400': inv.status === 'paid',
@@ -83,17 +83,13 @@ function invoicesPage() {
         invoices: [],
         loading: true,
         get totalPaid() {
-            return this.invoices.filter(i => i.status === 'paid').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+            return this.invoices.filter(i => i.status === 'paid').reduce((s, i) => s + parseFloat(i.total || 0), 0);
         },
         get totalOutstanding() {
-            return this.invoices.filter(i => i.status !== 'paid' && i.status !== 'draft').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+            return this.invoices.filter(i => i.status !== 'paid' && i.status !== 'draft').reduce((s, i) => s + parseFloat(i.total || 0), 0);
         },
         init() {
-            const token = localStorage.getItem('access_token');
-            if (!token) return;
-            fetch(APP_BASE + '/api/invoices', {
-                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
-            })
+            authFetch(APP_BASE + '/api/invoices')
             .then(r => r.json())
             .then(data => {
                 this.invoices = data.data || data || [];

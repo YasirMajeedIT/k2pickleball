@@ -22,7 +22,7 @@
     </script>
 </head>
 <body class="h-full bg-surface-950 font-sans text-white antialiased flex items-center justify-center p-6">
-    <div class="w-full max-w-md" x-data="{ password: '', confirmation: '', loading: false, done: false, error: '' }">
+    <div class="w-full max-w-md" x-data="resetPage()" x-init="init()">
         <div class="text-center mb-8">
             <a href="<?= $baseUrl ?>/" class="inline-flex items-center gap-3 mb-8">
                 <div class="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center">
@@ -32,20 +32,24 @@
             </a>
         </div>
 
+        <!-- No token state -->
+        <div x-show="!token" x-transition class="text-center">
+            <div class="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+            </div>
+            <h2 class="text-2xl font-extrabold">Invalid Reset Link</h2>
+            <p class="mt-2 text-sm text-surface-400">This password reset link is missing or invalid. Please request a new one.</p>
+            <a href="<?= $baseUrl ?>/forgot-password" class="mt-6 inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-2xl shadow-lg shadow-brand-600/25 transition-all">Request New Link</a>
+        </div>
+
         <!-- Reset form -->
-        <div x-show="!done" x-transition>
+        <div x-show="token && !done" x-transition>
             <h2 class="text-2xl font-extrabold text-center">Reset your password</h2>
             <p class="mt-2 text-sm text-surface-400 text-center">Enter your new password below.</p>
 
             <div x-show="error" x-transition class="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm" x-text="error"></div>
 
-            <form @submit.prevent="
-                error = '';
-                if (password.length < 8) { error = 'Password must be at least 8 characters.'; return; }
-                if (password !== confirmation) { error = 'Passwords do not match.'; return; }
-                loading = true;
-                setTimeout(() => { done = true; loading = false; }, 1000);
-            " class="mt-8 space-y-5">
+            <form @submit.prevent="doReset()" class="mt-8 space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-surface-300 mb-2">New Password</label>
                     <input type="password" x-model="password" required minlength="8" class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="Min. 8 characters">
@@ -74,5 +78,35 @@
             <a href="<?= $baseUrl ?>/login" class="mt-6 inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-2xl shadow-lg shadow-brand-600/25 transition-all">Sign In</a>
         </div>
     </div>
+
+    <script>
+    const BASE_URL = '<?= $baseUrl ?>';
+    function resetPage() {
+        return {
+            password: '', confirmation: '', loading: false, done: false, error: '', token: '',
+            init() {
+                const params = new URLSearchParams(window.location.search);
+                this.token = params.get('token') || '';
+            },
+            async doReset() {
+                this.error = '';
+                if (this.password.length < 8) { this.error = 'Password must be at least 8 characters.'; return; }
+                if (this.password !== this.confirmation) { this.error = 'Passwords do not match.'; return; }
+                this.loading = true;
+                try {
+                    const res = await fetch(BASE_URL + '/api/auth/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: this.token, password: this.password, password_confirmation: this.confirmation })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) { this.error = data.message || 'Reset failed. The link may have expired.'; this.loading = false; return; }
+                    this.done = true;
+                } catch { this.error = 'Network error. Please try again.'; }
+                this.loading = false;
+            }
+        }
+    }
+    </script>
 </body>
 </html>

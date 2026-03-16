@@ -67,6 +67,20 @@ $initials = strtoupper(substr($user['first_name'] ?? 'A', 0, 1) . substr($user['
                 </div>
             </div>
 
+            <!-- Theme Toggle -->
+            <div x-data="themeToggle()" class="relative">
+                <button x-on:click="cycle()"
+                        :title="label"
+                        class="flex h-10 w-10 items-center justify-center rounded-xl border border-surface-200 bg-surface-50 hover:bg-surface-100 hover:border-surface-300 dark:border-surface-700 dark:bg-surface-800 dark:hover:bg-surface-700 transition-all">
+                    <!-- Sun (light) -->
+                    <svg x-show="theme === 'light'" class="w-[18px] h-[18px] text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14A7 7 0 0012 5z"/></svg>
+                    <!-- Moon (dark) -->
+                    <svg x-show="theme === 'dark'" class="w-[18px] h-[18px] text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                    <!-- Monitor (system) -->
+                    <svg x-show="theme === 'system'" class="w-[18px] h-[18px] text-surface-500 dark:text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                </button>
+            </div>
+
             <!-- Divider -->
             <div class="h-6 w-px bg-surface-200 dark:bg-surface-700 mx-1"></div>
 
@@ -98,9 +112,9 @@ $initials = strtoupper(substr($user['first_name'] ?? 'A', 0, 1) . substr($user['
                         <p class="text-xs text-surface-400 mt-0.5"><?= htmlspecialchars($userEmail) ?></p>
                     </div>
                     <div class="py-2 px-2">
-                        <a href="<?= ($baseUrl ?? '') . '/admin/settings' ?>" class="flex items-center gap-3 px-3 py-2.5 text-sm text-surface-600 hover:bg-surface-50 dark:text-surface-300 dark:hover:bg-surface-700/50 rounded-xl transition-colors">
-                            <svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            Settings
+                        <a href="<?= ($baseUrl ?? '') . '/admin/account' ?>" class="flex items-center gap-3 px-3 py-2.5 text-sm text-surface-600 hover:bg-surface-50 dark:text-surface-300 dark:hover:bg-surface-700/50 rounded-xl transition-colors">
+                            <svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            My Account
                         </a>
                     </div>
                     <div class="border-t border-surface-100 dark:border-surface-700 py-2 px-2">
@@ -125,6 +139,7 @@ function logout() {
     }).finally(() => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
         window.location.href = APP_BASE + '/admin/login';
     });
 }

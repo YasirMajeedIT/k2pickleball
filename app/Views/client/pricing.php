@@ -8,7 +8,7 @@
             <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
                 Plans that scale <span class="gradient-text">with you</span>
             </h1>
-            <p class="mt-6 text-lg text-surface-400">Start free and upgrade as your facility grows. All plans include core scheduling and management features.</p>
+            <p class="mt-6 text-lg text-surface-400">Simple, transparent pricing for every facility. All plans include core scheduling and management features.</p>
         </div>
     </div>
 </section>
@@ -42,7 +42,7 @@
                         </template>
                     </div>
                     <a :href="baseUrl + '/register'" class="mt-6 block w-full text-center py-3 rounded-xl text-sm font-semibold transition-all" :class="plan.is_featured ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/25' : 'border border-surface-700 hover:border-surface-600 text-surface-300 hover:text-white'">
-                        <span x-text="plan.price_monthly == 0 ? 'Get Started Free' : (plan.is_featured ? 'Start Free Trial' : 'Contact Sales')"></span>
+                        <span x-text="plan.price_monthly == 0 ? 'Get Started Free' : (plan.is_featured ? 'Get Started' : 'Choose Plan')"></span>
                     </a>
                     <ul class="mt-6 space-y-3">
                         <template x-for="feature in plan.feature_list" :key="feature">

@@ -52,13 +52,14 @@ final class Sanitizer
     }
 
     /**
-     * Sanitize a plain string: trim, strip tags, encode special chars.
+     * Sanitize a plain string: trim and strip HTML tags.
+     * Does NOT apply htmlspecialchars — data is stored raw in the DB
+     * and encoded at output time (PHP templates or Alpine x-text).
      */
     public static function string(string $value): string
     {
         $value = trim($value);
-        $value = strip_tags($value);
-        return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return strip_tags($value);
     }
 
     /**

@@ -37,11 +37,12 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         // Allow inline styles/scripts for admin dashboard (TailAdmin + Alpine.js)
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com",
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
-            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://accounts.google.com https://*.squarecdn.com",
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://accounts.google.com https://*.squarecdn.com",
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://*.squarecdn.com https://*.cloudfront.net",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self'",
+            "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.squareup.com https://*.squareupsandbox.com",
+            "frame-src https://accounts.google.com https://*.squarecdn.com https://*.squareup.com https://*.squareupsandbox.com",
             "frame-ancestors 'none'",
         ]);
     }

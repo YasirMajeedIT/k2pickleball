@@ -22,7 +22,7 @@
     </script>
 </head>
 <body class="h-full bg-surface-950 font-sans text-white antialiased flex items-center justify-center p-6">
-    <div class="w-full max-w-md" x-data="{ email: '', loading: false, sent: false }">
+    <div class="w-full max-w-md" x-data="forgotPage()" x-init="init()">
         <div class="text-center mb-8">
             <a href="<?= $baseUrl ?>/" class="inline-flex items-center gap-3 mb-8">
                 <div class="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center">
@@ -37,10 +37,11 @@
             <h2 class="text-2xl font-extrabold text-center">Forgot your password?</h2>
             <p class="mt-2 text-sm text-surface-400 text-center">Enter your email and we'll send you a reset link.</p>
 
-            <form @submit.prevent="loading = true; setTimeout(() => { sent = true; loading = false; }, 1000)" class="mt-8 space-y-5">
+            <form @submit.prevent="sendReset()" class="mt-8 space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-surface-300 mb-2">Email address</label>
                     <input type="email" x-model="email" required autofocus class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="you@example.com">
+                    <p x-show="errorMsg" class="mt-2 text-sm text-red-400" x-text="errorMsg"></p>
                 </div>
                 <button type="submit" :disabled="loading" class="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-brand-600 hover:bg-brand-500 disabled:opacity-50 rounded-2xl shadow-lg shadow-brand-600/25 transition-all">
                     <span x-show="!loading">Send Reset Link</span>
@@ -63,8 +64,37 @@
         </div>
 
         <p class="mt-8 text-center text-sm text-surface-500">
-            <a href="<?= $baseUrl ?>/login" class="text-brand-400 hover:text-brand-300 font-medium">← Back to sign in</a>
+            <a href="<?= $baseUrl ?>/login" class="text-brand-400 hover:text-brand-300 font-medium">&larr; Back to sign in</a>
         </p>
     </div>
+
+    <script>
+    const BASE_URL = '<?= $baseUrl ?>';
+    function forgotPage() {
+        return {
+            email: '', loading: false, sent: false, errorMsg: '',
+            init() {
+                // Pre-fill email if passed as query param
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('email')) this.email = params.get('email');
+            },
+            async sendReset() {
+                this.errorMsg = ''; this.loading = true;
+                try {
+                    const res = await fetch(BASE_URL + '/api/auth/forgot-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: this.email })
+                    });
+                    // Always show success to prevent email enumeration
+                    this.sent = true;
+                } catch {
+                    this.errorMsg = 'Network error. Please try again.';
+                }
+                this.loading = false;
+            }
+        }
+    }
+    </script>
 </body>
 </html>

@@ -57,7 +57,17 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                                 <?= $required ? 'required' : '' ?>>
                                 <option value="">Select...</option>
                                 <?php foreach (($field['options'] ?? []) as $val => $optLabel): ?>
-                                    <option value="<?= htmlspecialchars($val, ENT_QUOTES) ?>"><?= htmlspecialchars($optLabel, ENT_QUOTES) ?></option>
+                                    <?php
+                                        // Support both ['key' => 'Label'] and [['value' => 'key', 'label' => 'Label']] formats
+                                        if (is_array($optLabel)) {
+                                            $optValue = $optLabel['value'] ?? $val;
+                                            $optText = $optLabel['label'] ?? $optLabel['name'] ?? $optValue;
+                                        } else {
+                                            $optValue = $val;
+                                            $optText = $optLabel;
+                                        }
+                                    ?>
+                                    <option value="<?= htmlspecialchars((string)$optValue, ENT_QUOTES) ?>"><?= htmlspecialchars((string)$optText, ENT_QUOTES) ?></option>
                                 <?php endforeach; ?>
                             </select>
                             <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -79,6 +89,150 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                             placeholder="<?= htmlspecialchars($placeholder ?: '{}', ENT_QUOTES) ?>"
                             class="w-full rounded-xl border border-surface-200 bg-white px-4 py-3 text-sm shadow-soft focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-surface-700 dark:bg-surface-800 dark:text-white font-mono placeholder:text-surface-400 transition-all"
                             <?= $required ? 'required' : '' ?>></textarea>
+
+                    <?php elseif ($type === 'color'): ?>
+                        <div class="flex items-center gap-3">
+                            <input type="color" x-model="form.<?= $name ?>"
+                                class="h-10 w-14 cursor-pointer rounded-lg border border-surface-200 bg-white p-1 dark:border-surface-700 dark:bg-surface-800 transition-all">
+                            <input type="text" x-model="form.<?= $name ?>" maxlength="7" pattern="#[0-9a-fA-F]{6}"
+                                placeholder="#6366f1"
+                                class="w-28 rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm font-mono shadow-soft focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-surface-700 dark:bg-surface-800 dark:text-white transition-all">
+                        </div>
+
+                    <?php elseif ($type === 'checkbox-group'): ?>
+                        <?php $defaultItems = $field['default_items'] ?? []; ?>
+                        <div class="space-y-2">
+                            <?php foreach ($defaultItems as $itemValue => $itemLabel): ?>
+                            <label class="flex items-center gap-2.5 cursor-pointer group">
+                                <input type="checkbox"
+                                    :checked="(form.<?= $name ?> || []).includes('<?= htmlspecialchars($itemValue, ENT_QUOTES) ?>')"
+                                    @change="
+                                        if (!form.<?= $name ?>) form.<?= $name ?> = [];
+                                        if ($event.target.checked) {
+                                            if (!form.<?= $name ?>.includes('<?= htmlspecialchars($itemValue, ENT_QUOTES) ?>')) form.<?= $name ?>.push('<?= htmlspecialchars($itemValue, ENT_QUOTES) ?>');
+                                        } else {
+                                            form.<?= $name ?> = form.<?= $name ?>.filter(v => v !== '<?= htmlspecialchars($itemValue, ENT_QUOTES) ?>');
+                                        }
+                                    "
+                                    class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500/20 dark:border-surface-600 dark:bg-surface-700">
+                                <span class="text-sm text-surface-700 dark:text-surface-300"><?= htmlspecialchars($itemLabel, ENT_QUOTES) ?></span>
+                            </label>
+                            <?php endforeach; ?>
+                            <!-- Custom items -->
+                            <template x-for="(item, idx) in (form._custom_<?= $name ?> || [])" :key="'custom_' + idx">
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox"
+                                        :checked="(form.<?= $name ?> || []).includes(item)"
+                                        @change="
+                                            if (!form.<?= $name ?>) form.<?= $name ?> = [];
+                                            if ($event.target.checked) {
+                                                if (!form.<?= $name ?>.includes(item)) form.<?= $name ?>.push(item);
+                                            } else {
+                                                form.<?= $name ?> = form.<?= $name ?>.filter(v => v !== item);
+                                                form._custom_<?= $name ?>.splice(idx, 1);
+                                            }
+                                        "
+                                        class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500/20 dark:border-surface-600 dark:bg-surface-700" checked>
+                                    <span class="text-sm text-surface-700 dark:text-surface-300" x-text="item"></span>
+                                    <button type="button" @click="form.<?= $name ?> = (form.<?= $name ?>||[]).filter(v => v !== item); form._custom_<?= $name ?>.splice(idx, 1)"
+                                        class="ml-auto text-red-400 hover:text-red-600 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                </label>
+                            </template>
+                            <!-- Add custom button -->
+                            <div class="flex items-center gap-2 mt-2" x-data="{ adding: false, newItem: '' }">
+                                <template x-if="!adding">
+                                    <button type="button" @click="adding = true" class="inline-flex items-center gap-1.5 text-xs font-medium text-primary-500 hover:text-primary-400 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        Add Custom
+                                    </button>
+                                </template>
+                                <template x-if="adding">
+                                    <div class="flex items-center gap-2 w-full">
+                                        <input type="text" x-model="newItem" placeholder="Custom item name" @keydown.enter.prevent="
+                                            if (newItem.trim()) {
+                                                if (!$data.form._custom_<?= $name ?>) $data.form._custom_<?= $name ?> = [];
+                                                $data.form._custom_<?= $name ?>.push(newItem.trim());
+                                                if (!$data.form.<?= $name ?>) $data.form.<?= $name ?> = [];
+                                                $data.form.<?= $name ?>.push(newItem.trim());
+                                                newItem = ''; adding = false;
+                                            }
+                                        " class="flex-1 rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-sm dark:border-surface-700 dark:bg-surface-800 dark:text-white focus:border-primary-400 focus:ring-1 focus:ring-primary-500/20 focus:outline-none">
+                                        <button type="button" @click="
+                                            if (newItem.trim()) {
+                                                if (!$data.form._custom_<?= $name ?>) $data.form._custom_<?= $name ?> = [];
+                                                $data.form._custom_<?= $name ?>.push(newItem.trim());
+                                                if (!$data.form.<?= $name ?>) $data.form.<?= $name ?> = [];
+                                                $data.form.<?= $name ?>.push(newItem.trim());
+                                                newItem = ''; adding = false;
+                                            }
+                                        " class="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 transition-colors">Add</button>
+                                        <button type="button" @click="adding = false; newItem = ''" class="text-surface-400 hover:text-surface-600 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                    <?php elseif ($type === 'file'): ?>
+                        <?php $accept = $field['accept'] ?? 'image/*'; ?>
+                        <div class="space-y-3">
+                            <template x-if="form._preview_<?= $name ?>">
+                                <div class="relative inline-block">
+                                    <img :src="form._preview_<?= $name ?>" class="h-24 w-24 rounded-xl object-cover border-2 border-surface-200 dark:border-surface-700 shadow-soft">
+                                    <button type="button" @click="form._preview_<?= $name ?> = ''; form.<?= $name ?> = ''; form._file_<?= $name ?> = null"
+                                        class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white shadow hover:bg-red-600 transition-colors">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </template>
+                            <label class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-surface-200 bg-surface-50 px-4 py-6 text-sm text-surface-500 hover:border-primary-400 hover:bg-primary-50/30 dark:border-surface-700 dark:bg-surface-800/50 dark:hover:border-primary-500/50 dark:hover:bg-surface-800 transition-all"
+                                x-show="!form._preview_<?= $name ?>">
+                                <svg class="w-6 h-6 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                                <span>Click to upload or drag & drop</span>
+                                <input type="file" accept="<?= htmlspecialchars($accept, ENT_QUOTES) ?>" class="hidden" @change="
+                                    const file = $event.target.files[0];
+                                    if (file) {
+                                        form._file_<?= $name ?> = file;
+                                        const reader = new FileReader();
+                                        reader.onload = e => form._preview_<?= $name ?> = e.target.result;
+                                        reader.readAsDataURL(file);
+                                    }
+                                ">
+                            </label>
+                        </div>
+
+                    <?php elseif ($type === 'custom' && $name === 'operating_hours'): ?>
+                        <!-- Operating Hours: Day-by-day time picker -->
+                        <div class="space-y-3">
+                            <template x-for="(day, key) in form.hours" :key="key">
+                                <div class="flex items-center gap-3 rounded-xl border border-surface-200 dark:border-surface-700 px-4 py-3 bg-white dark:bg-surface-800">
+                                    <span class="w-24 text-sm font-medium text-surface-700 dark:text-surface-300" x-text="form.dayLabels[key] || key"></span>
+                                    <template x-if="!day.closed">
+                                        <div class="flex items-center gap-2 flex-1">
+                                            <select x-model="day.open" class="rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm dark:border-surface-700 dark:bg-surface-800 dark:text-white focus:border-primary-400 focus:ring-1 focus:ring-primary-500/20 focus:outline-none">
+                                                <template x-for="opt in timeOptions()" :key="opt.value">
+                                                    <option :value="opt.value" x-text="opt.label"></option>
+                                                </template>
+                                            </select>
+                                            <span class="text-surface-400 text-sm">to</span>
+                                            <select x-model="day.close" class="rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm dark:border-surface-700 dark:bg-surface-800 dark:text-white focus:border-primary-400 focus:ring-1 focus:ring-primary-500/20 focus:outline-none">
+                                                <template x-for="opt in timeOptions()" :key="opt.value">
+                                                    <option :value="opt.value" x-text="opt.label"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                    </template>
+                                    <template x-if="day.closed">
+                                        <span class="flex-1 text-sm text-surface-400 italic">Closed</span>
+                                    </template>
+                                    <label class="flex items-center gap-2 cursor-pointer ml-auto">
+                                        <input type="checkbox" x-model="day.closed" class="h-4 w-4 rounded border-surface-300 text-red-500 focus:ring-red-500/20 dark:border-surface-600 dark:bg-surface-700">
+                                        <span class="text-xs text-surface-500">Closed</span>
+                                    </label>
+                                </div>
+                            </template>
+                        </div>
 
                     <?php else: ?>
                         <input type="<?= htmlspecialchars($type, ENT_QUOTES) ?>"

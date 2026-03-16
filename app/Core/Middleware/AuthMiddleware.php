@@ -29,6 +29,7 @@ final class AuthMiddleware implements MiddlewareInterface
         '/api/auth/refresh',
         '/api/webhooks/square',
         '/api/health',
+        '/api/plans',
         '/',
     ];
 
@@ -36,7 +37,6 @@ final class AuthMiddleware implements MiddlewareInterface
     private const PUBLIC_PREFIXES = [
         '/admin',
         '/platform',
-        '/portal',
         '/product',
         '/about',
         '/contact',
@@ -46,6 +46,10 @@ final class AuthMiddleware implements MiddlewareInterface
         '/register',
         '/forgot-password',
         '/reset-password',
+        '/verify-email',
+        '/api/auth/verify-email',
+        '/api/auth/resend-verification',
+        '/api/auth/google',
     ];
 
     public function __construct(JwtService $jwt, Connection $db)

@@ -14,9 +14,15 @@ ob_start();
 
     <!-- Header bar -->
     <div class="mb-6 flex items-center justify-between">
-        <div>
-            <h2 class="text-xl font-bold text-surface-900 dark:text-white" x-text="facility.name || 'Facility Details'"></h2>
-            <p class="mt-0.5 text-sm text-surface-500" x-text="facility.city && facility.state ? facility.city + ', ' + facility.state : ''"></p>
+        <div class="flex items-center gap-4">
+            <template x-if="facility.logo_url">
+                <img :src="facility.logo_url" alt="Logo" class="h-14 w-14 rounded-xl object-cover border border-surface-200 dark:border-surface-700 shadow-sm">
+            </template>
+            <div>
+                <h2 class="text-xl font-bold text-surface-900 dark:text-white" x-text="facility.name || 'Facility Details'"></h2>
+                <p x-show="facility.tagline" class="mt-0.5 text-sm text-surface-500 italic" x-text="facility.tagline"></p>
+                <p class="mt-0.5 text-xs text-surface-400" x-text="facility.city && facility.state ? facility.city + ', ' + facility.state : ''"></p>
+            </div>
         </div>
         <div class="flex items-center gap-3">
             <a href="<?= htmlspecialchars($backUrl) ?>"
@@ -82,6 +88,16 @@ ob_start();
                         <div class="px-6 py-4 border-l border-surface-100 dark:border-surface-800">
                             <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Timezone</dt>
                             <dd class="mt-1 text-sm text-surface-600 dark:text-surface-300" x-text="facility.timezone || '—'"></dd>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-0">
+                        <div class="px-6 py-4">
+                            <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Tax Rate</dt>
+                            <dd class="mt-1 text-sm text-surface-700 dark:text-surface-300" x-text="facility.tax_rate ? facility.tax_rate + '%' : '0%'"></dd>
+                        </div>
+                        <div class="px-6 py-4 border-l border-surface-100 dark:border-surface-800">
+                            <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Tagline</dt>
+                            <dd class="mt-1 text-sm text-surface-600 dark:text-surface-300 italic" x-text="facility.tagline || '—'"></dd>
                         </div>
                     </div>
                     <div class="px-6 py-4">
@@ -201,6 +217,39 @@ ob_start();
                 </div>
             </div>
 
+            <!-- SMTP Card -->
+            <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-soft overflow-hidden">
+                <div class="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 px-6 py-4 bg-surface-50/50 dark:bg-surface-800/30">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-sm">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-surface-800 dark:text-surface-100">Email Settings</h3>
+                </div>
+                <div class="divide-y divide-surface-100 dark:divide-surface-800">
+                    <div class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">SMTP</dt>
+                        <dd class="mt-1">
+                            <span x-show="smtpEnabled"
+                                  class="inline-flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-400">
+                                <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                                Own SMTP
+                            </span>
+                            <span x-show="!smtpEnabled"
+                                  class="inline-flex items-center gap-1.5 rounded-full bg-surface-100 dark:bg-surface-700 px-3 py-1 text-xs font-semibold text-surface-600 dark:text-surface-400">
+                                <span class="h-1.5 w-1.5 rounded-full bg-surface-400"></span>
+                                Company Default
+                            </span>
+                        </dd>
+                    </div>
+                    <div x-show="smtpEnabled" class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">SMTP Email</dt>
+                        <dd class="mt-1 text-sm text-surface-700 dark:text-surface-300 break-all" x-text="smtpEmail || '—'"></dd>
+                    </div>
+                </div>
+            </div>
+
             <!-- Meta Card -->
             <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-soft overflow-hidden">
                 <div class="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 px-6 py-4 bg-surface-50/50 dark:bg-surface-800/30">
@@ -251,26 +300,28 @@ ob_start();
 
 <script>
 function facilityShow() {
-    const token = localStorage.getItem('access_token');
-
     return {
         facility: {},
         amenities: [],
+        smtpEnabled: false,
+        smtpEmail: '',
         loading: true,
         async init() {
             try {
-                const res = await fetch('<?= htmlspecialchars($apiUrl) ?>', {
-                    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-                });
+                const res = await authFetch('<?= htmlspecialchars($apiUrl) ?>');
                 if (res.status === 401) { window.location.href = APP_BASE + '/admin/login'; return; }
                 const json = await res.json();
                 if (json.data) {
                     this.facility = json.data;
                     const settings = json.data.settings;
-                    if (settings && Array.isArray(settings.amenities)) {
-                        this.amenities = settings.amenities;
-                    } else if (settings && typeof settings.amenities === 'string') {
-                        try { this.amenities = JSON.parse(settings.amenities); } catch(e) {}
+                    if (settings) {
+                        if (Array.isArray(settings.amenities)) {
+                            this.amenities = settings.amenities;
+                        }
+                        if (settings.smtp && settings.smtp.enabled) {
+                            this.smtpEnabled = true;
+                            this.smtpEmail = settings.smtp.email || '';
+                        }
                     }
                 }
             } catch (e) {

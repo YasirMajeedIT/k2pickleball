@@ -100,11 +100,7 @@ function settingsPage() {
         message: '',
         messageType: 'success',
         init() {
-            const token = localStorage.getItem('access_token');
-            if (!token) return;
-            fetch(APP_BASE + '/api/auth/me', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
+            authFetch(APP_BASE + '/api/auth/me')
             .then(r => r.json())
             .then(data => {
                 const user = data.data || data;
@@ -121,11 +117,9 @@ function settingsPage() {
         async saveProfile() {
             this.savingProfile = true;
             this.message = '';
-            const token = localStorage.getItem('access_token');
             try {
-                const res = await fetch(APP_BASE + '/api/auth/profile', {
+                const res = await authFetch(APP_BASE + '/api/auth/profile', {
                     method: 'PUT',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         first_name: this.profile.first_name,
                         last_name: this.profile.last_name,
@@ -164,15 +158,13 @@ function settingsPage() {
                 return;
             }
             this.savingPassword = true;
-            const token = localStorage.getItem('access_token');
             try {
-                const res = await fetch(APP_BASE + '/api/auth/change-password', {
+                const res = await authFetch(APP_BASE + '/api/auth/change-password', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         current_password: this.passwords.current,
-                        new_password: this.passwords.new_password,
-                        new_password_confirmation: this.passwords.confirm
+                        password: this.passwords.new_password,
+                        password_confirmation: this.passwords.confirm
                     })
                 });
                 if (res.ok) {
@@ -191,11 +183,9 @@ function settingsPage() {
             this.savingPassword = false;
         },
         async deleteAccount() {
-            const token = localStorage.getItem('access_token');
             try {
-                await fetch(APP_BASE + '/api/auth/account', {
-                    method: 'DELETE',
-                    headers: { 'Authorization': 'Bearer ' + token }
+                await authFetch(APP_BASE + '/api/auth/account', {
+                    method: 'DELETE'
                 });
             } catch (e) {}
             localStorage.clear();

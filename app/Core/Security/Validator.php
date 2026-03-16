@@ -59,13 +59,22 @@ final class Validator
 
     /**
      * Return only validated fields.
+     * Empty strings for nullable fields are normalised to null so that
+     * integer/numeric DB columns never receive an empty string value.
      */
     public function validated(array $rules): array
     {
         $result = [];
-        foreach ($rules as $field => $_) {
+        foreach ($rules as $field => $ruleString) {
             if (array_key_exists($field, $this->data)) {
-                $result[$field] = $this->data[$field];
+                $value = $this->data[$field];
+                $fieldRules = is_array($ruleString) ? $ruleString : explode('|', $ruleString);
+                // Normalise '' → null for nullable fields so typed DB columns
+                // (INT, TINYINT, DECIMAL, …) never receive an empty string.
+                if ($value === '' && in_array('nullable', $fieldRules, true)) {
+                    $value = null;
+                }
+                $result[$field] = $value;
             }
         }
         return $result;

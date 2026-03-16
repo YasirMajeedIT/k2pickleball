@@ -1,0 +1,47 @@
+<?php
+$title = 'Create Category';
+$breadcrumbs = [['label' => 'Categories', 'url' => ($baseUrl ?? '') . '/admin/categories'], ['label' => 'Create']];
+
+$formId = 'categoryForm';
+$apiUrl = ($baseUrl ?? '') . '/api/categories';
+$method = 'POST';
+$backUrl = ($baseUrl ?? '') . '/admin/categories';
+$fields = [
+    ['name' => 'name', 'label' => 'Category Name', 'required' => true],
+    ['name' => 'color', 'label' => 'Color', 'type' => 'color'],
+    ['name' => 'sort_order', 'label' => 'Sort Order', 'type' => 'number', 'help' => 'Lower numbers appear first'],
+    ['name' => 'is_taxable', 'label' => 'Taxable', 'type' => 'checkbox', 'help' => 'Items in this category are subject to tax'],
+];
+
+ob_start();
+include __DIR__ . '/../../components/form.php';
+?>
+<script>
+function categoryForm() {
+    return {
+        form: { name: '', color: '#3b82f6', sort_order: '', is_taxable: false },
+        errors: {},
+        submitting: false,
+        async submitForm() {
+            this.submitting = true; this.errors = {};
+            try {
+                const res = await authFetch('<?= $apiUrl ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.form)
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Category created', type: 'success' } }));
+                    setTimeout(() => window.location.href = '<?= $backUrl ?>', 500);
+                } else { this.errors = json.errors || {}; window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Validation failed', type: 'error' } })); }
+            } catch (e) { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } })); }
+            this.submitting = false;
+        }
+    };
+}
+</script>
+<?php
+$content = ob_get_clean();
+include __DIR__ . '/../../layouts/admin.php';
+?>

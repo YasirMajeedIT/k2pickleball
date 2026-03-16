@@ -148,7 +148,12 @@ final class SubscriptionRepository extends Repository
         );
 
         $data = $this->db->fetchAll(
-            "SELECT * FROM `invoices` WHERE `organization_id` = ? ORDER BY `created_at` DESC LIMIT ? OFFSET ?",
+            "SELECT i.*, p.name AS plan_name
+             FROM `invoices` i
+             LEFT JOIN `subscriptions` s ON i.subscription_id = s.id
+             LEFT JOIN `plans` p ON s.plan_id = p.id
+             WHERE i.organization_id = ?
+             ORDER BY i.created_at DESC LIMIT ? OFFSET ?",
             [$orgId, $perPage, ($page - 1) * $perPage]
         );
 
