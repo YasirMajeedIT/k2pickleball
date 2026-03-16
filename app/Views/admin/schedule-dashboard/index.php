@@ -65,6 +65,11 @@ ob_start();
         <div x-show="activeTab === 'edit-session-type'" x-cloak>
             <?php include __DIR__ . '/edit-session-type.php'; ?>
         </div>
+
+        <!-- Tab: Master Schedule -->
+        <div x-show="activeTab === 'master-schedule'" x-cloak>
+            <?php include __DIR__ . '/master-schedule.php'; ?>
+        </div>
     </div>
 
     <!-- No facility selected -->
@@ -81,7 +86,7 @@ function scheduleDashboard() {
     const baseApi = '<?= ($baseUrl ?? '') ?>';
 
     // Valid tab IDs for validation
-    const VALID_TABS = ['session-details', 'session-types', 'add-session-type', 'edit-session-type'];
+    const VALID_TABS = ['session-details', 'session-types', 'add-session-type', 'edit-session-type', 'master-schedule'];
 
     function readHash() {
         const hash = window.location.hash.slice(1);
@@ -94,9 +99,9 @@ function scheduleDashboard() {
 
     const savedState = readHash();
 
-    // Also check URL query params (e.g. ?facility_id=21 or ?fid=21)
+    // Also check URL query params (e.g. ?facility_id=21, ?facility=21, or ?fid=21)
     const urlParams = new URLSearchParams(window.location.search);
-    const queryFacility = urlParams.get('facility_id') || urlParams.get('fid') || '';
+    const queryFacility = urlParams.get('facility_id') || urlParams.get('facility') || urlParams.get('fid') || '';
 
     // Use localStorage as fallback for facility selection
     const storedFacility = localStorage.getItem('k2_last_facility') || '';
@@ -109,7 +114,8 @@ function scheduleDashboard() {
     if (initialTab === 'edit-session-type' && !initialEditId) initialTab = 'session-types';
 
     return {
-        facilityId: initialFacility,
+        facilityId: '',
+        _initialFacility: initialFacility,
         facilities: [],
         activeTab: (initialTab && VALID_TABS.includes(initialTab)) ? initialTab : 'session-details',
         tabs: [
@@ -117,6 +123,7 @@ function scheduleDashboard() {
             { id: 'session-types',    label: 'Session Types',    alwaysVisible: true },
             { id: 'add-session-type', label: 'Add Session Type', alwaysVisible: true },
             { id: 'edit-session-type',label: 'Edit Session Type',alwaysVisible: false },
+            { id: 'master-schedule',  label: 'Master Schedule',  alwaysVisible: true },
         ],
         editingSessionTypeId: initialEditId,
 
@@ -145,11 +152,15 @@ function scheduleDashboard() {
                 const res = await authFetch(baseApi + '/api/facilities?per_page=100');
                 const json = await res.json();
                 this.facilities = json.data || [];
-                // Auto-select: use current facilityId, or fallback to first facility
-                if (!this.facilityId && this.facilities.length > 0) {
+                // Wait for Alpine to render <option> elements from x-for
+                await new Promise(r => setTimeout(r, 0));
+                // Restore desired facility now that options exist in the DOM
+                const desired = this._initialFacility;
+                if (desired && this.facilities.find(f => String(f.id) === String(desired))) {
+                    this.facilityId = String(desired);
+                } else if (this.facilities.length > 0) {
                     this.facilityId = String(this.facilities[0].id);
                 }
-                // Persist selection to localStorage
                 if (this.facilityId) {
                     localStorage.setItem('k2_last_facility', this.facilityId);
                 }

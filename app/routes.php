@@ -42,6 +42,8 @@ return function (Router $router): void {
         'Waivers',
         'SessionDetails',
         'SessionTypes',
+        'Calendar',
+        'Labels',
         'Admin',
         'Platform',
         'Client',

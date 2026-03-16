@@ -65,6 +65,7 @@
                             <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500 w-16">Image</th>
                             <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500">Session</th>
                             <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500 hidden sm:table-cell">Category</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500 hidden md:table-cell">Facilities</th>
                             <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-surface-500 w-24">Status</th>
                             <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-surface-500 w-24">Actions</th>
                         </tr>
@@ -96,6 +97,17 @@
                                     <span class="inline-flex items-center rounded-full bg-primary-50 dark:bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-600 dark:text-primary-400"
                                           x-text="getCategoryName(sd.category_id)"></span>
                                 </td>
+                                <!-- Facilities -->
+                                <td class="px-4 py-3 hidden md:table-cell">
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="fid in (sd.facility_ids || [])" :key="fid">
+                                            <span class="inline-flex items-center rounded-full bg-surface-100 dark:bg-surface-800 px-2 py-0.5 text-[10px] font-medium text-surface-600 dark:text-surface-400"
+                                                  x-text="getFacilityName(fid)"></span>
+                                        </template>
+                                        <span x-show="!sd.facility_ids || sd.facility_ids.length === 0"
+                                              class="text-[10px] text-surface-400 italic">None</span>
+                                    </div>
+                                </td>
                                 <!-- Status -->
                                 <td class="px-4 py-3 text-center">
                                     <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase"
@@ -123,7 +135,7 @@
                         <!-- Empty state row -->
                         <template x-if="sessions.length === 0">
                             <tr>
-                                <td colspan="5" class="px-4 py-16 text-center">
+                                <td colspan="6" class="px-4 py-16 text-center">
                                     <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-100 dark:bg-surface-800 mb-3">
                                         <svg class="w-7 h-7 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                     </div>
@@ -229,6 +241,30 @@
                                 <p class="text-[11px] text-surface-400">Active sessions are available for linking to session types</p>
                             </div>
                         </div>
+
+                        <!-- Facility Assignment -->
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-surface-500 mb-1.5">Assign to Facilities</label>
+                            <p class="text-[11px] text-surface-400 mb-3">Select the facilities where this session should be available.</p>
+                            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800/20 p-3 space-y-2 max-h-48 overflow-y-auto">
+                                <!-- Select All -->
+                                <label x-show="allFacilities.length > 1" class="flex items-center gap-2.5 cursor-pointer pb-2 mb-2 border-b border-surface-200 dark:border-surface-700">
+                                    <input type="checkbox"
+                                           :checked="form.facility_ids.length === allFacilities.length && allFacilities.length > 0"
+                                           x-on:change="form.facility_ids = $event.target.checked ? allFacilities.map(f => String(f.id)) : []"
+                                           class="rounded border-surface-300 text-primary-600 focus:ring-primary-500">
+                                    <span class="text-sm font-semibold text-surface-700 dark:text-surface-200">Select All</span>
+                                </label>
+                                <template x-for="fac in allFacilities" :key="fac.id">
+                                    <label class="flex items-center gap-2.5 cursor-pointer">
+                                        <input type="checkbox" :value="String(fac.id)" x-model="form.facility_ids"
+                                               class="rounded border-surface-300 text-primary-600 focus:ring-primary-500">
+                                        <span class="text-sm text-surface-600 dark:text-surface-300" x-text="fac.name"></span>
+                                    </label>
+                                </template>
+                                <p x-show="allFacilities.length === 0" class="text-xs text-surface-400 italic py-2 text-center">No facilities found</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Right Column: Featured Image -->
@@ -324,6 +360,7 @@ function sessionDetailsList() {
         editingId: null,
         baseApi: baseApi,
         dataLoaded: false,
+        allFacilities: [],
         quillInstance: null,
         imagePreview: null,
         imageFile: null,
@@ -337,22 +374,26 @@ function sessionDetailsList() {
             description: '',
             picture: '',
             is_active: true,
+            facility_ids: [],
         },
 
         async loadData() {
             this.loading = true;
             this.dataLoaded = true;
             try {
-                const [catRes, sesRes] = await Promise.all([
+                const [catRes, sesRes, facRes] = await Promise.all([
                     authFetch(baseApi + '/api/categories?per_page=100'),
                     authFetch(baseApi + '/api/session-details?per_page=100'
                         + (this.filterCategory ? '&category_id=' + this.filterCategory : '')
                         + (this.search ? '&search=' + encodeURIComponent(this.search) : '')),
+                    authFetch(baseApi + '/api/facilities?per_page=100'),
                 ]);
                 const catJson = await catRes.json();
                 const sesJson = await sesRes.json();
+                const facJson = await facRes.json();
                 this.categories = catJson.data || [];
                 this.sessions = sesJson.data || [];
+                this.allFacilities = facJson.data || [];
             } catch (e) { console.error('Failed to load session details', e); }
             this.loading = false;
         },
@@ -363,8 +404,13 @@ function sessionDetailsList() {
             return cat ? cat.name : 'Category #' + catId;
         },
 
+        getFacilityName(facId) {
+            const fac = this.allFacilities.find(f => f.id == facId);
+            return fac ? fac.name : 'Facility #' + facId;
+        },
+
         resetForm() {
-            this.form = { category_id: '', session_name: '', session_tagline: '', description: '', picture: '', is_active: true };
+            this.form = { category_id: '', session_name: '', session_tagline: '', description: '', picture: '', is_active: true, facility_ids: [] };
             this.imagePreview = null;
             this.imageFile = null;
             if (this.quillInstance) {
@@ -429,6 +475,7 @@ function sessionDetailsList() {
                 description: sd.description || '',
                 picture: sd.picture || '',
                 is_active: sd.is_active == 1,
+                facility_ids: (sd.facility_ids || []).map(String),
             };
             this.imagePreview = null;
             this.imageFile = null;
@@ -522,6 +569,7 @@ function sessionDetailsList() {
                     session_tagline: this.form.session_tagline,
                     description: this.form.description,
                     is_active: this.form.is_active,
+                    facility_ids: this.form.facility_ids.map(Number),
                 };
 
                 const url = this.editingId

@@ -64,6 +64,9 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- FullCalendar 6.x (local) -->
+    <script src="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/js/fullcalendar.min.js"></script>
     <script>window.APP_BASE = '<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>';</script>
     <script>
         // Apply saved theme before first paint to avoid flash

@@ -32,6 +32,14 @@ final class SessionDetailController extends Controller
 
         $result = $this->repo->findByOrganization($orgId, $search ?: null, $categoryId, $page, $perPage);
 
+        // Attach facility_ids to each session detail
+        $sessionIds = array_column($result['data'], 'id');
+        $facilityMap = $this->repo->getFacilityIdsForSessions($sessionIds);
+        foreach ($result['data'] as &$row) {
+            $row['facility_ids'] = $facilityMap[(int) $row['id']] ?? [];
+        }
+        unset($row);
+
         return $this->paginated($result['data'], $result['total'], $page, $perPage);
     }
 
@@ -57,6 +65,7 @@ final class SessionDetailController extends Controller
         if (!$record) {
             throw new NotFoundException('Session detail not found');
         }
+        $record['facility_ids'] = $this->repo->getFacilityIds($id);
         return $this->success($record);
     }
 
@@ -89,7 +98,15 @@ final class SessionDetailController extends Controller
         $data['updated_at'] = date('Y-m-d H:i:s');
 
         $id = $this->repo->create($data);
+
+        // Sync facility associations
+        $facilityIds = $request->input('facility_ids');
+        if (is_array($facilityIds)) {
+            $this->repo->syncFacilities($id, array_map('intval', $facilityIds));
+        }
+
         $record = $this->repo->findById($id);
+        $record['facility_ids'] = $this->repo->getFacilityIds($id);
 
         return $this->created($record, 'Session created');
     }
@@ -204,7 +221,14 @@ final class SessionDetailController extends Controller
         $data['updated_at'] = date('Y-m-d H:i:s');
         $this->repo->update($id, $data);
 
+        // Sync facility associations
+        $facilityIds = $request->input('facility_ids');
+        if (is_array($facilityIds)) {
+            $this->repo->syncFacilities($id, array_map('intval', $facilityIds));
+        }
+
         $record = $this->repo->findById($id);
+        $record['facility_ids'] = $this->repo->getFacilityIds($id);
         return $this->success($record, 'Session updated');
     }
 

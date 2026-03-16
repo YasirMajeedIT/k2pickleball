@@ -34,13 +34,56 @@ final class SessionTypeController extends Controller
 
         $result = $this->repo->findByOrganization($orgId, $search ?: null, $facilityId, $categoryId, $page, $perPage);
 
-        // Append classes count to each session type
-        foreach ($result['data'] as &$st) {
-            $st['classes_count'] = (int) $this->db->fetchColumn(
-                "SELECT COUNT(*) FROM `st_classes` WHERE `session_type_id` = ?",
-                [(int) $st['id']]
+        // Collect all session type IDs for batch queries
+        $stIds = array_column($result['data'], 'id');
+
+        // Batch: classes count
+        $classesMap = [];
+        if (!empty($stIds)) {
+            $ph = implode(',', array_fill(0, count($stIds), '?'));
+            $rows = $this->db->fetchAll(
+                "SELECT `session_type_id`, COUNT(*) as cnt FROM `st_classes` WHERE `session_type_id` IN ({$ph}) GROUP BY `session_type_id`",
+                $stIds
             );
+            foreach ($rows as $r) {
+                $classesMap[(int) $r['session_type_id']] = (int) $r['cnt'];
+            }
         }
+
+        // Batch: rolling prices
+        $rollingMap = [];
+        if (!empty($stIds)) {
+            $ph = implode(',', array_fill(0, count($stIds), '?'));
+            $rows = $this->db->fetchAll(
+                "SELECT * FROM `st_rolling_prices` WHERE `session_type_id` IN ({$ph}) ORDER BY `number_of_weeks` ASC",
+                $stIds
+            );
+            foreach ($rows as $r) {
+                $rollingMap[(int) $r['session_type_id']][] = $r;
+            }
+        }
+
+        // Batch: category names
+        $catIds = array_unique(array_filter(array_column($result['data'], 'category_id')));
+        $catMap = [];
+        if (!empty($catIds)) {
+            $ph = implode(',', array_fill(0, count($catIds), '?'));
+            $rows = $this->db->fetchAll(
+                "SELECT `id`, `name` FROM `categories` WHERE `id` IN ({$ph})",
+                array_values($catIds)
+            );
+            foreach ($rows as $r) {
+                $catMap[(int) $r['id']] = $r['name'];
+            }
+        }
+
+        foreach ($result['data'] as &$st) {
+            $stId = (int) $st['id'];
+            $st['classes_count'] = $classesMap[$stId] ?? 0;
+            $st['rolling_prices'] = $rollingMap[$stId] ?? [];
+            $st['category_name'] = $catMap[(int) ($st['category_id'] ?? 0)] ?? null;
+        }
+        unset($st);
 
         return $this->paginated($result['data'], $result['total'], $page, $perPage);
     }
@@ -295,6 +338,96 @@ final class SessionTypeController extends Controller
 
         $this->repo->delete($id);
         return $this->success(null, 'Session type deleted');
+    }
+
+    /**
+     * Duplicate a session type (copies config, resources, pricing — NOT scheduled classes).
+     */
+    public function copy(Request $request, int $id): Response
+    {
+        $source = $this->repo->findById($id);
+        if (!$source) {
+            throw new NotFoundException('Session type not found');
+        }
+
+        // Build new record from source
+        $allowedColumns = [
+            'organization_id', 'facility_id', 'category_id', 'session_id',
+            'title', 'internal_title', 'session_type', 'capacity', 'duration',
+            'standard_price', 'pricing_mode', 'is_active', 'private',
+            'scheduling_url',
+        ];
+        $newData = array_intersect_key($source, array_flip($allowedColumns));
+        $newData['title'] = $source['title'] . ' (Copy)';
+        $newData['uuid'] = $this->generateUuid();
+        $newData['created_at'] = date('Y-m-d H:i:s');
+        $newData['updated_at'] = date('Y-m-d H:i:s');
+
+        $newId = $this->repo->create($newData);
+
+        // Copy resource values
+        $rvIds = $this->repo->getResourceValueIds($id);
+        if (!empty($rvIds)) {
+            $this->repo->syncResourceValues($newId, $rvIds);
+        }
+
+        // Copy resource input values
+        $inputValues = $this->db->fetchAll(
+            "SELECT `resource_id`, `value` FROM `session_type_resource_inputs` WHERE `session_type_id` = ?",
+            [$id]
+        );
+        $this->syncResourceInputValues($newId, $inputValues);
+
+        // Copy pricing rules
+        $pricingRules = $this->db->fetchAll(
+            "SELECT `pricing_type`, `price`, `start_offset_days`, `max_users` FROM `st_pricing_rules` WHERE `session_type_id` = ? ORDER BY `priority` ASC",
+            [$id]
+        );
+        $this->syncPricingRules($newId, $pricingRules);
+
+        // Copy rolling prices
+        $rollingPrices = $this->db->fetchAll(
+            "SELECT `number_of_weeks`, `price` FROM `st_rolling_prices` WHERE `session_type_id` = ? ORDER BY `number_of_weeks` ASC",
+            [$id]
+        );
+        $this->syncRollingPrices($newId, $rollingPrices);
+
+        // Copy settings
+        $settingsRows = $this->db->fetchAll(
+            "SELECT `setting_key`, `setting_value` FROM `session_type_settings` WHERE `session_type_id` = ?",
+            [$id]
+        );
+        $settings = [];
+        foreach ($settingsRows as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+        $this->syncSettings($newId, $settings);
+
+        // Copy form fields
+        $formFields = $this->db->fetchAll(
+            "SELECT `field_label`, `field_name`, `field_type`, `field_options`, `placeholder`, `is_required`, `sort_order` FROM `session_form_fields` WHERE `session_type_id` = ? ORDER BY `sort_order` ASC",
+            [$id]
+        );
+        foreach ($formFields as $ff) {
+            $this->db->insert('session_form_fields', [
+                'session_type_id' => $newId,
+                'field_label'     => $ff['field_label'],
+                'field_name'      => $ff['field_name'],
+                'field_type'      => $ff['field_type'],
+                'field_options'   => $ff['field_options'],
+                'placeholder'     => $ff['placeholder'],
+                'is_required'     => $ff['is_required'],
+                'sort_order'      => $ff['sort_order'],
+                'created_at'      => date('Y-m-d H:i:s'),
+                'updated_at'      => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        $record = $this->repo->findWithResourceValues($newId);
+        $record['classes_count'] = 0;
+        $record['rolling_prices'] = $this->db->fetchAll("SELECT * FROM `st_rolling_prices` WHERE `session_type_id` = ? ORDER BY `number_of_weeks` ASC", [$newId]);
+
+        return $this->created($record, 'Session type duplicated');
     }
 
     /**
