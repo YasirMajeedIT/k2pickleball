@@ -38,8 +38,6 @@ $legalItems = [
 
 $myAccountItems = [
     ['label' => 'My Account', 'icon' => 'account', 'url' => ($baseUrl ?? '') . '/admin/account', 'match' => '/admin/account'],
-    ['label' => 'My Subscription', 'icon' => 'subscription', 'url' => ($baseUrl ?? '') . '/admin/my-subscription', 'match' => '/admin/my-subscription'],
-    ['label' => 'My Invoices', 'icon' => 'invoices', 'url' => ($baseUrl ?? '') . '/admin/my-invoices', 'match' => '/admin/my-invoices'],
 ];
 
 // Heroicon-style outline SVGs for a cleaner look
