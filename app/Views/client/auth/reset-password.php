@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password — K2 Pickleball</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -47,8 +48,6 @@
             <h2 class="text-2xl font-extrabold text-center">Reset your password</h2>
             <p class="mt-2 text-sm text-surface-400 text-center">Enter your new password below.</p>
 
-            <div x-show="error" x-transition class="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm" x-text="error"></div>
-
             <form @submit.prevent="doReset()" class="mt-8 space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-surface-300 mb-2">New Password</label>
@@ -83,15 +82,31 @@
     const BASE_URL = '<?= $baseUrl ?>';
     function resetPage() {
         return {
-            password: '', confirmation: '', loading: false, done: false, error: '', token: '',
+            password: '', confirmation: '', loading: false, done: false, token: '',
+            showAlert(message, icon = 'error', title = 'Reset Password') {
+                return Swal.fire({
+                    title,
+                    text: message,
+                    icon,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#059669',
+                    background: '#020617',
+                    color: '#e2e8f0'
+                });
+            },
             init() {
                 const params = new URLSearchParams(window.location.search);
                 this.token = params.get('token') || '';
             },
             async doReset() {
-                this.error = '';
-                if (this.password.length < 8) { this.error = 'Password must be at least 8 characters.'; return; }
-                if (this.password !== this.confirmation) { this.error = 'Passwords do not match.'; return; }
+                if (this.password.length < 8) {
+                    await this.showAlert('Password must be at least 8 characters.', 'warning', 'Validation Error');
+                    return;
+                }
+                if (this.password !== this.confirmation) {
+                    await this.showAlert('Passwords do not match.', 'warning', 'Validation Error');
+                    return;
+                }
                 this.loading = true;
                 try {
                     const res = await fetch(BASE_URL + '/api/auth/reset-password', {
@@ -100,9 +115,16 @@
                         body: JSON.stringify({ token: this.token, password: this.password, password_confirmation: this.confirmation })
                     });
                     const data = await res.json();
-                    if (!res.ok) { this.error = data.message || 'Reset failed. The link may have expired.'; this.loading = false; return; }
-                    this.done = true;
-                } catch { this.error = 'Network error. Please try again.'; }
+                    if (!res.ok) {
+                        await this.showAlert(data.message || 'Reset failed. The link may have expired.', 'error', 'Reset Failed');
+                        this.loading = false;
+                        return;
+                    }
+                    await this.showAlert('Your password has been reset successfully. You can now sign in.', 'success', 'Password Reset');
+                    window.location.href = BASE_URL + '/login';
+                } catch {
+                    await this.showAlert('Network error. Please try again.', 'error', 'Connection Error');
+                }
                 this.loading = false;
             }
         }

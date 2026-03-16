@@ -41,25 +41,32 @@ final class AuthService
             throw new AuthenticationException('Invalid email or password');
         }
 
-        // Check account lock
-        if ($user['locked_until'] !== null && strtotime($user['locked_until']) > time()) {
-            throw new AuthenticationException('Account is locked. Please try again later.');
-        }
-
-        // Check email verification
-        if (empty($user['email_verified_at'])) {
-            throw new AuthenticationException('Please verify your email address before signing in. Check your inbox for the verification link.');
-        }
-
-        // Check account status
-        if ($user['status'] !== 'active') {
-            throw new AuthenticationException('Account is not active. Please contact support.');
-        }
-
         // Verify password
         if (!password_verify($password, $user['password_hash'])) {
             $this->recordFailedLogin((int) $user['id']);
             throw new AuthenticationException('Invalid email or password');
+        }
+
+        // Check account lock after successful credential verification.
+        if ($user['locked_until'] !== null && strtotime($user['locked_until']) > time()) {
+            throw new AuthenticationException('Account is locked. Please try again later.');
+        }
+
+        // Enforce account status after credentials are verified.
+        switch ($user['status']) {
+            case 'active':
+                break;
+            case 'inactive':
+                throw new AuthenticationException('Your account is currently inactive. Please contact the administrator.');
+            case 'suspended':
+                throw new AuthenticationException('Your account has been suspended. Please contact the administrator for assistance.');
+            default:
+                throw new AuthenticationException('Your account is currently inactive. Please contact the administrator.');
+        }
+
+        // Check email verification for active accounts.
+        if (empty($user['email_verified_at'])) {
+            throw new AuthenticationException('Please verify your email address before signing in. Check your inbox for the verification link.');
         }
 
         // Reset failed attempts and update login info

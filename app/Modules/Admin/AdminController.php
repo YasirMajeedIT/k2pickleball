@@ -35,11 +35,13 @@ class AdminController extends Controller
         // Users
         'users'                     => 'admin/users/index.php',
         'users/create'              => 'admin/users/create.php',
+        'users/{id}'                => 'admin/users/show.php',
         'users/{id}/edit'           => 'admin/users/edit.php',
 
         // Roles
         'roles'                     => 'admin/roles/index.php',
         'roles/create'              => 'admin/roles/create.php',
+        'roles/{id}'                => 'admin/roles/show.php',
         'roles/{id}/edit'           => 'admin/roles/edit.php',
 
         // Subscriptions
@@ -77,7 +79,11 @@ class AdminController extends Controller
         'resources/{id}/edit'       => 'admin/resources/edit.php',
 
         // Schedule Dashboard
-        'schedule-dashboard'        => 'admin/schedule-dashboard/index.php',
+        'schedule-dashboard'                        => 'admin/schedule-dashboard/index.php',
+        'schedule-dashboard/session-types'          => 'admin/schedule-dashboard/session-types-list.php',
+        'schedule-dashboard/session-types/create'   => 'admin/schedule-dashboard/add-session-type.php',
+        'schedule-dashboard/session-types/{id}/edit'=> 'admin/schedule-dashboard/edit-session-type.php',
+        'schedule-dashboard/sessions'               => 'admin/schedule-dashboard/session-details-list.php',
 
         // Players
         'players'                   => 'admin/players/index.php',

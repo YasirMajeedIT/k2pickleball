@@ -11,9 +11,11 @@ $pdo = new PDO(
 );
 
 $sql = file_get_contents(__DIR__ . '/migrations/add_email_verification_google_oauth.sql');
+// Strip single-line comments before splitting on semicolons
+$sql = preg_replace('/--[^\n]*\n/', "\n", $sql);
 $statements = array_filter(array_map('trim', explode(';', $sql)));
 foreach ($statements as $stmt) {
-    if ($stmt && !str_starts_with(ltrim($stmt), '--')) {
+    if ($stmt) {
         try {
             $pdo->exec($stmt);
             echo 'OK: ' . substr(preg_replace('/\s+/', ' ', $stmt), 0, 80) . PHP_EOL;

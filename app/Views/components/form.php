@@ -35,6 +35,19 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                     $helpText = $field['help'] ?? '';
                     $cols = $field['cols'] ?? 'full';
                 ?>
+                <?php if ($type === 'section'): ?>
+                <div class="border-t border-surface-100 dark:border-surface-800 pt-1 first:border-t-0 first:pt-0">
+                    <div class="mb-1">
+                        <h4 class="text-sm font-bold uppercase tracking-wider text-surface-900 dark:text-white">
+                            <?= htmlspecialchars($label, ENT_QUOTES) ?>
+                        </h4>
+                        <?php if ($helpText): ?>
+                            <p class="mt-1 text-sm text-surface-500 dark:text-surface-400"><?= htmlspecialchars($helpText, ENT_QUOTES) ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php continue; ?>
+                <?php endif; ?>
                 <div class="<?= $cols === 'half' ? 'inline-block w-[calc(50%-0.625rem)] align-top first:mr-5' : '' ?>">
                     <?php if ($type !== 'checkbox'): ?>
                     <label class="mb-2 block text-sm font-semibold text-surface-700 dark:text-surface-300">
@@ -52,7 +65,7 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
 
                     <?php elseif ($type === 'select'): ?>
                         <div class="relative">
-                            <select x-model="form.<?= $name ?>"
+                            <select data-field="<?= htmlspecialchars($name, ENT_QUOTES) ?>" x-model="form.<?= $name ?>"
                                 class="w-full rounded-xl border border-surface-200 bg-white px-4 py-3 text-sm shadow-soft focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-surface-700 dark:bg-surface-800 dark:text-white appearance-none transition-all"
                                 <?= $required ? 'required' : '' ?>>
                                 <option value="">Select...</option>
@@ -171,6 +184,50 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                                         </button>
                                     </div>
                                 </template>
+                            </div>
+                        </div>
+
+                    <?php elseif ($type === 'multiselect'): ?>
+                        <div class="relative" x-data="{ msOpen_<?= $name ?>: false }" @click.away="msOpen_<?= $name ?> = false">
+                            <div @click="msOpen_<?= $name ?> = !msOpen_<?= $name ?>"
+                                 class="min-h-[46px] w-full cursor-pointer rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm shadow-soft focus-within:border-primary-400 dark:border-surface-700 dark:bg-surface-800 transition-all flex flex-wrap gap-1.5 items-center">
+                                <template x-if="(form.<?= $name ?> || []).length === 0">
+                                    <span class="text-surface-400">Select facilities...</span>
+                                </template>
+                                <template x-for="val in (form.<?= $name ?> || [])" :key="val">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
+                                        <span x-text="(ms_<?= $name ?> || []).find(o => String(o.value) === String(val))?.label || val"></span>
+                                        <button type="button" @click.stop="form.<?= $name ?> = (form.<?= $name ?> || []).filter(v => String(v) !== String(val))"
+                                                class="ml-0.5 text-primary-500 hover:text-primary-700 transition-colors">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </span>
+                                </template>
+                                <svg class="ml-auto w-4 h-4 text-surface-400 flex-shrink-0" :class="{ 'rotate-180': msOpen_<?= $name ?> }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                            <div x-show="msOpen_<?= $name ?>" x-transition
+                                 class="absolute z-20 mt-1.5 w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-medium overflow-hidden">
+                                <div class="max-h-52 overflow-y-auto divide-y divide-surface-100 dark:divide-surface-700">
+                                    <template x-if="!(ms_<?= $name ?> || []).length">
+                                        <div class="px-4 py-3 text-sm text-surface-400 text-center">No facilities available</div>
+                                    </template>
+                                    <template x-for="opt in (ms_<?= $name ?> || [])" :key="opt.value">
+                                        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-50 dark:hover:bg-surface-700 cursor-pointer transition-colors">
+                                            <input type="checkbox"
+                                                   :checked="(form.<?= $name ?> || []).some(v => String(v) === String(opt.value))"
+                                                   @change="
+                                                       if (!form.<?= $name ?>) form.<?= $name ?> = [];
+                                                       if ($event.target.checked) {
+                                                           if (!form.<?= $name ?>.some(v => String(v) === String(opt.value))) form.<?= $name ?>.push(opt.value);
+                                                       } else {
+                                                           form.<?= $name ?> = form.<?= $name ?>.filter(v => String(v) !== String(opt.value));
+                                                       }
+                                                   "
+                                                   class="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500/20 dark:border-surface-600 dark:bg-surface-700">
+                                            <span class="text-sm text-surface-700 dark:text-surface-300" x-text="opt.label"></span>
+                                        </label>
+                                    </template>
+                                </div>
                             </div>
                         </div>
 

@@ -40,6 +40,10 @@ return function (Router $router): void {
 
     // Schedule Dashboard
     $router->get('/admin/schedule-dashboard', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/schedule-dashboard/session-types', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/schedule-dashboard/session-types/create', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/schedule-dashboard/session-types/{id}/edit', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/schedule-dashboard/sessions', [AdminController::class, 'handleRequest']);
 
     // Players
     $router->get('/admin/players', [AdminController::class, 'handleRequest']);
@@ -83,6 +87,8 @@ return function (Router $router): void {
     $router->get('/admin/facilities/{id}/edit', [AdminController::class, 'handleRequest']);
     $router->get('/admin/courts/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/courts/{id}/edit', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/users/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/users/{id}/edit', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/roles/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/roles/{id}/edit', [AdminController::class, 'handleRequest']);
 };

@@ -126,8 +126,6 @@ CREATE TABLE IF NOT EXISTS `users` (
     `last_name` VARCHAR(100) NOT NULL,
     `phone` VARCHAR(30) DEFAULT NULL,
     `avatar_url` VARCHAR(500) DEFAULT NULL,
-    `timezone` VARCHAR(50) DEFAULT 'America/New_York',
-    `locale` VARCHAR(10) DEFAULT 'en_US',
     `email_verified_at` DATETIME DEFAULT NULL,
     `last_login_at` DATETIME DEFAULT NULL,
     `last_login_ip` VARCHAR(45) DEFAULT NULL,

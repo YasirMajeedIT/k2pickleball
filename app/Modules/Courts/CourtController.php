@@ -31,7 +31,7 @@ final class CourtController extends Controller
 
         if ($facilityId) {
             $search = Sanitizer::string($request->input('search', ''));
-            $result = $this->repo->findByFacility($facilityId, $search ?: null, $page, $perPage);
+            $result = $this->repo->findByFacility($orgId, $facilityId, $search ?: null, $page, $perPage);
         } else {
             $result = $this->repo->findByOrganization($orgId, $page, $perPage);
         }

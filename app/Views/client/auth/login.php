@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — K2 Pickleball</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -79,25 +80,17 @@
                 </p>
 
                 <div class="mt-6">
+                    <?php if (!empty($_ENV['GOOGLE_CLIENT_ID'] ?? '')): ?>
                     <div id="google-signin-btn" class="flex justify-center"></div>
                     <div class="relative my-5 flex items-center gap-3">
                         <div class="flex-1 border-t border-surface-800"></div>
                         <span class="text-xs text-surface-500 uppercase tracking-wide">or sign in with email</span>
                         <div class="flex-1 border-t border-surface-800"></div>
                     </div>
+                    <?php endif; ?>
                 </div>
 
                 <form @submit.prevent="login" class="mt-4 space-y-5">
-                    <!-- Unverified email notice -->
-                    <div x-show="unverified" x-transition class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
-                        Please verify your email address before signing in.
-                        <button type="button" @click="resendVerification()" class="ml-1 underline font-medium hover:text-amber-200">Resend verification email.</button>
-                    </div>
-                    <!-- Error -->
-                    <div x-show="error && !unverified" x-transition class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm" x-text="error"></div>
-                    <!-- Success info -->
-                    <div x-show="info" x-transition class="p-4 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm" x-text="info"></div>
-
                     <div>
                         <label class="block text-sm font-medium text-surface-300 mb-2">Email address</label>
                         <input type="email" x-model="email" required autofocus class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="you@example.com">
@@ -142,9 +135,33 @@
             password: '',
             showPass: false,
             loading: false,
-            error: '',
-            unverified: false,
-            info: '',
+            showAlert(message, icon = 'error', title = 'Sign In Failed') {
+                return Swal.fire({
+                    title,
+                    text: message,
+                    icon,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#059669',
+                    background: '#020617',
+                    color: '#e2e8f0'
+                });
+            },
+            getAlertMeta(message) {
+                const text = (message || '').toLowerCase();
+                if (text.includes('inactive')) {
+                    return { icon: 'warning', title: 'Account Inactive' };
+                }
+                if (text.includes('suspended')) {
+                    return { icon: 'error', title: 'Account Suspended' };
+                }
+                if (text.includes('verify')) {
+                    return { icon: 'info', title: 'Email Verification Required' };
+                }
+                if (text.includes('locked')) {
+                    return { icon: 'warning', title: 'Account Locked' };
+                }
+                return { icon: 'error', title: 'Sign In Failed' };
+            },
             googleSvg: '<svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>',
             init() {
                 const el = document.getElementById('google-signin-btn');
@@ -152,8 +169,8 @@
                 // Always show a styled button immediately
                 el.innerHTML = '<button type="button" data-google-btn class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white text-gray-800 font-medium text-sm hover:bg-gray-100 active:bg-gray-200 transition-colors shadow-sm border border-gray-200">' + this.googleSvg + 'Sign in with Google</button>';
                 if (!GOOGLE_CID) {
-                    el.querySelector('button').addEventListener('click', () => {
-                        this.error = 'Google login is not configured. Set GOOGLE_CLIENT_ID in .env';
+                    el.querySelector('button').addEventListener('click', async () => {
+                        await this.showAlert('Google login is not configured. Set GOOGLE_CLIENT_ID in .env', 'warning', 'Google Sign-In Unavailable');
                     });
                     return;
                 }
@@ -171,7 +188,6 @@
                 }
             },
             async login() {
-                this.error = ''; this.unverified = false; this.info = '';
                 this.loading = true;
                 try {
                     const res = await fetch(baseUrl + '/api/auth/login', {
@@ -183,9 +199,23 @@
                     if (!res.ok) {
                         const msg = data.message || data.error || 'Invalid email or password.';
                         if (msg.toLowerCase().includes('verify') || msg.toLowerCase().includes('verification')) {
-                            this.unverified = true;
+                            const result = await Swal.fire({
+                                title: 'Email Verification Required',
+                                text: msg,
+                                icon: 'info',
+                                showCancelButton: true,
+                                confirmButtonText: 'Resend Verification Email',
+                                cancelButtonText: 'Close',
+                                confirmButtonColor: '#059669',
+                                background: '#020617',
+                                color: '#e2e8f0'
+                            });
+                            if (result.isConfirmed) {
+                                await this.resendVerification();
+                            }
                         } else {
-                            this.error = msg;
+                            const meta = this.getAlertMeta(msg);
+                            await this.showAlert(msg, meta.icon, meta.title);
                         }
                         this.loading = false;
                         return;
@@ -200,7 +230,7 @@
 
                     window.location.href = baseUrl + '/admin';
                 } catch (e) {
-                    this.error = 'Network error. Please try again.';
+                    await this.showAlert('Network error. Please try again.', 'error', 'Connection Error');
                     this.loading = false;
                 }
             },
@@ -257,20 +287,23 @@
                 sessionStorage.removeItem('k2_pending_reg');
             },
             async resendVerification() {
-                this.info = '';
-                if (!this.email) { this.error = 'Please enter your email address above first.'; this.unverified = false; return; }
+                if (!this.email) {
+                    await this.showAlert('Please enter your email address above first.', 'warning', 'Email Required');
+                    return;
+                }
                 try {
                     await fetch(baseUrl + '/api/auth/resend-verification', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: this.email })
                     });
-                    this.unverified = false;
-                    this.info = 'Verification email sent! Check your inbox.';
-                } catch { this.error = 'Failed to send. Please try again.'; this.unverified = false; }
+                    await this.showAlert('Verification email sent! Check your inbox.', 'success', 'Email Sent');
+                } catch {
+                    await this.showAlert('Failed to send. Please try again.', 'error', 'Request Failed');
+                }
             },
             async googleCallback(response) {
-                this.loading = true; this.error = ''; this.unverified = false;
+                this.loading = true;
                 try {
                     const res = await fetch(baseUrl + '/api/auth/google', {
                         method: 'POST',
@@ -278,13 +311,21 @@
                         body: JSON.stringify({ credential: response.credential })
                     });
                     const data = await res.json();
-                    if (!res.ok) { this.error = data.message || 'Google sign-in failed.'; this.loading = false; return; }
+                    if (!res.ok) {
+                        const message = data.message || 'Google sign-in failed.';
+                        await this.showAlert(message, 'error', 'Google Sign-In Failed');
+                        this.loading = false;
+                        return;
+                    }
                     const d = data.data || data;
                     localStorage.setItem('access_token', d.access_token);
                     localStorage.setItem('refresh_token', d.refresh_token);
                     if (d.user) localStorage.setItem('user', JSON.stringify(d.user));
                     window.location.href = baseUrl + '/admin';
-                } catch { this.error = 'Google sign-in failed. Please try again.'; this.loading = false; }
+                } catch {
+                    await this.showAlert('Google sign-in failed. Please try again.', 'error', 'Google Sign-In Failed');
+                    this.loading = false;
+                }
             }
         }
     }

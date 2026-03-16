@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         tailwind.config = {
@@ -46,16 +47,6 @@
 
         <!-- Login Card -->
         <div class="rounded-2xl border border-surface-800/60 bg-surface-900/80 backdrop-blur-xl shadow-2xl p-7">
-            <!-- Error Alert -->
-            <div x-show="error" x-cloak
-                 x-transition:enter="transition duration-200 ease-out"
-                 x-transition:enter-start="opacity-0 -translate-y-1"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 class="mb-5 rounded-xl bg-red-500/10 border border-red-500/20 p-4 flex items-start gap-3">
-                <svg class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-sm text-red-300" x-text="error"></p>
-            </div>
-
             <form x-on:submit.prevent="submit()">
                 <div class="mb-5">
                     <label class="mb-2 block text-sm font-semibold text-surface-300">Email</label>
@@ -127,10 +118,35 @@
             remember: false,
             showPassword: false,
             loading: false,
-            error: '',
+            showAlert(message, icon = 'error', title = 'Sign In Failed') {
+                return Swal.fire({
+                    title,
+                    text: message,
+                    icon,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4f46e5',
+                    background: '#0f172a',
+                    color: '#e2e8f0'
+                });
+            },
+            getAlertMeta(message) {
+                const text = (message || '').toLowerCase();
+                if (text.includes('inactive')) {
+                    return { icon: 'warning', title: 'Account Inactive' };
+                }
+                if (text.includes('suspended')) {
+                    return { icon: 'error', title: 'Account Suspended' };
+                }
+                if (text.includes('verify')) {
+                    return { icon: 'info', title: 'Email Verification Required' };
+                }
+                if (text.includes('locked')) {
+                    return { icon: 'warning', title: 'Account Locked' };
+                }
+                return { icon: 'error', title: 'Sign In Failed' };
+            },
             async submit() {
                 this.loading = true;
-                this.error = '';
                 try {
                     const res = await fetch(APP_BASE + '/api/auth/login', {
                         method: 'POST',
@@ -139,14 +155,16 @@
                     });
                     const data = await res.json();
                     if (!res.ok) {
-                        this.error = data.message || 'Login failed';
+                        const message = data.message || 'Invalid email or password';
+                        const meta = this.getAlertMeta(message);
+                        await this.showAlert(message, meta.icon, meta.title);
                         return;
                     }
                     localStorage.setItem('access_token', data.data.access_token);
                     localStorage.setItem('refresh_token', data.data.refresh_token);
                     window.location.href = APP_BASE + '/admin';
                 } catch (e) {
-                    this.error = 'Network error. Please try again.';
+                    await this.showAlert('Network error. Please try again.', 'error', 'Connection Error');
                 } finally {
                     this.loading = false;
                 }

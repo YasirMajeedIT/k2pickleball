@@ -7,6 +7,7 @@ $apiUrl = ($baseUrl ?? '') . '/api/courts';
 $columns = [
     ['key' => 'id', 'label' => 'ID', 'sortable' => true],
     ['key' => 'name', 'label' => 'Name', 'sortable' => true],
+    ['key' => 'facility_name', 'label' => 'Facility'],
     ['key' => 'sport_type', 'label' => 'Type'],
     ['key' => 'surface_type', 'label' => 'Surface'],
     ['key' => 'hourly_rate', 'label' => 'Rate/hr', 'render' => "function(row) { return row.hourly_rate ? '$' + parseFloat(row.hourly_rate).toFixed(2) : '-'; }"],

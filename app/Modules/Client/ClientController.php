@@ -27,6 +27,13 @@ class ClientController extends Controller
         'forgot-password'       => 'client/auth/forgot-password.php',
         'reset-password'        => 'client/auth/reset-password.php',
         'verify-email'          => 'client/auth/verify-email.php',
+
+        // Customer portal
+        'portal'                => 'client/portal/dashboard.php',
+        'portal/dashboard'      => 'client/portal/dashboard.php',
+        'portal/subscription'   => 'client/portal/subscription.php',
+        'portal/invoices'       => 'client/portal/invoices.php',
+        'portal/settings'       => 'client/portal/settings.php',
     ];
 
     public function handleRequest(Request $request): Response
@@ -46,13 +53,21 @@ class ClientController extends Controller
         return Response::html($this->renderNotFound(), 404);
     }
 
-    /** Views that are standalone (no layout wrapper) */
+    /** Views that render standalone (no layout wrapper) */
     private const STANDALONE_VIEWS = [
         'client/auth/login.php',
         'client/auth/register.php',
         'client/auth/forgot-password.php',
         'client/auth/reset-password.php',
         'client/auth/verify-email.php',
+    ];
+
+    /** Views that use the portal layout */
+    private const PORTAL_VIEWS = [
+        'client/portal/dashboard.php',
+        'client/portal/subscription.php',
+        'client/portal/invoices.php',
+        'client/portal/settings.php',
     ];
 
     private function renderView(string $viewFile, array $params = []): Response
@@ -67,9 +82,8 @@ class ClientController extends Controller
         $params['baseUrl'] = ($basePath === '' || $basePath === '.') ? '' : $basePath;
         $params['contentView'] = $viewFile;
 
-        // Determine which layout to use
+        // Standalone auth pages (no layout)
         if (in_array($viewFile, self::STANDALONE_VIEWS, true)) {
-            // Auth pages render without a layout wrapper
             extract($params);
             ob_start();
             include $viewPath;
@@ -77,6 +91,17 @@ class ClientController extends Controller
             return Response::html($html);
         }
 
+        // Portal pages use the portal layout
+        if (in_array($viewFile, self::PORTAL_VIEWS, true)) {
+            $layoutPath = dirname(__DIR__, 2) . '/Views/layouts/portal.php';
+            extract($params);
+            ob_start();
+            include $layoutPath;
+            $html = ob_get_clean();
+            return Response::html($html);
+        }
+
+        // Marketing pages use the client layout
         $layoutPath = dirname(__DIR__, 2) . '/Views/layouts/client.php';
 
         extract($params);

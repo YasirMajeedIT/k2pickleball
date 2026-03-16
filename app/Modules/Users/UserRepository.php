@@ -52,7 +52,66 @@ final class UserRepository extends Repository
             [$id]
         );
 
+        $user['facilities'] = $this->db->fetchAll(
+            "SELECT `f`.`id`, `f`.`name`, `f`.`slug`, `f`.`city`, `f`.`state`, `f`.`status`
+             FROM `user_facilities` `uf`
+             JOIN `facilities` `f` ON `f`.`id` = `uf`.`facility_id`
+             WHERE `uf`.`user_id` = ?
+             ORDER BY `f`.`name` ASC",
+            [$id]
+        );
+
         return $user;
+    }
+
+    public function syncFacilities(int $userId, array $facilityIds, int $orgId): void
+    {
+        $this->db->query(
+            "DELETE FROM `user_facilities` WHERE `user_id` = ?",
+            [$userId]
+        );
+
+        foreach ($facilityIds as $facilityId) {
+            $facilityId = (int) $facilityId;
+            if ($facilityId > 0) {
+                $this->db->insert('user_facilities', [
+                    'user_id'         => $userId,
+                    'facility_id'     => $facilityId,
+                    'organization_id' => $orgId,
+                    'created_at'      => date('Y-m-d H:i:s'),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Fetch facilities for multiple users in a single query (for index listings).
+     * Returns an array keyed by user_id.
+     */
+    public function findFacilitiesForUsers(array $userIds): array
+    {
+        if (empty($userIds)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $rows = $this->db->fetchAll(
+            "SELECT `uf`.`user_id`, `f`.`id`, `f`.`name`, `f`.`city`
+             FROM `user_facilities` `uf`
+             JOIN `facilities` `f` ON `f`.`id` = `uf`.`facility_id`
+             WHERE `uf`.`user_id` IN ({$placeholders})
+             ORDER BY `f`.`name` ASC",
+            $userIds
+        );
+
+        $map = [];
+        foreach ($rows as $row) {
+            $uid = $row['user_id'];
+            unset($row['user_id']);
+            $map[$uid][] = $row;
+        }
+
+        return $map;
     }
 
     public function emailExists(string $email, ?int $excludeId = null): bool

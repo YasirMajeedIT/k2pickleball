@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account — K2 Pickleball</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -67,12 +68,6 @@
             </div>
             <!-- Step progress (mobile) -->
             <div class="lg:hidden flex gap-2 mb-6"><template x-for="i in 3" :key="i"><div class="h-1.5 flex-1 rounded-full transition-colors" :class="step>=i?'bg-brand-500':'bg-surface-800'"></div></template></div>
-
-            <!-- Errors -->
-            <div x-show="errors.length>0" x-transition class="mb-5 p-4 rounded-xl bg-red-500/10 border border-red-500/20 space-y-1">
-                <template x-for="(e,i) in errors" :key="i"><p class="text-sm text-red-400" x-text="e"></p></template>
-            </div>
-            <div x-show="infoMsg" x-transition class="mb-5 p-4 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm" x-text="infoMsg"></div>
 
             <!-- ===== STEP 1: Account ===== -->
             <div x-show="step===1" x-transition>
@@ -280,7 +275,7 @@ function registerPage() {
                 org_name:'', org_slug:'', org_phone:'', org_address:'', plan_id:null, _slugManual:false },
         plans: [],
         loading: false, loadingMsg: 'Creating account…',
-        errors: [], fieldErrors: {}, infoMsg: '',
+        errors: [], fieldErrors: {},
         showPw: false, strength: 0,
         pwOk: { length:false, upper:false, lower:false, number:false },
         sqPayments: null, sqCard: null,
@@ -291,6 +286,35 @@ function registerPage() {
         get selectedPlanPrice() {
             const p = this.plans.find(pl => pl.id == this.form.plan_id);
             return p ? p.price_monthly : 0;
+        },
+
+        showAlert(message, icon = 'error', title = 'Action Required') {
+            return Swal.fire({
+                title,
+                text: message,
+                icon,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#059669',
+                background: '#020617',
+                color: '#e2e8f0'
+            });
+        },
+
+        async showValidationSummary(title = 'Please Review Your Details') {
+            const messages = this.errors.filter(Boolean);
+            if (messages.length === 0) {
+                return;
+            }
+
+            await Swal.fire({
+                title,
+                html: '<div style="text-align:left">' + messages.map(msg => '<div style="margin:6px 0">• ' + msg + '</div>').join('') + '</div>',
+                icon: 'warning',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#059669',
+                background: '#020617',
+                color: '#e2e8f0'
+            });
         },
 
         async init() {
@@ -324,8 +348,8 @@ function registerPage() {
             // Always show a styled button immediately
             el.innerHTML = '<button type="button" data-google-btn class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white text-gray-800 font-medium text-sm hover:bg-gray-100 active:bg-gray-200 transition-colors shadow-sm border border-gray-200">' + this.googleSvg + (btnText === 'signup_with' ? 'Sign up with Google' : 'Continue with Google') + '</button>';
             if (!GOOGLE_CID) {
-                el.querySelector('button').addEventListener('click', () => {
-                    this.errors = ['Google login is not configured. Set GOOGLE_CLIENT_ID in .env'];
+                el.querySelector('button').addEventListener('click', async () => {
+                    await this.showAlert('Google login is not configured. Set GOOGLE_CLIENT_ID in .env', 'warning', 'Google Sign-In Unavailable');
                 });
                 return;
             }
@@ -369,7 +393,7 @@ function registerPage() {
             }
         },
 
-        nextStep() {
+        async nextStep() {
             this.errors = []; this.fieldErrors = {};
             if (this.step === 1) {
                 let ok = true;
@@ -384,10 +408,19 @@ function registerPage() {
                     this.fieldErrors.password_confirmation = 'Passwords do not match.'; ok = false;
                 }
                 if (!this.form.phone.trim()) { this.fieldErrors.phone = 'Phone number is required.'; ok = false; }
-                if (!ok) { this.errors = Object.values(this.fieldErrors).filter(Boolean); return; }
+                if (!ok) {
+                    this.errors = Object.values(this.fieldErrors).filter(Boolean);
+                    await this.showValidationSummary();
+                    return;
+                }
             }
             if (this.step === 2) {
-                if (!this.form.org_name.trim()) { this.fieldErrors.org_name = 'Organization name is required.'; this.errors = [this.fieldErrors.org_name]; return; }
+                if (!this.form.org_name.trim()) {
+                    this.fieldErrors.org_name = 'Organization name is required.';
+                    this.errors = [this.fieldErrors.org_name];
+                    await this.showValidationSummary();
+                    return;
+                }
                 if (!this.form.org_slug.trim()) this.autoSlug();
             }
             this.step++;
@@ -405,6 +438,8 @@ function registerPage() {
             }
             if (typeof Square === 'undefined') {
                 this.fieldErrors.payment = 'Payment SDK failed to load. Please refresh the page.';
+                this.errors = [this.fieldErrors.payment];
+                this.showValidationSummary('Payment Unavailable');
                 return;
             }
             try {
@@ -423,6 +458,8 @@ function registerPage() {
                 await this.sqCard.attach('#sq-card-container');
             } catch(e) {
                 this.fieldErrors.payment = 'Payment form failed to load: ' + (e.message || 'Unknown error');
+                this.errors = [this.fieldErrors.payment];
+                this.showValidationSummary('Payment Unavailable');
                 console.warn('Square init error:', e);
             }
         },
@@ -438,6 +475,7 @@ function registerPage() {
                     await this.completeSetup(this._googleToken, this.form.email);
                 } catch (e) {
                     this.errors = ['Setup failed. Please try again.'];
+                    await this.showValidationSummary('Setup Failed');
                     this.loading = false;
                 }
                 return;
@@ -454,6 +492,7 @@ function registerPage() {
                 if (tokenResult.status !== 'OK') {
                     this.fieldErrors.payment = tokenResult.errors?.map(e=>e.message).join(', ') || 'Please check your card details.';
                     this.errors = [this.fieldErrors.payment];
+                    await this.showValidationSummary('Payment Details Required');
                     this.loading = false; return;
                 }
                 paymentNonce = tokenResult.token;
@@ -475,6 +514,7 @@ function registerPage() {
                 const regData = await regRes.json();
                 if (!regRes.ok) {
                     this.setErrors(regData.errors, regData.message || 'Registration failed.');
+                    await this.showValidationSummary('Registration Failed');
                     if (regData.errors) this.step = 1; // go back so field errors are visible
                     this.loading = false; return;
                 }
@@ -492,10 +532,13 @@ function registerPage() {
                     payment_nonce: paymentNonce,
                 }));
 
+                await this.showAlert('Account created successfully. Please verify your email before signing in.', 'success', 'Registration Successful');
+
                 // Redirect to email verification page
                 window.location.href = BASE_URL + '/verify-email?email=' + encodeURIComponent(this.form.email);
             } catch(e) {
                 this.errors = ['Network error. Please check your connection and try again.'];
+                await this.showValidationSummary('Connection Error');
                 this.loading = false;
             }
         },
@@ -518,6 +561,7 @@ function registerPage() {
             const orgId   = orgData.data?.id || orgData.id;
             if (!orgId) {
                 this.errors = [orgData.message || 'Failed to create organization.'];
+                await this.showValidationSummary('Organization Setup Failed');
                 this.loading = false;
                 return;
             }
@@ -529,6 +573,7 @@ function registerPage() {
                 if (tokenResult.status !== 'OK') {
                     this.fieldErrors.payment = tokenResult.errors?.map(e=>e.message).join(', ') || 'Card declined.';
                     this.errors = [this.fieldErrors.payment];
+                    await this.showValidationSummary('Payment Failed');
                     this.loading = false; return;
                 }
                 const amount = Math.round(this.selectedPlanPrice * 100);
@@ -540,6 +585,7 @@ function registerPage() {
                 if (!payRes.ok) {
                     this.fieldErrors.payment = payData.message || 'Payment failed. Please try again.';
                     this.errors = [this.fieldErrors.payment];
+                    await this.showValidationSummary('Payment Failed');
                     this.loading = false; return;
                 }
             }
@@ -562,7 +608,12 @@ function registerPage() {
                     body: JSON.stringify({ credential: response.credential })
                 });
                 const data = await res.json();
-                if (!res.ok) { this.errors = [data.message || 'Google sign-in failed.']; this.loading=false; return; }
+                if (!res.ok) {
+                    this.errors = [data.message || 'Google sign-in failed.'];
+                    await this.showValidationSummary('Google Sign-In Failed');
+                    this.loading=false;
+                    return;
+                }
                 const d = data.data || data;
                 localStorage.setItem('access_token',  d.access_token);
                 localStorage.setItem('refresh_token', d.refresh_token);
@@ -577,8 +628,12 @@ function registerPage() {
                 }
                 this.loading = false;
                 this.step = 2;
-                this.infoMsg = 'Google sign-in successful! Complete your organization setup below.';
-            } catch(e) { this.errors = ['Google sign-in failed. Please try again.']; this.loading = false; }
+                await this.showAlert('Google sign-in successful. Complete your organization setup below.', 'success', 'Google Sign-In Successful');
+            } catch(e) {
+                this.errors = ['Google sign-in failed. Please try again.'];
+                await this.showValidationSummary('Google Sign-In Failed');
+                this.loading = false;
+            }
         },
     }
 }

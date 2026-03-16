@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password — K2 Pickleball</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -41,7 +42,6 @@
                 <div>
                     <label class="block text-sm font-medium text-surface-300 mb-2">Email address</label>
                     <input type="email" x-model="email" required autofocus class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="you@example.com">
-                    <p x-show="errorMsg" class="mt-2 text-sm text-red-400" x-text="errorMsg"></p>
                 </div>
                 <button type="submit" :disabled="loading" class="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-brand-600 hover:bg-brand-500 disabled:opacity-50 rounded-2xl shadow-lg shadow-brand-600/25 transition-all">
                     <span x-show="!loading">Send Reset Link</span>
@@ -72,24 +72,34 @@
     const BASE_URL = '<?= $baseUrl ?>';
     function forgotPage() {
         return {
-            email: '', loading: false, sent: false, errorMsg: '',
+            email: '', loading: false, sent: false,
+            showAlert(message, icon = 'success', title = 'Password Reset') {
+                return Swal.fire({
+                    title,
+                    text: message,
+                    icon,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#059669',
+                    background: '#020617',
+                    color: '#e2e8f0'
+                });
+            },
             init() {
                 // Pre-fill email if passed as query param
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('email')) this.email = params.get('email');
             },
             async sendReset() {
-                this.errorMsg = ''; this.loading = true;
+                this.loading = true;
                 try {
-                    const res = await fetch(BASE_URL + '/api/auth/forgot-password', {
+                    await fetch(BASE_URL + '/api/auth/forgot-password', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: this.email })
                     });
-                    // Always show success to prevent email enumeration
-                    this.sent = true;
+                    await this.showAlert('If an account exists for this email, password reset instructions have been sent.', 'success', 'Reset Link Sent');
                 } catch {
-                    this.errorMsg = 'Network error. Please try again.';
+                    await this.showAlert('Network error. Please try again.', 'error', 'Connection Error');
                 }
                 this.loading = false;
             }

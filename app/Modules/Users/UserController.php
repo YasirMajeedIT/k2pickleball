@@ -32,10 +32,18 @@ final class UserController extends Controller
 
         $result = $this->repo->findByOrganization($orgId, $search ?: null, $status, $page, $perPage);
 
-        // Strip password hashes from results
         foreach ($result['data'] as &$user) {
             unset($user['password_hash']);
         }
+        unset($user);
+
+        // Eager-load facilities for all users on this page
+        $userIds = array_column($result['data'], 'id');
+        $facilitiesMap = $this->repo->findFacilitiesForUsers($userIds);
+        foreach ($result['data'] as &$user) {
+            $user['facilities'] = $facilitiesMap[$user['id']] ?? [];
+        }
+        unset($user);
 
         return $this->paginated($result['data'], $result['total'], $page, $perPage);
     }
@@ -51,19 +59,36 @@ final class UserController extends Controller
 
     public function store(Request $request): Response
     {
+        $facilityIds = array_filter(array_map('intval', (array) ($request->input('facility_ids', []))));
+
         $data = Validator::validate($request->all(), [
             'email' => 'required|email|max:255',
             'password' => 'required|password',
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'phone' => 'nullable|phone',
-            'status' => 'nullable|in:active,inactive,suspended,pending',
+            'professional_title' => 'nullable|string|max:100',
+            'membership_id' => 'nullable|string|max:50',
+            'certification_level' => 'nullable|string|max:100',
+            'years_experience' => 'nullable|integer|min:0|max:60',
+            'emergency_contact_name' => 'nullable|string|max:150',
+            'emergency_contact_phone' => 'nullable|phone',
+            'bio' => 'nullable|string|max:5000',
+            'status' => 'nullable|in:active,inactive,suspended',
             'role_id' => 'nullable|integer',
         ]);
 
         $data['email'] = Sanitizer::email($data['email']);
         $data['first_name'] = Sanitizer::string($data['first_name']);
         $data['last_name'] = Sanitizer::string($data['last_name']);
+        $data['phone'] = isset($data['phone']) ? Sanitizer::string($data['phone']) : null;
+        $data['professional_title'] = isset($data['professional_title']) ? Sanitizer::string($data['professional_title']) : null;
+        $data['membership_id'] = isset($data['membership_id']) ? Sanitizer::string($data['membership_id']) : null;
+        $data['certification_level'] = isset($data['certification_level']) ? Sanitizer::string($data['certification_level']) : null;
+        $data['years_experience'] = isset($data['years_experience']) && $data['years_experience'] !== '' ? (int) $data['years_experience'] : null;
+        $data['emergency_contact_name'] = isset($data['emergency_contact_name']) ? Sanitizer::string($data['emergency_contact_name']) : null;
+        $data['emergency_contact_phone'] = isset($data['emergency_contact_phone']) ? Sanitizer::string($data['emergency_contact_phone']) : null;
+        $data['bio'] = isset($data['bio']) ? trim((string) $data['bio']) : null;
 
         if ($this->repo->emailExists($data['email'])) {
             return $this->validationError(['email' => ['Email is already registered']]);
@@ -85,9 +110,12 @@ final class UserController extends Controller
 
         $id = $this->repo->create($data);
 
-        // Assign role if provided
         if ($roleId && $orgId) {
             $this->repo->assignRole($id, $roleId, $orgId);
+        }
+
+        if (!empty($facilityIds) && $orgId) {
+            $this->repo->syncFacilities($id, $facilityIds, $orgId);
         }
 
         $user = $this->repo->findWithRoles($id);
@@ -102,19 +130,37 @@ final class UserController extends Controller
             throw new NotFoundException('User not found');
         }
 
+        $facilityIds = array_filter(array_map('intval', (array) ($request->input('facility_ids', []))));
+        $syncFacilities = $request->input('facility_ids') !== null;
+
         $data = Validator::validate($request->all(), [
             'email' => 'required|email|max:255',
             'password' => 'nullable|password',
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'phone' => 'nullable|phone',
-            'status' => 'nullable|in:active,inactive,suspended,pending',
+            'professional_title' => 'nullable|string|max:100',
+            'membership_id' => 'nullable|string|max:50',
+            'certification_level' => 'nullable|string|max:100',
+            'years_experience' => 'nullable|integer|min:0|max:60',
+            'emergency_contact_name' => 'nullable|string|max:150',
+            'emergency_contact_phone' => 'nullable|phone',
+            'bio' => 'nullable|string|max:5000',
+            'status' => 'nullable|in:active,inactive,suspended',
             'role_id' => 'nullable|integer',
         ]);
 
         $data['email'] = Sanitizer::email($data['email']);
         $data['first_name'] = Sanitizer::string($data['first_name']);
         $data['last_name'] = Sanitizer::string($data['last_name']);
+        $data['phone'] = isset($data['phone']) ? Sanitizer::string($data['phone']) : null;
+        $data['professional_title'] = isset($data['professional_title']) ? Sanitizer::string($data['professional_title']) : null;
+        $data['membership_id'] = isset($data['membership_id']) ? Sanitizer::string($data['membership_id']) : null;
+        $data['certification_level'] = isset($data['certification_level']) ? Sanitizer::string($data['certification_level']) : null;
+        $data['years_experience'] = isset($data['years_experience']) && $data['years_experience'] !== '' ? (int) $data['years_experience'] : null;
+        $data['emergency_contact_name'] = isset($data['emergency_contact_name']) ? Sanitizer::string($data['emergency_contact_name']) : null;
+        $data['emergency_contact_phone'] = isset($data['emergency_contact_phone']) ? Sanitizer::string($data['emergency_contact_phone']) : null;
+        $data['bio'] = isset($data['bio']) ? trim((string) $data['bio']) : null;
 
         if ($this->repo->emailExists($data['email'], $id)) {
             return $this->validationError(['email' => ['Email is already registered']]);
@@ -137,6 +183,11 @@ final class UserController extends Controller
         if ($roleId) {
             $orgId = $request->organizationId();
             $this->repo->assignRole($id, $roleId, $orgId);
+        }
+
+        if ($syncFacilities) {
+            $orgId = $request->organizationId();
+            $this->repo->syncFacilities($id, $facilityIds, $orgId);
         }
 
         $user = $this->repo->findWithRoles($id);

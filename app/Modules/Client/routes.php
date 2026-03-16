@@ -26,4 +26,12 @@ return function (Router $router): void {
     $router->get('/forgot-password', [ClientController::class, 'handleRequest']);
     $router->get('/reset-password', [ClientController::class, 'handleRequest']);
     $router->get('/verify-email', [ClientController::class, 'handleRequest']);
+
+    // Customer portal
+    $router->get('/portal', [ClientController::class, 'handleRequest']);
+    $router->get('/portal/dashboard', [ClientController::class, 'handleRequest']);
+    $router->get('/portal/subscription', [ClientController::class, 'handleRequest']);
+    $router->get('/portal/invoices', [ClientController::class, 'handleRequest']);
+    $router->get('/portal/settings', [ClientController::class, 'handleRequest']);
 };
+
