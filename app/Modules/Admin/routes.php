@@ -27,6 +27,9 @@ return function (Router $router): void {
     $router->get('/admin/audit-logs', [AdminController::class, 'handleRequest']);
     $router->get('/admin/settings', [AdminController::class, 'handleRequest']);
 
+    // Extensions
+    $router->get('/admin/extensions', [AdminController::class, 'handleRequest']);
+
     // Categories
     $router->get('/admin/categories', [AdminController::class, 'handleRequest']);
     $router->get('/admin/categories/create', [AdminController::class, 'handleRequest']);

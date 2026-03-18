@@ -66,11 +66,15 @@ final class CalendarController extends Controller
                 cat.id AS category_id,
                 cat.name AS category_name,
                 cat.color AS category_color,
+                cat.is_taxable AS is_taxable,
+                f.tax_rate AS facility_tax_rate,
                 u.first_name AS coach_first_name,
                 u.last_name AS coach_last_name,
                 hd.id AS hot_deal_id,
                 hd.discount_price AS hot_deal_price,
                 hd.is_active AS hot_deal_active,
+                hd.min_registrations AS hot_deal_min_reg,
+                hd.label AS hot_deal_label,
                 eb.id AS early_bird_id,
                 eb.discount_price AS early_bird_price,
                 eb.is_active AS early_bird_active,
@@ -85,6 +89,7 @@ final class CalendarController extends Controller
             FROM st_classes c
             JOIN session_types st ON st.id = c.session_type_id
             LEFT JOIN categories cat ON cat.id = st.category_id
+            LEFT JOIN facilities f ON f.id = c.facility_id
             LEFT JOIN users u ON u.id = c.coach_id
             LEFT JOIN st_hot_deals hd ON hd.class_id = c.id
             LEFT JOIN st_early_birds eb ON eb.class_id = c.id
@@ -98,6 +103,41 @@ final class CalendarController extends Controller
 
         $rows = $this->db->fetchAll($sql, $params);
 
+        // Pre-fetch rolling prices and series session numbers for all session types in result
+        $sessionTypeIds = array_unique(array_column($rows, 'session_type_id'));
+        $rollingPricesMap = [];
+        $seriesSessionMap = []; // class_id => session number (e.g. "3 of 8")
+        if (!empty($sessionTypeIds)) {
+            $inPlaceholders = implode(',', array_fill(0, count($sessionTypeIds), '?'));
+            // Rolling prices
+            $rp = $this->db->fetchAll(
+                "SELECT * FROM st_rolling_prices WHERE session_type_id IN ({$inPlaceholders}) ORDER BY number_of_weeks ASC",
+                array_values($sessionTypeIds)
+            );
+            foreach ($rp as $r) {
+                $rollingPricesMap[(int) $r['session_type_id']][] = [
+                    'weeks' => (int) $r['number_of_weeks'],
+                    'price' => (float) $r['price'],
+                ];
+            }
+            // Series session numbering: for series type, rank classes by scheduled_at within each session_type_id
+            $seriesRows = $this->db->fetchAll(
+                "SELECT id, session_type_id,
+                        ROW_NUMBER() OVER (PARTITION BY session_type_id ORDER BY scheduled_at ASC) AS session_number,
+                        COUNT(*) OVER (PARTITION BY session_type_id) AS total_sessions
+                 FROM st_classes
+                 WHERE session_type_id IN ({$inPlaceholders}) AND is_active = 1
+                 ORDER BY session_type_id, scheduled_at",
+                array_values($sessionTypeIds)
+            );
+            foreach ($seriesRows as $sr) {
+                $seriesSessionMap[(int) $sr['id']] = [
+                    'number' => (int) $sr['session_number'],
+                    'total'  => (int) $sr['total_sessions'],
+                ];
+            }
+        }
+
         $events = [];
         foreach ($rows as $row) {
             $startDt = $row['scheduled_at'];
@@ -107,6 +147,26 @@ final class CalendarController extends Controller
             $color = $row['category_color'] ?: '#6366f1';
             $booked = (int) $row['slots'] - (int) $row['slots_available'];
             $total  = (int) $row['slots'];
+
+            // Hot deal: check registration-based threshold
+            $hotDealActive = $row['hot_deal_id'] && $row['hot_deal_active'];
+            if ($hotDealActive && !empty($row['hot_deal_min_reg'])) {
+                $hotDealActive = $booked >= (int) $row['hot_deal_min_reg'];
+            }
+
+            // Price: for series_rolling use rolling prices range, otherwise standard
+            $price = (float) $row['standard_price'];
+            $stId = (int) $row['session_type_id'];
+            $rollingPrices = $rollingPricesMap[$stId] ?? [];
+            $priceRange = null;
+            if ($row['session_type'] === 'series_rolling' && !empty($rollingPrices)) {
+                $minP = min(array_column($rollingPrices, 'price'));
+                $maxP = max(array_column($rollingPrices, 'price'));
+                $priceRange = ['min' => $minP, 'max' => $maxP];
+            }
+
+            // Series session info
+            $sessionInfo = $seriesSessionMap[(int) $row['class_id']] ?? null;
 
             // Formatted time strings
             $startTime = date('g:i a', strtotime($startDt));
@@ -144,18 +204,26 @@ final class CalendarController extends Controller
                     'startTime'       => $startTime,
                     'endTime'         => $endTime,
                     'courtNames'      => $row['court_names'] ?? '',
-                    'hotDeal'         => $row['hot_deal_id'] && $row['hot_deal_active'] ? [
+                    'hotDeal'         => $hotDealActive ? [
                         'id'    => (int) $row['hot_deal_id'],
                         'price' => (float) $row['hot_deal_price'],
+                        'label' => $row['hot_deal_label'] ?? 'Hot Deal',
+                        'minReg' => $row['hot_deal_min_reg'] ? (int) $row['hot_deal_min_reg'] : null,
                     ] : null,
                     'earlyBird'       => $row['early_bird_id'] && $row['early_bird_active'] ? [
                         'id'    => (int) $row['early_bird_id'],
                         'price' => (float) $row['early_bird_price'],
                     ] : null,
+                    'rollingPrices'   => $rollingPrices ?: null,
+                    'priceRange'      => $priceRange,
+                    'sessionNumber'   => $sessionInfo ? $sessionInfo['number'] : null,
+                    'totalSessions'   => $sessionInfo ? $sessionInfo['total'] : null,
                     'notesCount'      => (int) $row['notes_count'],
                     'firstNoteText'   => $row['first_note_text'] ?? '',
                     'courtsCount'     => (int) $row['courts_count'],
                     'attendeesCount'  => (int) $row['attendees_count'],
+                    'isTaxable'       => (bool) ($row['is_taxable'] ?? false),
+                    'taxRate'         => (float) ($row['facility_tax_rate'] ?? 0),
                 ],
             ];
         }

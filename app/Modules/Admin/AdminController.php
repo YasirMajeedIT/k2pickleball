@@ -67,6 +67,9 @@ class AdminController extends Controller
         // Settings
         'settings'                  => 'admin/settings/index.php',
 
+        // Extensions
+        'extensions'                => 'admin/extensions/index.php',
+
         // Categories
         'categories'                => 'admin/categories/index.php',
         'categories/create'         => 'admin/categories/create.php',

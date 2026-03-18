@@ -44,10 +44,10 @@ final class SquarePaymentService
             $body->setCustomerId($options['customer_id']);
         }
         if (!empty($options['reference_id'])) {
-            $body->setReferenceId($options['reference_id']);
+            $body->setReferenceId(substr($options['reference_id'], 0, 40));
         }
         if (!empty($options['note'])) {
-            $body->setNote($options['note']);
+            $body->setNote(substr($options['note'], 0, 500));
         }
         if ($this->locationId) {
             $body->setLocationId($this->locationId);

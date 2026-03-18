@@ -10,7 +10,7 @@ use PHPMailer\PHPMailer\Exception as MailerException;
 
 /**
  * Email service wrapping PHPMailer.
- * Reads config from .env MAIL_* keys.
+ * Supports facility-level SMTP config with env fallback.
  */
 final class Mailer
 {
@@ -46,25 +46,20 @@ final class Mailer
     }
 
     /**
-     * Send an email.
-     *
-     * @param string $toEmail  Recipient email
-     * @param string $toName   Recipient name
-     * @param string $subject  Email subject
-     * @param string $htmlBody HTML email body
-     * @param string $textBody Optional plain-text fallback
-     *
-     * @throws \RuntimeException on failure
+     * Send an email, optionally using facility-level SMTP config.
+     * Falls back to .env SMTP when facility SMTP is not configured.
      */
     public function send(
         string $toEmail,
         string $toName,
         string $subject,
         string $htmlBody,
-        string $textBody = ''
+        string $textBody = '',
+        ?array $facilitySmtp = null
     ): void {
-        // If mail not configured, log and silently skip (dev mode)
-        if (!$this->enabled) {
+        $smtp = $this->resolveSmtp($facilitySmtp);
+
+        if (!$smtp['enabled']) {
             $this->logFallback($toEmail, $subject, $htmlBody);
             return;
         }
@@ -72,25 +67,20 @@ final class Mailer
         $mail = new PHPMailer(true);
 
         try {
-            // SMTP config
             $mail->isSMTP();
-            $mail->Host       = $this->host;
+            $mail->Host       = $smtp['host'];
             $mail->SMTPAuth   = true;
-            $mail->Username   = $this->username;
-            $mail->Password   = $this->password;
-            $mail->SMTPSecure = $this->encryption === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = $this->port;
+            $mail->Username   = $smtp['username'];
+            $mail->Password   = $smtp['password'];
+            $mail->SMTPSecure = $smtp['encryption'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = $smtp['port'];
             $mail->CharSet    = 'UTF-8';
             $mail->Timeout    = 10;
 
-            // From
-            $mail->setFrom($this->fromAddress, $this->fromName);
-            $mail->addReplyTo($this->fromAddress, $this->fromName);
-
-            // Recipients
+            $mail->setFrom($smtp['from_address'], $smtp['from_name']);
+            $mail->addReplyTo($smtp['from_address'], $smtp['from_name']);
             $mail->addAddress($toEmail, $toName);
 
-            // Content
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body    = $htmlBody;
@@ -101,6 +91,40 @@ final class Mailer
             error_log('[Mailer] Failed to send email to ' . $toEmail . ': ' . $mail->ErrorInfo);
             throw new \RuntimeException('Email could not be sent: ' . $mail->ErrorInfo);
         }
+    }
+
+    /**
+     * Resolve SMTP config: facility overrides env when available.
+     */
+    private function resolveSmtp(?array $facilitySmtp): array
+    {
+        if ($facilitySmtp
+            && !empty($facilitySmtp['smtp_host'])
+            && !empty($facilitySmtp['smtp_username'])
+            && !empty($facilitySmtp['smtp_password'])
+        ) {
+            return [
+                'host'         => $facilitySmtp['smtp_host'],
+                'port'         => (int) ($facilitySmtp['smtp_port'] ?? 587),
+                'username'     => $facilitySmtp['smtp_username'],
+                'password'     => $facilitySmtp['smtp_password'],
+                'encryption'   => $facilitySmtp['smtp_encryption'] ?? 'tls',
+                'from_address' => $facilitySmtp['smtp_from_email'] ?? $this->fromAddress,
+                'from_name'    => $facilitySmtp['smtp_from_name'] ?? $this->fromName,
+                'enabled'      => true,
+            ];
+        }
+
+        return [
+            'host'         => $this->host,
+            'port'         => $this->port,
+            'username'     => $this->username,
+            'password'     => $this->password,
+            'encryption'   => $this->encryption,
+            'from_address' => $this->fromAddress,
+            'from_name'    => $this->fromName,
+            'enabled'      => $this->enabled,
+        ];
     }
 
     /**

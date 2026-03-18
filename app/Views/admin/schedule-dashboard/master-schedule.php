@@ -1,4 +1,18 @@
-﻿<!-- Master Schedule Calendar View -->
+﻿<!-- Square Web Payments SDK -->
+<?php
+$paymentsConfig = require __DIR__ . '/../../../../config/payments.php';
+$squareEnv = $paymentsConfig['square']['environment'] ?? 'sandbox';
+$squareAppId = $paymentsConfig['square']['application_id'] ?? '';
+$squareLocationId = $paymentsConfig['square']['location_id'] ?? '';
+$squareJsUrl = $paymentsConfig[$squareEnv]['web_payments_url'] ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
+?>
+<script src="<?= htmlspecialchars($squareJsUrl, ENT_QUOTES) ?>"></script>
+<script>
+    window.SQUARE_APP_ID = '<?= htmlspecialchars($squareAppId, ENT_QUOTES) ?>';
+    window.SQUARE_LOCATION_ID = '<?= htmlspecialchars($squareLocationId, ENT_QUOTES) ?>';
+</script>
+
+<!-- Master Schedule Calendar View -->
 <div x-data="masterSchedule()" x-init="init()" x-effect="handleFacilityChange(facilityId)" class="space-y-4">
 
     <!-- Header: Category Filters + View Controls + Date Picker + Settings -->
@@ -59,6 +73,14 @@
                     <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
 
+                <!-- Maximize / Fullscreen -->
+                <button @click="isFullscreen = !isFullscreen; $nextTick(() => { if (calendar) calendar.updateSize(); })"
+                        class="p-1.5 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-500 dark:text-surface-400 transition-all"
+                        :title="isFullscreen ? 'Exit Fullscreen' : 'Maximize Calendar'">
+                    <svg x-show="!isFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                    <svg x-show="isFullscreen" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4H4m0 0l5 5M9 15v5H4m0 0l5-5m6-6V4h5m0 0l-5 5m5 6v5h-5m0 0l5-5"/></svg>
+                </button>
+
                 <!-- Settings Gear -->
                 <button @click="showSettingsModal = true"
                         class="p-1.5 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-500 dark:text-surface-400 transition-all"
@@ -70,8 +92,8 @@
     </div>
 
     <!-- Calendar Container -->
-    <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-soft overflow-hidden">
-        <div id="master-schedule-calendar" class="min-h-[700px]" style="--fc-border-color: #e2e8f0; --fc-today-bg-color: rgba(99,102,241,0.05); --fc-page-bg-color: transparent; --fc-neutral-bg-color: rgba(148,163,184,0.08);"></div>
+    <div :class="isFullscreen ? 'fixed inset-0 z-[200] overflow-auto bg-white dark:bg-surface-900' : 'rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-soft overflow-hidden'">
+        <div id="master-schedule-calendar" :class="isFullscreen ? 'min-h-screen' : 'min-h-[700px]'" style="--fc-border-color: #e2e8f0; --fc-today-bg-color: rgba(99,102,241,0.05); --fc-page-bg-color: transparent; --fc-neutral-bg-color: rgba(148,163,184,0.08);"></div>
     </div>
 
     <!-- ===== EVENT ACTIONS MODAL ===== -->
@@ -185,25 +207,25 @@
     <!-- ===== SETTINGS MODAL ===== -->
     <template x-teleport="body">
         <div x-show="showSettingsModal" x-cloak @keydown.escape.window="showSettingsModal = false" class="fixed inset-0 z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);" @click.self="showSettingsModal = false">
-            <div class="bg-white dark:bg-surface-900 rounded-2xl shadow-xl w-full max-w-md" @click.stop>
-                <div class="flex items-center justify-between px-5 py-4 border-b border-surface-200 dark:border-surface-800">
+            <div class="bg-white dark:bg-surface-900 rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col" @click.stop>
+                <div class="flex items-center justify-between px-5 py-4 border-b border-surface-200 dark:border-surface-800 flex-shrink-0">
                     <h3 class="text-sm font-semibold text-surface-800 dark:text-surface-100">Calendar Display Settings</h3>
                     <button @click="showSettingsModal = false" class="p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </div>
-                <div class="p-5 space-y-4">
-                    <p class="text-xs text-surface-400">Choose which details to display on calendar events.</p>
-                    <div class="space-y-2">
+                <div class="p-5 overflow-y-auto flex-1">
+                    <p class="text-xs text-surface-400 mb-4">Choose which details to display on calendar events.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <template x-for="field in settingsFields" :key="field.key">
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer">
-                                <input type="checkbox" :checked="displaySettings[field.key]" @change="toggleDisplaySetting(field.key)" class="rounded border-surface-300 text-primary-500 focus:ring-primary-500/20">
-                                <div>
-                                    <span class="text-sm text-surface-700 dark:text-surface-200" x-text="field.label"></span>
-                                    <p class="text-[10px] text-surface-400" x-text="field.desc"></p>
+                            <label class="flex items-start gap-3 p-3 rounded-xl border border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 cursor-pointer transition-colors">
+                                <input type="checkbox" :checked="displaySettings[field.key]" @change="toggleDisplaySetting(field.key)" class="rounded border-surface-300 text-primary-500 focus:ring-primary-500/20 mt-0.5 flex-shrink-0">
+                                <div class="min-w-0">
+                                    <span class="text-sm font-medium text-surface-700 dark:text-surface-200 block" x-text="field.label"></span>
+                                    <p class="text-[10px] text-surface-400 leading-relaxed mt-0.5" x-text="field.desc"></p>
                                 </div>
                             </label>
                         </template>
                     </div>
-                    <div class="pt-2 border-t border-surface-200 dark:border-surface-800">
+                    <div class="pt-3 mt-3 border-t border-surface-200 dark:border-surface-800">
                         <button @click="resetDisplaySettings()" class="text-xs text-primary-500 hover:text-primary-600 font-medium">Reset to defaults</button>
                     </div>
                 </div>
@@ -411,11 +433,11 @@
 
                         <!-- Attendee rows -->
                         <template x-for="att in filteredAttendees" :key="att.id">
-                            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 overflow-hidden">
+                            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 overflow-hidden" x-data="{ showActions: false, editing: false, editData: {} }">
                                 <div class="flex items-center gap-3 px-3 py-2.5">
                                     <!-- Avatar -->
                                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                         :style="'background:' + (att.checked_in ? '#10b981' : '#6366f1')">
+                                         :style="'background:' + (att.status === 'cancelled' ? '#ef4444' : att.status === 'reserved' ? '#f59e0b' : att.checked_in ? '#10b981' : '#6366f1')">
                                         <span x-text="(att.first_name || '?').charAt(0).toUpperCase()"></span>
                                     </div>
                                     <!-- Name / details -->
@@ -427,19 +449,43 @@
                                                   :class="{
                                                     'bg-green-100 text-green-700': att.status === 'registered',
                                                     'bg-amber-100 text-amber-700': att.status === 'waitlisted',
+                                                    'bg-yellow-100 text-yellow-700': att.status === 'reserved',
                                                     'bg-red-100 text-red-600':     att.status === 'cancelled',
                                                     'bg-surface-100 text-surface-500': att.status === 'no_show'
                                                   }"
                                                   x-text="att.status"></span>
+                                            <!-- Payment status badge -->
+                                            <span class="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                                                  :class="{
+                                                    'bg-green-50 text-green-600': att.payment_status === 'paid',
+                                                    'bg-amber-50 text-amber-600': att.payment_status === 'pending',
+                                                    'bg-blue-50 text-blue-600':   att.payment_status === 'free',
+                                                    'bg-red-50 text-red-600':     att.payment_status === 'refunded',
+                                                    'bg-purple-50 text-purple-600': att.payment_status === 'credited',
+                                                    'bg-orange-50 text-orange-600': att.payment_status === 'partially_refunded',
+                                                  }"
+                                                  x-text="(att.payment_status || 'pending').replace('_', ' ')"></span>
                                             <!-- Partner badge -->
                                             <span x-show="att.partner_id" class="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-600">Paired</span>
                                         </div>
                                         <div class="flex items-center gap-2 mt-0.5 text-[10px] text-surface-400 flex-wrap">
                                             <span x-show="att.email" x-text="att.email"></span>
                                             <span x-show="att.phone" x-text="att.phone"></span>
-                                            <span x-show="att.amount_paid" class="text-green-600 dark:text-green-400 font-medium" x-text="'$' + parseFloat(att.amount_paid || 0).toFixed(2)"></span>
+                                            <span x-show="att.amount_paid > 0" class="text-green-600 dark:text-green-400 font-medium" x-text="'Paid $' + parseFloat(att.amount_paid || 0).toFixed(2)"></span>
+                                            <span class="text-surface-400 font-medium" x-text="(att.payment_method === 'cash' ? '💵 Cash' : att.payment_method === 'card' ? '💳 Card' : att.payment_method === 'terminal' ? '📟 Terminal' : att.payment_method === 'free' ? '🆓 Free' : '')"></span>
+                                            <span x-show="att.discount_code" class="text-purple-500 font-medium" x-text="'🏷 ' + att.discount_code + ' -$' + parseFloat(att.discount_amount || 0).toFixed(2)"></span>
+                                            <span x-show="att.credit_amount > 0" class="text-blue-500 font-medium" x-text="'Credit -$' + parseFloat(att.credit_amount || 0).toFixed(2)"></span>
+                                            <span x-show="att.gift_amount > 0" class="text-pink-500 font-medium" x-text="'Gift -$' + parseFloat(att.gift_amount || 0).toFixed(2)"></span>
+                                            <span x-show="att.tax_amount > 0" class="text-orange-500 font-medium" x-text="'Tax +$' + parseFloat(att.tax_amount || 0).toFixed(2)"></span>
+                                            <span x-show="att.booking_group_id" class="text-indigo-500 font-medium">🔄 Rolling</span>
                                         </div>
-                                        <div x-show="att.notes" class="mt-0.5 text-[10px] text-surface-400 truncate" x-text="att.notes"></div>
+                                        <!-- Labels row -->
+                                        <div x-show="att.labels && att.labels.length > 0" class="flex items-center gap-1 mt-1 flex-wrap">
+                                            <template x-for="lbl in (att.labels || [])" :key="lbl.id">
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded-full font-medium text-white" :style="'background:' + (lbl.color || '#6366f1')" x-text="lbl.name"></span>
+                                            </template>
+                                        </div>
+                                        <div x-show="att.notes" class="mt-0.5 text-[10px] text-surface-400 italic truncate" x-text="'📝 ' + att.notes"></div>
                                     </div>
                                     <!-- Actions -->
                                     <div class="flex items-center gap-1 flex-shrink-0">
@@ -450,34 +496,91 @@
                                                 :title="att.checked_in ? 'Checked In — click to undo' : 'Mark as Checked In'">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                         </button>
-                                        <!-- Status dropdown -->
-                                        <select x-model="att.status" @change="updateAttendee(att)"
-                                                class="text-[10px] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-1.5 py-1 outline-none dark:text-white">
-                                            <option value="registered">Registered</option>
-                                            <option value="waitlisted">Waitlisted</option>
-                                            <option value="cancelled">Cancelled</option>
-                                            <option value="no_show">No Show</option>
-                                        </select>
-                                        <!-- Remove -->
-                                        <button @click="removeAttendee(att.id)"
-                                                class="w-7 h-7 rounded-lg flex items-center justify-center bg-surface-100 dark:bg-surface-700 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
+                                        <!-- Action menu -->
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button @click.stop="open = !open" class="w-7 h-7 rounded-lg flex items-center justify-center bg-surface-100 dark:bg-surface-700 text-surface-400 hover:text-surface-600 transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                                            </button>
+                                            <div x-show="open" @click.outside="open = false" x-cloak x-transition
+                                                 class="absolute right-0 mt-1 w-52 bg-white dark:bg-surface-800 rounded-xl shadow-xl border border-surface-200 dark:border-surface-700 py-1 text-xs"
+                                                 :class="att._dropUp ? 'bottom-full mb-1' : 'top-full'"
+                                                 x-init="$watch('open', v => { if(v) { const rect = $el.parentElement.getBoundingClientRect(); att._dropUp = (window.innerHeight - rect.bottom) < 220; } })">
+                                                <!-- Edit -->
+                                                <button @click="editing = true; editData = { first_name: att.first_name, last_name: att.last_name || '', email: att.email || '', phone: att.phone || '', notes: att.notes || '' }; open = false"
+                                                        class="w-full text-left px-3 py-2 hover:bg-surface-50 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-200">
+                                                    ✏️ Edit Details
+                                                </button>
+                                                <!-- Notes -->
+                                                <button @click="const n = prompt('Notes:', att.notes || ''); if(n !== null) { att.notes = n; updateAttendee(att); } open = false"
+                                                        class="w-full text-left px-3 py-2 hover:bg-surface-50 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-200">
+                                                    📝 Add/Edit Notes
+                                                </button>
+                                                <!-- Labels -->
+                                                <button @click="openLabelPicker(att); open = false"
+                                                        class="w-full text-left px-3 py-2 hover:bg-surface-50 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-200">
+                                                    🏷️ Manage Labels
+                                                </button>
+                                                <div class="border-t border-surface-100 dark:border-surface-700 my-1"></div>
+                                                <!-- Status changes -->
+                                                <template x-if="att.status !== 'registered'">
+                                                    <button @click="att.status = 'registered'; updateAttendee(att); open = false"
+                                                            class="w-full text-left px-3 py-2 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600">
+                                                        ✅ Register
+                                                    </button>
+                                                </template>
+                                                <template x-if="att.status !== 'waitlisted'">
+                                                    <button @click="att.status = 'waitlisted'; updateAttendee(att); open = false"
+                                                            class="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600">
+                                                        ⏳ Move to Waitlist
+                                                    </button>
+                                                </template>
+                                                <template x-if="att.status === 'reserved'">
+                                                    <button @click="convertReservation(att); open = false"
+                                                            class="w-full text-left px-3 py-2 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 font-semibold">
+                                                        💰 Receive Payment & Register
+                                                    </button>
+                                                </template>
+                                                <template x-if="att.status !== 'cancelled'">
+                                                    <button @click="showCancelDialog(att); open = false"
+                                                            class="w-full text-left px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600">
+                                                        🚫 Cancel Booking
+                                                    </button>
+                                                </template>
+                                                <div class="border-t border-surface-100 dark:border-surface-700 my-1"></div>
+                                                <template x-if="att.amount_paid > 0 && att.payment_status !== 'refunded'">
+                                                    <button @click="showRefundDialog(att); open = false"
+                                                            class="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600">
+                                                        💰 Issue Refund
+                                                    </button>
+                                                </template>
+                                                <template x-if="att.player_id">
+                                                    <button @click="showIssueCreditDialog(att); open = false"
+                                                            class="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600">
+                                                        🎫 Issue Credit
+                                                    </button>
+                                                </template>
+                                                <div class="border-t border-surface-100 dark:border-surface-700 my-1"></div>
+                                                <button @click="removeAttendee(att.id); open = false"
+                                                        class="w-full text-left px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">
+                                                    🗑️ Delete Record
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <!-- Edit amount row (collapsed inline) -->
-                                <div class="px-3 pb-2 flex gap-2 items-center border-t border-surface-100 dark:border-surface-700/50 pt-2">
-                                    <span class="text-[10px] text-surface-400">Amount paid:</span>
-                                    <input type="number" step="0.01" x-model.number="att.amount_paid" @change="updateAttendeeAmount(att)"
-                                           class="w-24 text-xs rounded border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2 py-0.5 outline-none focus:ring-1 focus:ring-primary-500/30 dark:text-white">
-                                    <span class="text-[10px] text-surface-400 ml-2">Payment:</span>
-                                    <select x-model="att.payment_status" @change="updateAttendeeAmount(att)"
-                                            class="text-[10px] rounded border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-1.5 py-0.5 outline-none dark:text-white">
-                                        <option value="paid">Paid</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="free">Free</option>
-                                        <option value="refunded">Refunded</option>
-                                    </select>
+                                <!-- Edit mode -->
+                                <div x-show="editing" class="px-3 pb-3 pt-1 border-t border-surface-100 dark:border-surface-700/50 space-y-2" x-cloak>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" x-model="editData.first_name" placeholder="First name" class="text-xs rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary-500/30 dark:text-white">
+                                        <input type="text" x-model="editData.last_name" placeholder="Last name" class="text-xs rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary-500/30 dark:text-white">
+                                        <input type="email" x-model="editData.email" placeholder="Email" class="text-xs rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary-500/30 dark:text-white">
+                                        <input type="tel" x-model="editData.phone" placeholder="Phone" class="text-xs rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary-500/30 dark:text-white">
+                                    </div>
+                                    <textarea x-model="editData.notes" placeholder="Internal notes..." rows="2" class="w-full text-xs rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-primary-500/30 dark:text-white resize-none"></textarea>
+                                    <div class="flex gap-2 justify-end">
+                                        <button @click="editing = false" class="px-3 py-1 text-xs rounded-lg border border-surface-200 dark:border-surface-700 text-surface-500 hover:bg-surface-50 dark:hover:bg-surface-700">Cancel</button>
+                                        <button @click="Object.assign(att, editData); updateAttendeeDetails(att); editing = false" class="px-3 py-1 text-xs rounded-lg bg-primary-500 text-white hover:bg-primary-600 font-medium">Save</button>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -485,15 +588,41 @@
                         <p x-show="!filteredAttendees.length && modalData.attendeeSearch" class="text-sm text-surface-400 text-center py-8">No attendees match your search.</p>
                     </div>
 
+                    <!-- ── LABEL PICKER OVERLAY ── -->
+                    <div x-show="labelPicker.open" x-cloak class="absolute inset-0 z-50 bg-white/95 dark:bg-surface-900/95 flex flex-col">
+                        <div class="flex items-center justify-between p-4 border-b border-surface-200 dark:border-surface-700">
+                            <h3 class="text-sm font-bold text-surface-800 dark:text-surface-100">🏷️ Manage Labels</h3>
+                            <button @click="labelPicker.open = false" class="text-surface-400 hover:text-surface-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="p-4 flex-1 overflow-y-auto space-y-2">
+                            <p x-show="!orgLabels.length" class="text-xs text-surface-400 text-center py-4">No labels created yet. Create labels in the Labels module first.</p>
+                            <template x-for="lbl in orgLabels" :key="lbl.id">
+                                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer">
+                                    <input type="checkbox" :checked="labelPicker.selectedIds.includes(lbl.id)" @change="toggleLabel(lbl.id)" class="rounded border-surface-300 text-primary-500 focus:ring-primary-500/20">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <span class="w-3 h-3 rounded-full flex-shrink-0" :style="'background:' + (lbl.color || '#6366f1')"></span>
+                                        <span class="text-sm text-surface-700 dark:text-surface-200" x-text="lbl.name"></span>
+                                    </span>
+                                </label>
+                            </template>
+                        </div>
+                        <div class="p-4 border-t border-surface-200 dark:border-surface-700 flex gap-2">
+                            <button @click="saveLabelSelection()" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors">Save Labels</button>
+                            <button @click="labelPicker.open = false" class="flex-1 py-2 text-xs font-semibold rounded-xl border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors">Cancel</button>
+                        </div>
+                    </div>
+
                     <!-- ── ADD NEW TAB ── -->
                     <div x-show="modalData.attendeeTab === 'add'" class="p-4 space-y-4">
                         <!-- Mode toggle -->
                         <div class="flex rounded-xl overflow-hidden border border-surface-200 dark:border-surface-700">
-                            <button @click="modalData.addMode = 'search'; modalData.playerQuery = ''; modalData.playerResults = []; modalData.selectedPlayer = null;" class="flex-1 py-2 text-xs font-semibold transition-colors"
+                            <button @click="modalData.addMode = 'search'; modalData.playerQuery = ''; modalData.playerResults = []; modalData.selectedPlayer = null; resetBookingForm();" class="flex-1 py-2 text-xs font-semibold transition-colors"
                                     :class="modalData.addMode === 'search' ? 'bg-primary-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300 hover:bg-surface-50'">
                                 🔍 Search Player
                             </button>
-                            <button @click="modalData.addMode = 'manual'; modalData.selectedPlayer = null; modalData.newAttendee = { player_id: '', first_name: '', last_name: '', email: '', phone: '', amount_paid: '', quote_amount: '', payment_status: 'pending', status: 'registered', notes: '' }" class="flex-1 py-2 text-xs font-semibold transition-colors"
+                            <button @click="modalData.addMode = 'manual'; modalData.selectedPlayer = null; resetBookingForm();" class="flex-1 py-2 text-xs font-semibold transition-colors"
                                     :class="modalData.addMode === 'manual' ? 'bg-primary-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300 hover:bg-surface-50'">
                                 ✏️ Manual Entry
                             </button>
@@ -512,7 +641,7 @@
                                 </div>
                             </div>
                             <!-- Search results dropdown -->
-                            <div x-show="modalData.playerResults.length > 0" class="rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
+                            <div x-show="modalData.playerResults.length > 0" class="rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden max-h-48 overflow-y-auto">
                                 <template x-for="pl in modalData.playerResults" :key="pl.id">
                                     <button @click="selectPlayerForAttendee(pl)" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-b border-surface-100 dark:border-surface-700/50 last:border-0 transition-colors text-left">
                                         <div class="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 text-xs font-bold flex-shrink-0">
@@ -530,7 +659,7 @@
                                 <div class="flex items-center gap-2">
                                     <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                     <span class="text-sm font-semibold text-primary-700 dark:text-primary-300" x-text="modalData.selectedPlayer ? (modalData.selectedPlayer.first_name + ' ' + (modalData.selectedPlayer.last_name || '')) : ''"></span>
-                                    <button @click="modalData.selectedPlayer = null; modalData.playerQuery = ''; modalData.newAttendee.player_id = '';" class="ml-auto text-primary-400 hover:text-primary-600">
+                                    <button @click="modalData.selectedPlayer = null; modalData.playerQuery = ''; modalData.newAttendee.player_id = ''; resetBookingForm();" class="ml-auto text-primary-400 hover:text-primary-600">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>
@@ -550,57 +679,207 @@
                                 <input x-model="modalData.newAttendee.email" placeholder="Email" type="email" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
                                 <input x-model="modalData.newAttendee.phone" placeholder="Phone" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
                             </div>
-                            <!-- Booking fields (always shown) -->
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400 mb-1">Booking Status</label>
-                                    <select x-model="modalData.newAttendee.status" class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
-                                        <option value="registered">Registered</option>
-                                        <option value="waitlisted">Waitlisted</option>
-                                        <option value="cancelled">Cancelled</option>
-                                    </select>
+
+                            <!-- Status -->
+                            <div>
+                                <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400 mb-1">Booking Status</label>
+                                <select x-model="modalData.newAttendee.status" class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                                    <option value="registered">Registered</option>
+                                    <option value="waitlisted">Waitlisted</option>
+                                    <option value="reserved">Reserved (pay later)</option>
+                                </select>
+                            </div>
+
+                            <!-- ─── ROLLING ENROLLMENT (series_rolling only) ─── -->
+                            <div x-show="selectedEvent?.extendedProps?.sessionType === 'series_rolling' && selectedEvent?.extendedProps?.rollingPrices" class="rounded-xl border border-indigo-200 dark:border-indigo-700/50 bg-indigo-50/50 dark:bg-indigo-900/20 p-3 space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold text-indigo-700 dark:text-indigo-300">🔄 Rolling Enrollment</span>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400 mb-1">Payment Status</label>
-                                    <select x-model="modalData.newAttendee.payment_status" class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
-                                        <option value="pending">Pending</option>
-                                        <option value="paid">Paid</option>
-                                        <option value="free">Free / Comp</option>
-                                        <option value="refunded">Refunded</option>
-                                    </select>
+                                <p class="text-[10px] text-indigo-600 dark:text-indigo-400">This is a rolling series. Select a package to auto-enroll into multiple weeks.</p>
+                                <select x-model="booking.rollingWeeks" @change="onRollingChange()" class="w-full rounded-xl border border-indigo-200 dark:border-indigo-600 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white">
+                                    <option value="0">Single Session Only</option>
+                                    <template x-for="rp in (selectedEvent?.extendedProps?.rollingPrices || [])" :key="rp.weeks">
+                                        <option :value="rp.weeks" x-text="rp.weeks + ' Weeks — $' + parseFloat(rp.price).toFixed(2)"></option>
+                                    </template>
+                                </select>
+                                <div x-show="booking.rollingWeeks > 0" class="text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-100/60 dark:bg-indigo-900/30 rounded-lg px-2.5 py-1.5">
+                                    <span x-text="'📅 ' + booking.rollingWeeks + ' weeks × $' + booking.rollingPerSession.toFixed(2) + '/session = $' + booking.rollingTotal.toFixed(2) + ' total'"></span>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400 mb-1">Amount Paid ($)</label>
-                                    <input type="number" step="0.01" x-model.number="modalData.newAttendee.amount_paid" placeholder="0.00" class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+
+                            <!-- ─── PRICE CALCULATOR ─── -->
+                            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 p-3 space-y-2">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-xs font-semibold text-surface-700 dark:text-surface-200">💰 Price Breakdown</span>
+                                    <button @click="calculateBookingPrice()" class="ml-auto text-[10px] text-primary-500 hover:text-primary-600 font-medium">⟳ Recalculate</button>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400 mb-1">Quoted Price ($)</label>
-                                    <input type="number" step="0.01" x-model.number="modalData.newAttendee.quote_amount" placeholder="0.00" class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                                <div class="space-y-1 text-xs">
+                                    <div class="flex justify-between">
+                                        <span class="text-surface-500">Base price</span>
+                                        <span class="font-medium text-surface-700 dark:text-surface-200" x-text="'$' + booking.basePrice.toFixed(2)"></span>
+                                    </div>
+                                    <div x-show="booking.discountAmount > 0" class="flex justify-between text-purple-600">
+                                        <span x-text="'Discount (' + (booking.discountName || booking.discountCode) + ')'"></span>
+                                        <span x-text="'-$' + booking.discountAmount.toFixed(2)"></span>
+                                    </div>
+                                    <div x-show="booking.creditAmount > 0" class="flex justify-between text-blue-600">
+                                        <span x-text="'Credit (' + booking.creditCode + ')'"></span>
+                                        <span x-text="'-$' + booking.creditAmount.toFixed(2)"></span>
+                                    </div>
+                                    <div x-show="booking.giftAmount > 0" class="flex justify-between text-pink-600">
+                                        <span x-text="'Gift Cert (' + booking.giftCode + ')'"></span>
+                                        <span x-text="'-$' + booking.giftAmount.toFixed(2)"></span>
+                                    </div>
+                                    <div x-show="booking.taxAmount > 0" class="flex justify-between text-orange-600">
+                                        <span x-text="'Tax (' + (selectedEvent?.extendedProps?.taxRate || 0) + '%)'"></span>
+                                        <span x-text="'+$' + booking.taxAmount.toFixed(2)"></span>
+                                    </div>
+                                    <div class="flex justify-between pt-1.5 border-t border-surface-200 dark:border-surface-700 font-bold text-sm">
+                                        <span class="text-surface-700 dark:text-surface-200">Total Due</span>
+                                        <span class="text-green-600" x-text="'$' + booking.finalAmount.toFixed(2)"></span>
+                                    </div>
                                 </div>
                             </div>
-                            <!-- Session price reference -->
-                            <div class="text-[10px] text-surface-400 bg-surface-50 dark:bg-surface-800/50 rounded-lg px-3 py-2">
-                                Session price: <strong class="text-surface-600 dark:text-surface-300" x-text="'$' + (selectedEvent?.extendedProps?.price || 0).toFixed(2)"></strong>
-                                <span x-show="selectedEvent?.extendedProps?.hotDeal"> · Hot deal: <strong class="text-orange-500" x-text="selectedEvent?.extendedProps?.hotDeal ? '$' + selectedEvent.extendedProps.hotDeal.price.toFixed(2) : ''"></strong></span>
-                                <span x-show="selectedEvent?.extendedProps?.earlyBird"> · Early bird: <strong class="text-green-500" x-text="selectedEvent?.extendedProps?.earlyBird ? '$' + selectedEvent.extendedProps.earlyBird.price.toFixed(2) : ''"></strong></span>
+
+                            <!-- ─── DISCOUNT CODE ─── -->
+                            <div class="space-y-1">
+                                <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400">Discount / Coupon Code</label>
+                                <div class="flex gap-2">
+                                    <input x-model="booking.discountCode" placeholder="Enter code" @keydown.enter.prevent="validateDiscountCode()"
+                                           class="flex-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                                    <button @click="validateDiscountCode()" :disabled="!booking.discountCode || booking.validatingDiscount"
+                                            class="px-3 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium transition-colors disabled:opacity-50">
+                                        <span x-show="!booking.validatingDiscount">Apply</span>
+                                        <span x-show="booking.validatingDiscount">...</span>
+                                    </button>
+                                    <button x-show="booking.discountAmount > 0" @click="booking.discountCode = ''; booking.discountAmount = 0; booking.discountName = ''; recalcTotal()"
+                                            class="px-2 py-2 rounded-xl bg-red-100 text-red-600 text-xs hover:bg-red-200">✕</button>
+                                </div>
+                                <p x-show="booking.discountError" class="text-[10px] text-red-500" x-text="booking.discountError"></p>
+                                <p x-show="booking.discountName && booking.discountAmount > 0" class="text-[10px] text-purple-600" x-text="'✓ ' + booking.discountName + ' applied: -$' + booking.discountAmount.toFixed(2)"></p>
                             </div>
+
+                            <!-- ─── CREDIT CODE ─── -->
+                            <div class="space-y-1">
+                                <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400">Credit Code <span class="text-surface-300">(player-bound)</span></label>
+                                <div class="flex gap-2">
+                                    <input x-model="booking.creditCode" placeholder="Enter code" @keydown.enter.prevent="validateCreditCode()"
+                                           class="flex-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                                    <button @click="validateCreditCode()" :disabled="!booking.creditCode || booking.validatingCredit"
+                                            class="px-3 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium transition-colors disabled:opacity-50">
+                                        <span x-show="!booking.validatingCredit">Apply</span>
+                                        <span x-show="booking.validatingCredit">...</span>
+                                    </button>
+                                    <button x-show="booking.creditAmount > 0" @click="booking.creditCode = ''; booking.creditAmount = 0; booking.creditBalance = 0; recalcTotal()"
+                                            class="px-2 py-2 rounded-xl bg-red-100 text-red-600 text-xs hover:bg-red-200">✕</button>
+                                </div>
+                                <p x-show="booking.creditError" class="text-[10px] text-red-500" x-text="booking.creditError"></p>
+                                <p x-show="booking.creditBalance > 0" class="text-[10px] text-blue-600" x-text="'✓ Balance: $' + booking.creditBalance.toFixed(2) + ' — applying $' + booking.creditAmount.toFixed(2)"></p>
+                            </div>
+
+                            <!-- ─── GIFT CERTIFICATE ─── -->
+                            <div class="space-y-1">
+                                <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400">Gift Certificate</label>
+                                <div class="flex gap-2">
+                                    <input x-model="booking.giftCode" placeholder="Enter code" @keydown.enter.prevent="validateGiftCode()"
+                                           class="flex-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                                    <button @click="validateGiftCode()" :disabled="!booking.giftCode || booking.validatingGift"
+                                            class="px-3 py-2 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-xs font-medium transition-colors disabled:opacity-50">
+                                        <span x-show="!booking.validatingGift">Apply</span>
+                                        <span x-show="booking.validatingGift">...</span>
+                                    </button>
+                                    <button x-show="booking.giftAmount > 0" @click="booking.giftCode = ''; booking.giftAmount = 0; booking.giftBalance = 0; booking.giftRecipient = ''; recalcTotal()"
+                                            class="px-2 py-2 rounded-xl bg-red-100 text-red-600 text-xs hover:bg-red-200">✕</button>
+                                </div>
+                                <p x-show="booking.giftError" class="text-[10px] text-red-500" x-text="booking.giftError"></p>
+                                <p x-show="booking.giftBalance > 0" class="text-[10px] text-pink-600" x-text="'✓ Balance: $' + booking.giftBalance.toFixed(2) + (booking.giftRecipient ? ' (Recipient: ' + booking.giftRecipient + ')' : '') + ' — applying $' + booking.giftAmount.toFixed(2)"></p>
+                            </div>
+
+                            <!-- ─── PAYMENT METHOD ─── -->
+                            <div x-show="modalData.newAttendee.status !== 'reserved'" class="space-y-2">
+                                <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400">Payment Method</label>
+                                <div class="flex rounded-xl overflow-hidden border border-surface-200 dark:border-surface-700">
+                                    <button @click="booking.paymentMethod = 'cash'" class="flex-1 py-2 text-xs font-semibold transition-colors"
+                                            :class="booking.paymentMethod === 'cash' ? 'bg-green-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300'">
+                                        💵 Cash
+                                    </button>
+                                    <button @click="booking.paymentMethod = 'card'; initSquareCard()" class="flex-1 py-2 text-xs font-semibold transition-colors"
+                                            :class="booking.paymentMethod === 'card' ? 'bg-blue-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300'">
+                                        💳 Card
+                                    </button>
+                                    <button x-show="terminalActive && terminalDevicePaired" @click="booking.paymentMethod = 'terminal'" class="flex-1 py-2 text-xs font-semibold transition-colors"
+                                            :class="booking.paymentMethod === 'terminal' ? 'bg-purple-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300'">
+                                        📟 Terminal
+                                    </button>
+                                    <button @click="booking.paymentMethod = 'free'" class="flex-1 py-2 text-xs font-semibold transition-colors"
+                                            :class="booking.paymentMethod === 'free' ? 'bg-surface-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300'">
+                                        🆓 Free
+                                    </button>
+                                </div>
+
+                                <!-- Square Card Form -->
+                                <div x-show="booking.paymentMethod === 'card'" class="space-y-2">
+                                    <div id="square-card-container" class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 p-3 min-h-[60px]">
+                                        <div x-show="booking.squareLoading" class="flex items-center justify-center py-3">
+                                            <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                            <span class="text-xs text-surface-400 ml-2">Loading card form...</span>
+                                        </div>
+                                    </div>
+                                    <p x-show="booking.cardError" class="text-[10px] text-red-500" x-text="booking.cardError"></p>
+                                </div>
+
+                                <!-- Terminal Payment Notice -->
+                                <div x-show="booking.paymentMethod === 'terminal'" class="rounded-xl border border-purple-200 dark:border-purple-700/50 bg-purple-50 dark:bg-purple-900/20 p-3 text-center">
+                                    <p class="text-xs text-purple-700 dark:text-purple-300 font-medium">📟 Terminal device paired for this facility.</p>
+                                    <p class="text-[10px] text-purple-500 mt-1">A checkout request will be sent to the terminal. The booking will be auto-cancelled if payment is not completed.</p>
+                                </div>
+                                <!-- Terminal not paired warning -->
+                                <div x-show="terminalActive && !terminalDevicePaired" class="rounded-xl border border-amber-200 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/20 p-3 text-center">
+                                    <p class="text-xs text-amber-700 dark:text-amber-300 font-medium">⚠ No terminal device paired for this facility.</p>
+                                    <p class="text-[10px] text-amber-500 mt-1">Go to Extensions → Square Terminal POS → Configure to pair a device.</p>
+                                </div>
+
+                                <!-- Cash amount override -->
+                                <div x-show="booking.paymentMethod === 'cash'" class="flex gap-2">
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400 mb-1">Amount Received ($)</label>
+                                        <input type="number" step="0.01" x-model.number="booking.manualAmount" placeholder="0.00"
+                                               class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reserved status hint -->
+                            <div x-show="modalData.newAttendee.status === 'reserved'" class="rounded-xl border border-yellow-200 dark:border-yellow-700/50 bg-yellow-50 dark:bg-yellow-900/20 p-3">
+                                <p class="text-xs text-yellow-700 dark:text-yellow-300 font-medium">📋 Reservation — No payment required now</p>
+                                <p class="text-[10px] text-yellow-600 dark:text-yellow-400 mt-1">The spot will be reserved. Payment can be collected in-person later via the "Receive Payment & Register" option.</p>
+                            </div>
+
+                            <!-- Notes -->
                             <div>
                                 <label class="block text-[10px] font-medium text-surface-500 dark:text-surface-400 mb-1">Internal Notes</label>
                                 <textarea x-model="modalData.newAttendee.notes" placeholder="Optional note about this booking..." rows="2"
                                           class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white resize-none focus:ring-2 focus:ring-primary-500/20"></textarea>
                             </div>
+
                             <!-- Spots check -->
                             <div x-show="attendeeStats.spotsLeft <= 0" class="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
                                 ⚠️ This session is at capacity. You can still add as Waitlisted.
                             </div>
+
+                            <!-- Send Email Checkbox -->
+                            <label class="flex items-center gap-2 text-xs text-surface-600 dark:text-surface-300 cursor-pointer">
+                                <input type="checkbox" x-model="booking.sendEmail" class="rounded border-surface-300 dark:border-surface-600 text-primary-500 focus:ring-primary-500/20">
+                                <span>📧 Send Email to Client</span>
+                            </label>
+
                             <!-- Submit -->
-                            <button @click="addAttendee()"
-                                    :disabled="saving || (modalData.addMode === 'manual' && !modalData.newAttendee.first_name?.trim()) || (modalData.addMode === 'search' && !modalData.selectedPlayer)"
+                            <button @click="processBooking()"
+                                    :disabled="saving || (modalData.addMode === 'manual' && !modalData.newAttendee?.first_name?.trim()) || (modalData.addMode === 'search' && !modalData.selectedPlayer)"
                                     class="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-colors disabled:opacity-50">
-                                <span x-show="!saving">✓ Register Attendee</span>
-                                <span x-show="saving">Registering...</span>
+                                <span x-show="!saving" x-text="modalData.newAttendee.status === 'reserved' ? '📋 Reserve Spot' : booking.rollingWeeks > 0 ? '🔄 Enroll in ' + booking.rollingWeeks + ' Weeks' : booking.paymentMethod === 'card' ? '💳 Pay & Register' : booking.paymentMethod === 'terminal' ? '📟 Terminal Pay & Register' : booking.paymentMethod === 'free' ? '✓ Register (Free)' : '✓ Register Attendee'"></span>
+                                <span x-show="saving && booking.paymentMethod === 'terminal'" class="text-[10px]">Waiting for terminal...</span>
+                                <span x-show="saving">Processing...</span>
                             </button>
                         </div>
                     </div>
@@ -692,6 +971,152 @@
                 </div><!-- end scrollable tab body -->
             </div><!-- end slide-in panel -->
         </div><!-- end attendees sidebar -->
+
+        <!-- ===== CANCEL BOOKING DIALOG ===== -->
+        <template x-teleport="body">
+            <div x-show="booking.showCancelDialog" x-cloak class="fixed inset-0 z-[120] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);" @click.self="booking.showCancelDialog = false">
+                <div class="bg-white dark:bg-surface-900 rounded-2xl shadow-xl w-full max-w-md" @click.stop>
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-200 dark:border-surface-800">
+                        <h3 class="text-sm font-semibold text-red-600">🚫 Cancel Booking</h3>
+                        <button @click="booking.showCancelDialog = false" class="p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="bg-surface-50 dark:bg-surface-800 rounded-xl p-3">
+                            <p class="text-sm font-medium text-surface-700 dark:text-surface-200" x-text="booking.actionAttendee ? booking.actionAttendee.first_name + ' ' + (booking.actionAttendee.last_name || '') : ''"></p>
+                            <p class="text-xs text-surface-400 mt-0.5" x-text="'Amount paid: $' + parseFloat(booking.actionAttendee?.amount_paid || 0).toFixed(2)"></p>
+                            <p x-show="booking.actionAttendee?.payment_method === 'card'" class="text-xs text-blue-500 mt-0.5">💳 Paid by card</p>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300">Cancellation Option</label>
+                            <div class="space-y-1.5">
+                                <label class="flex items-center gap-2 p-2.5 rounded-lg border border-surface-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer">
+                                    <input type="radio" x-model="booking.cancelMode" value="full_refund" class="text-primary-500">
+                                    <span class="text-xs text-surface-700 dark:text-surface-200">Full Refund</span>
+                                    <span class="text-[10px] text-surface-400 ml-auto" x-text="'$' + parseFloat(booking.actionAttendee?.amount_paid || 0).toFixed(2)"></span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2.5 rounded-lg border border-surface-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer">
+                                    <input type="radio" x-model="booking.cancelMode" value="partial_refund" class="text-primary-500">
+                                    <span class="text-xs text-surface-700 dark:text-surface-200">Partial Refund</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2.5 rounded-lg border border-surface-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer">
+                                    <input type="radio" x-model="booking.cancelMode" value="issue_credit" class="text-primary-500">
+                                    <span class="text-xs text-surface-700 dark:text-surface-200">Issue Credit Code</span>
+                                    <span class="text-[10px] text-purple-500 ml-auto">Player gets credit</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2.5 rounded-lg border border-surface-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer">
+                                    <input type="radio" x-model="booking.cancelMode" value="no_refund" class="text-primary-500">
+                                    <span class="text-xs text-surface-700 dark:text-surface-200">No Refund</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div x-show="booking.cancelMode === 'partial_refund'">
+                            <label class="block text-[10px] font-medium text-surface-500 mb-1">Refund Amount ($)</label>
+                            <input type="number" step="0.01" x-model.number="booking.cancelRefundAmount" :max="booking.actionAttendee?.amount_paid || 0"
+                                   class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                        </div>
+                        <div x-show="booking.cancelMode === 'issue_credit'">
+                            <label class="block text-[10px] font-medium text-surface-500 mb-1">Credit Amount ($)</label>
+                            <input type="number" step="0.01" x-model.number="booking.cancelCreditAmount"
+                                   class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-surface-500 mb-1">Reason</label>
+                            <input type="text" x-model="booking.cancelReason" placeholder="Cancellation reason..."
+                                   class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-surface-600 dark:text-surface-300 cursor-pointer">
+                            <input type="checkbox" x-model="booking.sendEmail" class="rounded border-surface-300 dark:border-surface-600 text-primary-500 focus:ring-primary-500/20">
+                            <span>📧 Send Email to Client</span>
+                        </label>
+                        <button @click="processCancellation()" :disabled="saving"
+                                class="w-full py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50">
+                            <span x-show="!saving">Confirm Cancellation</span>
+                            <span x-show="saving">Processing...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- ===== REFUND DIALOG ===== -->
+        <template x-teleport="body">
+            <div x-show="booking.showRefundDialog" x-cloak class="fixed inset-0 z-[120] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);" @click.self="booking.showRefundDialog = false">
+                <div class="bg-white dark:bg-surface-900 rounded-2xl shadow-xl w-full max-w-md" @click.stop>
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-200 dark:border-surface-800">
+                        <h3 class="text-sm font-semibold text-orange-600">💰 Issue Refund</h3>
+                        <button @click="booking.showRefundDialog = false" class="p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="bg-surface-50 dark:bg-surface-800 rounded-xl p-3">
+                            <p class="text-sm font-medium text-surface-700 dark:text-surface-200" x-text="booking.actionAttendee ? booking.actionAttendee.first_name + ' ' + (booking.actionAttendee.last_name || '') : ''"></p>
+                            <p class="text-xs text-surface-400 mt-0.5" x-text="'Paid: $' + parseFloat(booking.actionAttendee?.amount_paid || 0).toFixed(2) + ' · Refunded: $' + parseFloat(booking.actionAttendee?.refunded_amount || 0).toFixed(2)"></p>
+                            <p class="text-xs font-medium text-green-600 mt-0.5" x-text="'Available for refund: $' + (parseFloat(booking.actionAttendee?.amount_paid || 0) - parseFloat(booking.actionAttendee?.refunded_amount || 0)).toFixed(2)"></p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-surface-500 mb-1">Refund Amount ($)</label>
+                            <input type="number" step="0.01" x-model.number="booking.refundAmount"
+                                   class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-surface-500 mb-1">Reason</label>
+                            <input type="text" x-model="booking.refundReason" placeholder="Refund reason..."
+                                   class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-surface-600 dark:text-surface-300 cursor-pointer">
+                            <input type="checkbox" x-model="booking.sendEmail" class="rounded border-surface-300 dark:border-surface-600 text-primary-500 focus:ring-primary-500/20">
+                            <span>📧 Send Email to Client</span>
+                        </label>
+                        <button @click="processRefund()" :disabled="saving || !booking.refundAmount"
+                                class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors disabled:opacity-50">
+                            <span x-show="!saving" x-text="'Refund $' + (booking.refundAmount || 0).toFixed(2)"></span>
+                            <span x-show="saving">Processing...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- ===== ISSUE CREDIT DIALOG ===== -->
+        <template x-teleport="body">
+            <div x-show="booking.showCreditDialog" x-cloak class="fixed inset-0 z-[120] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);" @click.self="booking.showCreditDialog = false">
+                <div class="bg-white dark:bg-surface-900 rounded-2xl shadow-xl w-full max-w-md" @click.stop>
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-200 dark:border-surface-800">
+                        <h3 class="text-sm font-semibold text-purple-600">🎫 Issue Credit Code</h3>
+                        <button @click="booking.showCreditDialog = false" class="p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="bg-surface-50 dark:bg-surface-800 rounded-xl p-3">
+                            <p class="text-sm font-medium text-surface-700 dark:text-surface-200" x-text="booking.actionAttendee ? booking.actionAttendee.first_name + ' ' + (booking.actionAttendee.last_name || '') : ''"></p>
+                            <p class="text-xs text-surface-400 mt-0.5">A new credit code will be created and assigned to this player.</p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-surface-500 mb-1">Credit Amount ($)</label>
+                            <input type="number" step="0.01" x-model.number="booking.issueCreditAmount"
+                                   class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-surface-500 mb-1">Reason</label>
+                            <input type="text" x-model="booking.issueCreditReason" placeholder="e.g. Goodwill credit, cancellation..."
+                                   class="w-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm outline-none dark:text-white focus:ring-2 focus:ring-primary-500/20">
+                        </div>
+                        <label class="flex items-center gap-2 text-xs text-surface-600 dark:text-surface-300 cursor-pointer">
+                            <input type="checkbox" x-model="booking.sendEmail" class="rounded border-surface-300 dark:border-surface-600 text-primary-500 focus:ring-primary-500/20">
+                            <span>📧 Send Email to Client</span>
+                        </label>
+                        <button @click="processIssueCredit()" :disabled="saving || !booking.issueCreditAmount"
+                                class="w-full py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-sm font-semibold transition-colors disabled:opacity-50">
+                            <span x-show="!saving" x-text="'Issue Credit $' + (booking.issueCreditAmount || 0).toFixed(2)"></span>
+                            <span x-show="saving">Processing...</span>
+                        </button>
+                        <!-- Result -->
+                        <div x-show="booking.issuedCreditCode" class="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/50">
+                            <p class="text-xs font-semibold text-green-700 dark:text-green-300">✅ Credit Code Issued</p>
+                            <p class="text-lg font-mono font-bold text-green-600 mt-1" x-text="booking.issuedCreditCode"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
 
         <!-- Hot Deal Modal -->
         <div x-show="activeModal === 'hotDeal'" x-cloak @keydown.escape.window="activeModal = null" class="fixed inset-0 z-[110] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);" @click.self="activeModal = null">
@@ -819,6 +1244,7 @@ function masterSchedule() {
         calendarTitle: '',
         showActionsModal: false,
         showSettingsModal: false,
+        isFullscreen: false,
         activeModal: null,
         selectedEvent: null,
         saving: false,
@@ -858,13 +1284,41 @@ function masterSchedule() {
             playerResults: [],
             playerLoading: false,
             selectedPlayer: null,
-            newAttendee: { player_id: '', first_name: '', last_name: '', email: '', phone: '', amount_paid: '', quote_amount: '', payment_status: 'pending', status: 'registered', notes: '' },
+            newAttendee: { player_id: '', first_name: '', last_name: '', email: '', phone: '', status: 'registered', notes: '' },
             hotDeal: { discount_price: 0, original_price: 0 },
             earlyBird: { discount_price: 0, cutoff_hours: 24 },
             feedback: { message: '' },
             pairPlayer1: '',
             pairPlayer2: '',
         },
+
+        // Booking state for Add New tab
+        booking: {
+            basePrice: 0, discountAmount: 0, creditAmount: 0, giftAmount: 0, taxAmount: 0, finalAmount: 0,
+            discountCode: '', discountName: '', discountError: '', validatingDiscount: false,
+            creditCode: '', creditBalance: 0, creditError: '', validatingCredit: false,
+            giftCode: '', giftBalance: 0, giftRecipient: '', giftError: '', validatingGift: false,
+            paymentMethod: 'cash', // 'cash' | 'card' | 'free' | 'terminal'
+            manualAmount: 0,
+            squareLoading: false, squareCard: null, cardError: '',
+            // Rolling enrollment
+            rollingWeeks: 0, rollingTotal: 0, rollingPerSession: 0,
+            // Cancel/refund/credit dialogs
+            showCancelDialog: false, showRefundDialog: false, showCreditDialog: false,
+            actionAttendee: null,
+            cancelMode: 'full_refund', cancelRefundAmount: 0, cancelCreditAmount: 0, cancelReason: '',
+            refundAmount: 0, refundReason: '',
+            issueCreditAmount: 0, issueCreditReason: '', issuedCreditCode: '',
+            sendEmail: true,
+        },
+
+        // Terminal extension active state
+        terminalActive: false,
+        terminalDevicePaired: false,
+
+        // Labels
+        orgLabels: [],
+        labelPicker: { open: false, attendee: null, selectedIds: [] },
 
         get filteredAttendees() {
             const q = (this.modalData.attendeeSearch || '').toLowerCase();
@@ -881,6 +1335,7 @@ function masterSchedule() {
                 checkedIn:  l.filter(a => a.checked_in).length,
                 registered: l.filter(a => a.status === 'registered').length,
                 waitlisted: l.filter(a => a.status === 'waitlisted').length,
+                reserved:   l.filter(a => a.status === 'reserved').length,
                 capacity:   this.selectedEvent?.extendedProps?.capacity || 0,
                 spotsLeft:  this.selectedEvent?.extendedProps?.slotsAvailable || 0,
             };
@@ -913,6 +1368,8 @@ function masterSchedule() {
 
         async init() {
             await this.loadOrgUsers();
+            await this.checkTerminalExtension();
+            await this.loadOrgLabels();
             this.initDatepicker();
             this.$watch('categoryFilter', () => { if (calendar) calendar.refetchEvents(); });
         },
@@ -954,6 +1411,7 @@ function masterSchedule() {
             this.currentFacilityId = newFid;
             if (!newFid) return;
             this.loadCategories();
+            this.checkTerminalExtension();
             this.$nextTick(() => {
                 if (!calendar) {
                     this.initCalendar();
@@ -1012,12 +1470,23 @@ function masterSchedule() {
                     const txtColor = ds.textColorWhite ? '' : 'color:#1f2937;';
                     const lines = [];
 
-                    // Line 1: Title - booked/cap - $price
+                    // Line 1: Title - booked/cap - $price (or price range for rolling)
                     const line1Parts = [];
                     if (ds.showTitle) line1Parts.push(self.esc(arg.event.title));
                     if (ds.showSlots) line1Parts.push(booked + '/' + cap);
-                    if (ds.showPrice) line1Parts.push('$' + price.toFixed(2));
+                    if (ds.showPrice) {
+                        if (ep.priceRange) {
+                            line1Parts.push('$' + ep.priceRange.min.toFixed(2) + '-$' + ep.priceRange.max.toFixed(2));
+                        } else {
+                            line1Parts.push('$' + price.toFixed(2));
+                        }
+                    }
                     if (line1Parts.length) lines.push('<div class="ms-ev-line1">' + line1Parts.join(' - ') + '</div>');
+
+                    // Session number for series types
+                    if (ep.sessionNumber && ep.totalSessions) {
+                        lines.push('<div class="ms-ev-line2" style="font-weight:600;opacity:0.85">\uD83D\uDCCB Session ' + ep.sessionNumber + ' of ' + ep.totalSessions + '</div>');
+                    }
 
                     // Line 2: Courts · Facilitator · Category · Duration · Attendees
                     const line2Parts = [];
@@ -1056,7 +1525,7 @@ function masterSchedule() {
                         badges.push('<span class="ms-badge ms-badge-closed">Closed</span>');
                     }
                     if (ds.showDealBadges && ep.hotDeal) {
-                        badges.push('<span class="ms-badge ms-badge-deal">Deal</span>');
+                        badges.push('<span class="ms-badge ms-badge-deal">' + self.esc(ep.hotDeal.label || 'Deal') + '</span>');
                     }
                     if (ds.showDealBadges && ep.earlyBird) {
                         badges.push('<span class="ms-badge ms-badge-early">Early</span>');
@@ -1084,6 +1553,10 @@ function masterSchedule() {
                 },
             });
             calendar.render();
+
+            // Auto-resize when calendar container becomes visible (e.g. tab switch)
+            const resizeObs = new ResizeObserver(() => { if (calendar) calendar.updateSize(); });
+            resizeObs.observe(el);
         },
 
         esc(str) {
@@ -1328,33 +1801,451 @@ function masterSchedule() {
             this.modalData.newAttendee.last_name   = player.last_name  || '';
             this.modalData.newAttendee.email       = player.email      || '';
             this.modalData.newAttendee.phone       = player.phone      || '';
-            // Pre-fill quote with session price
-            const price = this.selectedEvent?.extendedProps?.price || 0;
-            const hdPrice = this.selectedEvent?.extendedProps?.hotDeal?.price;
-            const ebPrice = this.selectedEvent?.extendedProps?.earlyBird?.price;
-            this.modalData.newAttendee.quote_amount = hdPrice || ebPrice || price;
+            // Calculate price for this player
+            this.calculateBookingPrice();
         },
 
-        async addAttendee() {
-            // Validate
+        resetBookingForm() {
+            this.modalData.newAttendee = { player_id: '', first_name: '', last_name: '', email: '', phone: '', status: 'registered', notes: '' };
+            this.booking.basePrice = 0; this.booking.discountAmount = 0; this.booking.creditAmount = 0;
+            this.booking.giftAmount = 0; this.booking.finalAmount = 0; this.booking.discountCode = '';
+            this.booking.discountName = ''; this.booking.discountError = ''; this.booking.creditCode = '';
+            this.booking.creditBalance = 0; this.booking.creditError = ''; this.booking.giftCode = '';
+            this.booking.giftBalance = 0; this.booking.giftRecipient = ''; this.booking.giftError = '';
+            this.booking.paymentMethod = 'cash'; this.booking.manualAmount = 0; this.booking.taxAmount = 0;
+            this.booking.cardError = ''; this.booking.squareCard = null;
+            this.booking.rollingWeeks = 0; this.booking.rollingTotal = 0; this.booking.rollingPerSession = 0;
+        },
+
+        recalcTotal() {
+            const afterDiscount = Math.max(0, this.booking.basePrice - this.booking.discountAmount);
+            const afterCredit = Math.max(0, afterDiscount - this.booking.creditAmount);
+            const subtotal = Math.max(0, afterCredit - this.booking.giftAmount);
+
+            // Tax calculation: apply tax if category is taxable and facility has a tax rate
+            const isTaxable = this.selectedEvent?.extendedProps?.isTaxable;
+            const taxRate = parseFloat(this.selectedEvent?.extendedProps?.taxRate || 0);
+            if (isTaxable && taxRate > 0 && subtotal > 0) {
+                this.booking.taxAmount = Math.round(subtotal * taxRate) / 100;
+            } else {
+                this.booking.taxAmount = 0;
+            }
+
+            this.booking.finalAmount = Math.round((subtotal + this.booking.taxAmount) * 100) / 100;
+            this.booking.manualAmount = this.booking.finalAmount;
+        },
+
+        async calculateBookingPrice() {
+            try {
+                const params = new URLSearchParams();
+                if (this.booking.discountCode) params.set('discount_code', this.booking.discountCode);
+                if (this.booking.creditCode) params.set('credit_code', this.booking.creditCode);
+                if (this.booking.giftCode) params.set('gift_code', this.booking.giftCode);
+                if (this.modalData.newAttendee.player_id) params.set('player_id', this.modalData.newAttendee.player_id);
+                const res = await authFetch(this._apiBase() + '/calculate-price', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(params)) });
+                const json = await res.json();
+                if (json.data) {
+                    this.booking.basePrice = parseFloat(json.data.base_price) || 0;
+                    if (json.data.discount) {
+                        this.booking.discountAmount = parseFloat(json.data.discount.amount) || 0;
+                        this.booking.discountName = json.data.discount.name || '';
+                    }
+                    if (json.data.credit && !json.data.credit.error) {
+                        this.booking.creditBalance = parseFloat(json.data.credit_balance) || 0;
+                    }
+                    if (json.data.gift) {
+                        this.booking.giftBalance = parseFloat(json.data.gift_balance) || 0;
+                        this.booking.giftRecipient = json.data.gift.recipient_name || '';
+                    }
+                    this.recalcTotal();
+                }
+            } catch(e) { /* silently use defaults */ }
+        },
+
+        async validateDiscountCode() {
+            if (!this.booking.discountCode) return;
+            this.booking.validatingDiscount = true;
+            this.booking.discountError = '';
+            try {
+                const res = await authFetch(baseApi + '/api/discounts/validate-coupon', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ coupon_code: this.booking.discountCode }) });
+                const json = await res.json();
+                if (json.success && json.data) {
+                    this.booking.discountName = json.data.name;
+                    if (json.data.discount_type === 'percent') {
+                        this.booking.discountAmount = Math.round(this.booking.basePrice * parseFloat(json.data.discount_value) / 100 * 100) / 100;
+                    } else {
+                        this.booking.discountAmount = Math.min(this.booking.basePrice, parseFloat(json.data.discount_value));
+                    }
+                    this.recalcTotal();
+                } else {
+                    this.booking.discountError = json.message || 'Invalid code';
+                    this.booking.discountAmount = 0;
+                }
+            } catch(e) { this.booking.discountError = 'Error validating code'; }
+            this.booking.validatingDiscount = false;
+        },
+
+        async validateCreditCode() {
+            if (!this.booking.creditCode) return;
+            this.booking.validatingCredit = true;
+            this.booking.creditError = '';
+            try {
+                const res = await authFetch(this._apiBase() + '/validate-credit-code', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ code: this.booking.creditCode, player_id: this.modalData.newAttendee.player_id || null })
+                });
+                const json = await res.json();
+                if (json.success && json.data) {
+                    this.booking.creditBalance = parseFloat(json.data.balance) || 0;
+                    const remaining = Math.max(0, this.booking.basePrice - this.booking.discountAmount);
+                    this.booking.creditAmount = Math.min(this.booking.creditBalance, remaining);
+                    this.recalcTotal();
+                } else {
+                    this.booking.creditError = json.message || 'Invalid code';
+                    this.booking.creditBalance = 0;
+                    this.booking.creditAmount = 0;
+                }
+            } catch(e) { this.booking.creditError = 'Error validating code'; }
+            this.booking.validatingCredit = false;
+        },
+
+        async validateGiftCode() {
+            if (!this.booking.giftCode) return;
+            this.booking.validatingGift = true;
+            this.booking.giftError = '';
+            try {
+                const res = await authFetch(this._apiBase() + '/validate-gift-code', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ code: this.booking.giftCode })
+                });
+                const json = await res.json();
+                if (json.success && json.data) {
+                    this.booking.giftBalance = parseFloat(json.data.balance) || 0;
+                    this.booking.giftRecipient = json.data.recipient_name || '';
+                    const remaining = Math.max(0, this.booking.basePrice - this.booking.discountAmount - this.booking.creditAmount);
+                    this.booking.giftAmount = Math.min(this.booking.giftBalance, remaining);
+                    this.recalcTotal();
+                } else {
+                    this.booking.giftError = json.message || 'Invalid code';
+                    this.booking.giftBalance = 0;
+                    this.booking.giftAmount = 0;
+                }
+            } catch(e) { this.booking.giftError = 'Error validating code'; }
+            this.booking.validatingGift = false;
+        },
+
+        async initSquareCard() {
+            if (this.booking.squareCard) return; // already initialized
+            if (!window.Square) { this.booking.cardError = 'Square SDK not loaded'; return; }
+            this.booking.squareLoading = true;
+            this.booking.cardError = '';
+            try {
+                const payments = window.Square.payments(window.SQUARE_APP_ID, window.SQUARE_LOCATION_ID);
+                this.booking.squareCard = await payments.card();
+                await this.booking.squareCard.attach('#square-card-container');
+            } catch(e) {
+                this.booking.cardError = 'Failed to load card form: ' + (e.message || e);
+            }
+            this.booking.squareLoading = false;
+        },
+
+        async checkTerminalExtension() {
+            try {
+                const res = await authFetch(baseApi + '/api/extensions/check/square-terminal-pos');
+                const json = await res.json();
+                this.terminalActive = !!(json.data && json.data.is_active);
+            } catch(e) { this.terminalActive = false; }
+            // Check if the current facility has a paired device
+            if (this.terminalActive && this.getFacilityId()) {
+                try {
+                    const res = await authFetch(baseApi + '/api/square-terminal/status?facility_id=' + this.getFacilityId());
+                    const json = await res.json();
+                    this.terminalDevicePaired = !!(json.data?.device?.device_id);
+                } catch(e) { this.terminalDevicePaired = false; }
+            } else {
+                this.terminalDevicePaired = false;
+            }
+        },
+
+        onRollingChange() {
+            const weeks = parseInt(this.booking.rollingWeeks) || 0;
+            if (weeks <= 0) {
+                this.booking.rollingWeeks = 0;
+                this.booking.rollingTotal = 0;
+                this.booking.rollingPerSession = 0;
+                this.calculateBookingPrice();
+                return;
+            }
+            const rp = (this.selectedEvent?.extendedProps?.rollingPrices || []).find(p => parseInt(p.weeks) === weeks);
+            if (rp) {
+                this.booking.rollingTotal = parseFloat(rp.price);
+                this.booking.rollingPerSession = Math.round(parseFloat(rp.price) / weeks * 100) / 100;
+                this.booking.basePrice = parseFloat(rp.price);
+                this.recalcTotal();
+            }
+        },
+
+        async autoDeleteAttendee(attendeeId) {
+            try {
+                const classId = this.selectedEvent?.extendedProps?.classId;
+                const stId = this.selectedEvent?.extendedProps?.sessionTypeId;
+                if (classId && stId && attendeeId) {
+                    await authFetch(baseApi + '/api/session-types/' + stId + '/classes/' + classId + '/attendees/' + attendeeId + '/cancel', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ cancel_mode: 'no_refund', reason: 'Terminal payment not completed' })
+                    });
+                }
+                await this.loadAttendees();
+                if (this.calendar) this.calendar.refetchEvents();
+            } catch(e) { console.error('Auto-delete attendee failed:', e); }
+        },
+
+        async processBooking() {
             if (this.modalData.addMode === 'manual' && !this.modalData.newAttendee?.first_name?.trim()) return;
             if (this.modalData.addMode === 'search' && !this.modalData.selectedPlayer) return;
             this.saving = true;
+
             try {
-                const payload = { ...this.modalData.newAttendee };
+                const payload = {
+                    first_name: this.modalData.newAttendee.first_name,
+                    last_name: this.modalData.newAttendee.last_name || '',
+                    email: this.modalData.newAttendee.email || '',
+                    phone: this.modalData.newAttendee.phone || '',
+                    player_id: this.modalData.newAttendee.player_id || null,
+                    status: this.modalData.newAttendee.status || 'registered',
+                    notes: this.modalData.newAttendee.notes || '',
+                    payment_method: this.booking.paymentMethod,
+                    quote_amount: this.booking.basePrice,
+                    discount_code: this.booking.discountAmount > 0 ? this.booking.discountCode : '',
+                    discount_amount: this.booking.discountAmount,
+                    credit_code: this.booking.creditAmount > 0 ? this.booking.creditCode : '',
+                    credit_amount: this.booking.creditAmount,
+                    gift_code: this.booking.giftAmount > 0 ? this.booking.giftCode : '',
+                    gift_amount: this.booking.giftAmount,
+                    tax_amount: this.booking.taxAmount,
+                    tax_rate: parseFloat(this.selectedEvent?.extendedProps?.taxRate || 0),
+                    send_email: this.booking.sendEmail ? 1 : 0,
+                };
+
+                // Rolling enrollment
+                if (this.booking.rollingWeeks > 0) {
+                    payload.rolling_package_weeks = parseInt(this.booking.rollingWeeks);
+                }
+
+                // Reserved: override payment to cash with 0 amount
+                if (payload.status === 'reserved') {
+                    payload.payment_method = 'cash';
+                    payload.amount_paid = 0;
+                } else if (this.booking.paymentMethod === 'card' && this.booking.finalAmount > 0) {
+                    if (!this.booking.squareCard) {
+                        this.booking.cardError = 'Card form not loaded';
+                        this.saving = false;
+                        return;
+                    }
+                    const tokenResult = await this.booking.squareCard.tokenize();
+                    if (tokenResult.status !== 'OK') {
+                        this.booking.cardError = tokenResult.errors?.[0]?.message || 'Card tokenization failed';
+                        this.saving = false;
+                        return;
+                    }
+                    payload.source_id = tokenResult.token;
+                } else if (this.booking.paymentMethod === 'terminal') {
+                    // Terminal: book first as pending, then create checkout and poll
+                    // payment_method stays 'terminal', backend will store as pending
+                    payload.amount_paid = 0;
+                } else if (this.booking.paymentMethod === 'cash') {
+                    payload.amount_paid = this.booking.manualAmount || this.booking.finalAmount;
+                } else if (this.booking.paymentMethod === 'free') {
+                    payload.amount_paid = 0;
+                }
+
+                // Clean empty values
                 Object.keys(payload).forEach(k => { if (payload[k] === '' || payload[k] === null || payload[k] === undefined) delete payload[k]; });
-                if (!payload.first_name) { this.saving = false; return; }
-                await authFetch(this._apiBase() + '/attendees', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+
+                const res = await authFetch(this._apiBase() + '/book', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    this.showToast(json.message || 'Booking failed', 'error');
+                    this.saving = false;
+                    return;
+                }
+
+                const attendeeId = json.data?.id;
+
+                // Terminal: create checkout and poll for payment completion
+                if (this.booking.paymentMethod === 'terminal' && this.booking.finalAmount > 0 && attendeeId) {
+                    try {
+                        this.showToast('Sending checkout to terminal device...', 'info');
+                        const termRes = await authFetch(baseApi + '/api/square-terminal/checkout', {
+                            method: 'POST', headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                                amount_cents: Math.round(this.booking.finalAmount * 100),
+                                facility_id: this.getFacilityId(),
+                                note: 'Booking: ' + (this.selectedEvent?.title || ''),
+                                reference_id: 'ATT-' + attendeeId,
+                            })
+                        });
+                        const termJson = await termRes.json();
+                        if (!termRes.ok || !termJson.data?.checkout_id) {
+                            // Checkout creation failed — auto-cancel the booking
+                            this.showToast('Terminal checkout failed — cancelling booking...', 'error');
+                            await this.autoDeleteAttendee(attendeeId);
+                            this.saving = false;
+                            return;
+                        }
+
+                        // Poll for checkout completion (max 90 seconds)
+                        const checkoutId = termJson.data.checkout_id;
+                        let terminalDone = false;
+                        let pollAttempts = 0;
+                        const maxPolls = 30;
+                        while (!terminalDone && pollAttempts < maxPolls) {
+                            await new Promise(r => setTimeout(r, 3000));
+                            pollAttempts++;
+                            try {
+                                const pollRes = await authFetch(baseApi + '/api/square-terminal/checkout/' + encodeURIComponent(checkoutId));
+                                const pollJson = await pollRes.json();
+                                const status = pollJson.data?.status;
+                                if (status === 'COMPLETED') {
+                                    terminalDone = true;
+                                    // Update attendee payment status via the update endpoint
+                                    await authFetch(this._apiBase() + '/attendees/' + attendeeId, {
+                                        method: 'PUT', headers: {'Content-Type':'application/json'},
+                                        body: JSON.stringify({ payment_status: 'paid', square_payment_id: pollJson.data.payment_id || checkoutId, amount_paid: this.booking.finalAmount })
+                                    });
+                                } else if (status === 'CANCELED' || status === 'CANCELLED' || status === 'CANCEL_REQUESTED') {
+                                    this.showToast('Terminal payment was cancelled — removing booking...', 'error');
+                                    await this.autoDeleteAttendee(attendeeId);
+                                    this.saving = false;
+                                    return;
+                                }
+                            } catch (pe) { /* continue polling */ }
+                        }
+                        if (!terminalDone) {
+                            this.showToast('Terminal payment timed out — removing booking...', 'error');
+                            await this.autoDeleteAttendee(attendeeId);
+                            this.saving = false;
+                            return;
+                        }
+                    } catch(e) {
+                        this.showToast('Terminal error — cancelling booking: ' + (e.message || e), 'error');
+                        await this.autoDeleteAttendee(attendeeId);
+                        this.saving = false;
+                        return;
+                    }
+                }
+
                 // Reset form
-                this.modalData.newAttendee  = { player_id: '', first_name: '', last_name: '', email: '', phone: '', amount_paid: '', quote_amount: '', payment_status: 'pending', status: 'registered', notes: '' };
+                this.resetBookingForm();
                 this.modalData.selectedPlayer = null;
-                this.modalData.playerQuery  = '';
+                this.modalData.playerQuery = '';
                 await this.loadAttendees();
-                this.modalData.attendeeTab  = 'list';
-                this.showToast('Attendee registered successfully');
+                this.modalData.attendeeTab = 'list';
+                this.showToast('Attendee booked successfully');
                 if (calendar) calendar.refetchEvents();
-            } catch(e) { this.showToast('Error adding attendee', 'error'); }
+            } catch(e) {
+                this.showToast('Error: ' + (e.message || 'Booking failed'), 'error');
+            }
             this.saving = false;
+        },
+
+        // ── CANCEL / REFUND / CREDIT DIALOGS ──
+
+        showCancelDialog(att) {
+            this.booking.actionAttendee = att;
+            this.booking.cancelMode = 'full_refund';
+            this.booking.cancelRefundAmount = parseFloat(att.amount_paid || 0);
+            this.booking.cancelCreditAmount = parseFloat(att.amount_paid || 0);
+            this.booking.cancelReason = '';
+            this.booking.showCancelDialog = true;
+        },
+
+        showRefundDialog(att) {
+            this.booking.actionAttendee = att;
+            this.booking.refundAmount = parseFloat(att.amount_paid || 0) - parseFloat(att.refunded_amount || 0);
+            this.booking.refundReason = '';
+            this.booking.showRefundDialog = true;
+        },
+
+        showIssueCreditDialog(att) {
+            this.booking.actionAttendee = att;
+            this.booking.issueCreditAmount = parseFloat(att.amount_paid || 0);
+            this.booking.issueCreditReason = '';
+            this.booking.issuedCreditCode = '';
+            this.booking.showCreditDialog = true;
+        },
+
+        async processCancellation() {
+            const att = this.booking.actionAttendee;
+            if (!att) return;
+            this.saving = true;
+            try {
+                const payload = { cancel_mode: this.booking.cancelMode, reason: this.booking.cancelReason, send_email: this.booking.sendEmail ? 1 : 0 };
+                if (this.booking.cancelMode === 'partial_refund') payload.refund_amount = this.booking.cancelRefundAmount;
+
+                const res = await authFetch(this._apiBase() + '/attendees/' + att.id + '/cancel', {
+                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (this.booking.cancelMode === 'issue_credit' && att.player_id) {
+                    // Also issue credit code
+                    await authFetch(this._apiBase() + '/attendees/' + att.id + '/issue-credit', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ amount: this.booking.cancelCreditAmount, reason: 'Cancellation credit' })
+                    });
+                }
+
+                this.booking.showCancelDialog = false;
+                await this.loadAttendees();
+                if (calendar) calendar.refetchEvents();
+                this.showToast(json.message || 'Booking cancelled');
+            } catch(e) { this.showToast('Error cancelling booking', 'error'); }
+            this.saving = false;
+        },
+
+        async processRefund() {
+            const att = this.booking.actionAttendee;
+            if (!att || !this.booking.refundAmount) return;
+            this.saving = true;
+            try {
+                const res = await authFetch(this._apiBase() + '/attendees/' + att.id + '/refund', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ amount: this.booking.refundAmount, reason: this.booking.refundReason, send_email: this.booking.sendEmail ? 1 : 0 })
+                });
+                const json = await res.json();
+                this.booking.showRefundDialog = false;
+                await this.loadAttendees();
+                if (calendar) calendar.refetchEvents();
+                this.showToast(json.message || 'Refund processed');
+            } catch(e) { this.showToast('Error processing refund', 'error'); }
+            this.saving = false;
+        },
+
+        async processIssueCredit() {
+            const att = this.booking.actionAttendee;
+            if (!att || !this.booking.issueCreditAmount) return;
+            this.saving = true;
+            try {
+                const res = await authFetch(this._apiBase() + '/attendees/' + att.id + '/issue-credit', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ amount: this.booking.issueCreditAmount, reason: this.booking.issueCreditReason, send_email: this.booking.sendEmail ? 1 : 0 })
+                });
+                const json = await res.json();
+                if (json.success && json.data?.credit_code?.code) {
+                    this.booking.issuedCreditCode = json.data.credit_code.code;
+                }
+                await this.loadAttendees();
+                if (calendar) calendar.refetchEvents();
+                this.showToast(json.message || 'Credit issued');
+            } catch(e) { this.showToast('Error issuing credit', 'error'); }
+            this.saving = false;
+        },
+
+        // Legacy method — still used by attendee row addAttendee call if needed
+        async addAttendee() {
+            return this.processBooking();
         },
 
         async updateAttendeeAmount(att) {
@@ -1428,11 +2319,88 @@ function masterSchedule() {
                 await authFetch(this._apiBase() + '/attendees/' + att.id, {
                     method: 'PUT',
                     headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ status: att.status, checked_in: att.checked_in ? 1 : 0 })
+                    body: JSON.stringify({ status: att.status, checked_in: att.checked_in ? 1 : 0, notes: att.notes || '' })
                 });
                 this.showToast('Attendee updated');
                 if (calendar) calendar.refetchEvents();
             } catch(e) { this.showToast('Error updating attendee', 'error'); }
+        },
+
+        async updateAttendeeDetails(att) {
+            try {
+                await authFetch(this._apiBase() + '/attendees/' + att.id, {
+                    method: 'PUT',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        first_name: att.first_name,
+                        last_name: att.last_name,
+                        email: att.email,
+                        phone: att.phone,
+                        notes: att.notes
+                    })
+                });
+                await this.loadAttendees();
+                this.showToast('Attendee details updated');
+            } catch(e) { this.showToast('Error updating details', 'error'); }
+        },
+
+        async loadOrgLabels() {
+            try {
+                const res = await authFetch(baseApi + '/api/labels');
+                const json = await res.json();
+                this.orgLabels = json.data || [];
+            } catch(e) { this.orgLabels = []; }
+        },
+
+        openLabelPicker(att) {
+            this.labelPicker = {
+                open: true,
+                attendee: att,
+                selectedIds: (att.labels || []).map(l => l.id || l.label_id)
+            };
+        },
+
+        toggleLabel(labelId) {
+            const idx = this.labelPicker.selectedIds.indexOf(labelId);
+            if (idx === -1) {
+                this.labelPicker.selectedIds.push(labelId);
+            } else {
+                this.labelPicker.selectedIds.splice(idx, 1);
+            }
+        },
+
+        async saveLabelSelection() {
+            const att = this.labelPicker.attendee;
+            if (!att) return;
+            try {
+                await authFetch(this._apiBase() + '/attendees/' + att.id, {
+                    method: 'PUT',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ label_ids: this.labelPicker.selectedIds })
+                });
+                await this.loadAttendees();
+                this.labelPicker.open = false;
+                this.showToast('Labels updated');
+            } catch(e) { this.showToast('Error updating labels', 'error'); }
+        },
+
+        async convertReservation(att, paymentMethod) {
+            if (!confirm('Receive payment and register this attendee?')) return;
+            try {
+                await authFetch(this._apiBase() + '/attendees/' + att.id, {
+                    method: 'PUT',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        status: 'registered',
+                        payment_status: 'paid',
+                        payment_method: paymentMethod || 'cash',
+                        amount_paid: att.quote_amount || 0
+                    })
+                });
+                await this.loadAttendees();
+                if (calendar) calendar.refetchEvents();
+                this.showToast('Attendee registered & payment received');
+            } catch(e) { this.showToast('Error converting reservation', 'error'); }
         },
 
         async removeAttendee(attId) {

@@ -113,7 +113,7 @@ final class ClassAttendeeController extends Controller
         $data = $request->all();
         $update = ['updated_at' => date('Y-m-d H:i:s')];
 
-        $allowedFields = ['first_name', 'last_name', 'email', 'phone', 'status', 'amount_paid', 'quote_amount', 'notes', 'partner_id', 'checked_in'];
+        $allowedFields = ['first_name', 'last_name', 'email', 'phone', 'status', 'amount_paid', 'quote_amount', 'notes', 'partner_id', 'checked_in', 'payment_status', 'payment_method'];
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
                 $update[$field] = $data[$field];

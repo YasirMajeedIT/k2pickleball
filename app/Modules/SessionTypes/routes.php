@@ -44,6 +44,15 @@ return function (Router $router): void {
         $router->put('/{id}/classes/{classId}/attendees/{attendeeId}', ['App\\Modules\\SessionTypes\\ClassAttendeeController', 'update']);
         $router->delete('/{id}/classes/{classId}/attendees/{attendeeId}', ['App\\Modules\\SessionTypes\\ClassAttendeeController', 'destroy']);
 
+        // Booking & payment management
+        $router->post('/{id}/classes/{classId}/book', ['App\\Modules\\SessionTypes\\BookingController', 'book']);
+        $router->post('/{id}/classes/{classId}/calculate-price', ['App\\Modules\\SessionTypes\\BookingController', 'calculatePrice']);
+        $router->post('/{id}/classes/{classId}/validate-credit-code', ['App\\Modules\\SessionTypes\\BookingController', 'validateCreditCode']);
+        $router->post('/{id}/classes/{classId}/validate-gift-code', ['App\\Modules\\SessionTypes\\BookingController', 'validateGiftCode']);
+        $router->post('/{id}/classes/{classId}/attendees/{attendeeId}/cancel', ['App\\Modules\\SessionTypes\\BookingController', 'cancel']);
+        $router->post('/{id}/classes/{classId}/attendees/{attendeeId}/refund', ['App\\Modules\\SessionTypes\\BookingController', 'refund']);
+        $router->post('/{id}/classes/{classId}/attendees/{attendeeId}/issue-credit', ['App\\Modules\\SessionTypes\\BookingController', 'issueCredit']);
+
         // Hot deals
         $router->get('/{id}/classes/{classId}/hot-deal', ['App\\Modules\\SessionTypes\\HotDealController', 'show']);
         $router->put('/{id}/classes/{classId}/hot-deal', ['App\\Modules\\SessionTypes\\HotDealController', 'upsert']);
@@ -58,5 +67,10 @@ return function (Router $router): void {
         $router->get('/{id}/classes/{classId}/feedback', ['App\\Modules\\SessionTypes\\FeedbackController', 'show']);
         $router->put('/{id}/classes/{classId}/feedback', ['App\\Modules\\SessionTypes\\FeedbackController', 'upsert']);
         $router->post('/{id}/classes/{classId}/feedback/send', ['App\\Modules\\SessionTypes\\FeedbackController', 'send']);
+
+        // Rolling booking groups
+        $router->get('/booking-groups', ['App\\Modules\\SessionTypes\\BookingController', 'listBookingGroups']);
+        $router->get('/{id}/booking-groups/{groupId}', ['App\\Modules\\SessionTypes\\BookingController', 'bookingGroupDetails']);
+        $router->post('/{id}/booking-groups/{groupId}/cancel', ['App\\Modules\\SessionTypes\\BookingController', 'cancelBookingGroup']);
     });
 };

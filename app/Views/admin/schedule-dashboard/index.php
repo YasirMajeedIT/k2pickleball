@@ -70,6 +70,7 @@ ob_start();
         <div x-show="activeTab === 'master-schedule'" x-cloak>
             <?php include __DIR__ . '/master-schedule.php'; ?>
         </div>
+
     </div>
 
     <!-- No facility selected -->

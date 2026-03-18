@@ -46,6 +46,7 @@ return function (Router $router): void {
         'Labels',
         'Admin',
         'Platform',
+        'Extensions',
         'Client',
     ];
 
