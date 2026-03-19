@@ -24,7 +24,7 @@ final class LabelController extends Controller
 
     public function index(Request $request): Response
     {
-        $orgId = (int) $request->input('organization_id', 0);
+        $orgId = $request->organizationId() ?? (int) $request->input('organization_id', 0);
         if (!$orgId) {
             return $this->success([]);
         }
@@ -40,13 +40,17 @@ final class LabelController extends Controller
     public function store(Request $request): Response
     {
         $data = Validator::validate($request->all(), [
-            'organization_id' => 'required|integer',
-            'name'            => 'required|string|max:100',
-            'color'           => 'nullable|string|max:20',
+            'name'  => 'required|string|max:100',
+            'color' => 'nullable|string|max:20',
         ]);
 
+        $orgId = $request->organizationId() ?? (int) ($data['organization_id'] ?? 0);
+        if (!$orgId) {
+            return $this->error('Organization context required', 422);
+        }
+
         $id = $this->db->insert('labels', [
-            'organization_id' => (int) $data['organization_id'],
+            'organization_id' => $orgId,
             'name'            => Sanitizer::string($data['name']),
             'color'           => $data['color'] ?? '#6366f1',
             'created_at'      => date('Y-m-d H:i:s'),

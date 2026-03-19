@@ -1,19 +1,10 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
-
-$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
-$dotenv->load();
-
-$host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-$dbName = $_ENV['DB_DATABASE'] ?? 'k2pickleball';
-$user = $_ENV['DB_USERNAME'] ?? 'root';
-$pass = $_ENV['DB_PASSWORD'] ?? '';
-$port = $_ENV['DB_PORT'] ?? '3306';
+$config = require __DIR__ . '/../config/database.php';
 
 $pdo = new PDO(
-    "mysql:host={$host};port={$port};dbname={$dbName}",
-    $user,
-    $pass,
+    "mysql:host={$config['host']};port={$config['port']};dbname={$config['name']};charset={$config['charset']}",
+    $config['user'], $config['pass'],
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
 

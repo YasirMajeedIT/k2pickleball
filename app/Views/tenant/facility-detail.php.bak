@@ -1,0 +1,148 @@
+<?php
+/**
+ * Tenant Facility Detail Page
+ * Shows facility info, courts, and links to schedule filtered by this facility.
+ * Route: /facilities/{slug}
+ */
+?>
+
+<div x-data="facilityDetailPage()" x-init="load()">
+    <!-- Loading -->
+    <div x-show="loading" class="py-32 text-center">
+        <div class="inline-flex items-center gap-3 text-surface-400">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Loading facility...
+        </div>
+    </div>
+
+    <!-- Not found -->
+    <div x-show="!loading && !facility" class="py-32 text-center">
+        <div class="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <p class="text-lg font-semibold text-surface-600">Facility not found</p>
+        <a href="/facilities" class="inline-flex items-center gap-2 mt-4 text-primary-600 hover:text-primary-700 font-semibold text-sm">← All Locations</a>
+    </div>
+
+    <template x-if="!loading && facility">
+        <div>
+            <!-- Hero -->
+            <section class="bg-gradient-to-br from-surface-900 to-surface-800 text-white py-16">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <nav class="flex items-center gap-2 text-sm text-surface-400 mb-4">
+                        <a href="/facilities" class="hover:text-white transition-colors">Locations</a>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <span class="text-white" x-text="facility.name"></span>
+                    </nav>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold" x-text="facility.name"></h1>
+                    <p class="mt-2 text-lg text-surface-300" x-text="fullAddress()"></p>
+                </div>
+            </section>
+
+            <!-- Facility Info + Courts -->
+            <section class="py-12 bg-surface-50">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="lg:grid lg:grid-cols-3 lg:gap-10">
+                        <!-- Main: Courts -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-2xl border border-surface-100 p-6 sm:p-8">
+                                <h2 class="text-xl font-bold text-surface-800 mb-6">Courts</h2>
+                                <div x-show="facility.courts && facility.courts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <template x-for="court in facility.courts" :key="court.id || court.name">
+                                        <div class="p-4 rounded-xl bg-surface-50 border border-surface-100">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                                                </div>
+                                                <div>
+                                                    <h3 class="text-sm font-bold text-surface-800" x-text="court.name"></h3>
+                                                    <div class="flex items-center gap-2 mt-0.5">
+                                                        <span class="text-xs text-surface-500" x-text="court.sport_type || 'Multi-sport'"></span>
+                                                        <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+                                                        <span class="text-xs" :class="court.is_indoor ? 'text-blue-500' : 'text-green-500'" x-text="court.is_indoor ? 'Indoor' : 'Outdoor'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div x-show="!facility.courts || facility.courts.length === 0" class="text-center py-8 text-surface-400 text-sm">
+                                    No courts listed for this facility.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar: Info Card -->
+                        <div class="mt-8 lg:mt-0">
+                            <div class="bg-white rounded-2xl border border-surface-100 p-6 space-y-5 sticky top-24">
+                                <!-- Address -->
+                                <div>
+                                    <h3 class="text-xs font-bold text-surface-400 uppercase tracking-wider mb-2">Address</h3>
+                                    <p class="text-sm text-surface-700" x-text="fullAddress() || 'Not specified'"></p>
+                                </div>
+                                <!-- Phone -->
+                                <div x-show="facility.phone">
+                                    <h3 class="text-xs font-bold text-surface-400 uppercase tracking-wider mb-2">Phone</h3>
+                                    <a :href="'tel:' + facility.phone" class="text-sm text-primary-600 hover:text-primary-700 font-medium" x-text="facility.phone"></a>
+                                </div>
+                                <!-- Email -->
+                                <div x-show="facility.email">
+                                    <h3 class="text-xs font-bold text-surface-400 uppercase tracking-wider mb-2">Email</h3>
+                                    <a :href="'mailto:' + facility.email" class="text-sm text-primary-600 hover:text-primary-700 font-medium" x-text="facility.email"></a>
+                                </div>
+                                <!-- Courts count -->
+                                <div>
+                                    <h3 class="text-xs font-bold text-surface-400 uppercase tracking-wider mb-2">Courts</h3>
+                                    <p class="text-sm text-surface-700" x-text="(facility.courts?.length || 0) + ' court' + ((facility.courts?.length || 0) !== 1 ? 's' : '')"></p>
+                                </div>
+                                <!-- CTA -->
+                                <a href="/schedule" @click="selectThisFacility()" class="block text-center w-full py-3 text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl shadow-lg shadow-primary-500/25 transition-all">
+                                    View Schedule Here →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </template>
+</div>
+
+<script>
+function facilityDetailPage() {
+    return {
+        facility: null,
+        loading: true,
+
+        async load() {
+            this.loading = true;
+            const slug = window.location.pathname.split('/').filter(Boolean).pop();
+            if (!slug) { this.loading = false; return; }
+            try {
+                const res = await fetch(baseApi + '/api/public/facilities/' + encodeURIComponent(slug));
+                const json = await res.json();
+                this.facility = json.data || null;
+            } catch(e) {
+                this.facility = null;
+            }
+            this.loading = false;
+        },
+
+        fullAddress() {
+            if (!this.facility) return '';
+            const parts = [];
+            if (this.facility.address_line1) parts.push(this.facility.address_line1);
+            const cityState = [this.facility.city, this.facility.state].filter(Boolean).join(', ');
+            if (cityState) parts.push(cityState);
+            if (this.facility.zip_code) parts.push(this.facility.zip_code);
+            return parts.join(', ');
+        },
+
+        selectThisFacility() {
+            if (this.facility && window.tenantApp?.selectFacility) {
+                window.tenantApp.selectFacility(this.facility);
+            }
+        }
+    };
+}
+</script>

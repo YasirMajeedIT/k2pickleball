@@ -49,6 +49,9 @@ final class CategoryController extends Controller
             'color'      => 'nullable|string|max:7',
             'sort_order' => 'nullable|integer',
             'is_taxable' => 'nullable|boolean',
+            'is_active'  => 'nullable|boolean',
+            'description' => 'nullable|string|max:2000',
+            'image_url'  => 'nullable|string|max:500',
         ]);
 
         $data['name'] = Sanitizer::string($data['name']);
@@ -62,6 +65,9 @@ final class CategoryController extends Controller
             $data['sort_order'] = $this->repo->getMaxSortOrder($orgId) + 1;
         }
         $data['is_taxable'] = !empty($data['is_taxable']) ? 1 : 0;
+        $data['is_active'] = isset($data['is_active']) ? (!empty($data['is_active']) ? 1 : 0) : 1;
+        $data['description'] = $data['description'] ?? null;
+        $data['image_url'] = $data['image_url'] ?? null;
         $data['uuid'] = $this->generateUuid();
         $data['organization_id'] = $orgId;
         $data['created_at'] = date('Y-m-d H:i:s');
@@ -85,6 +91,9 @@ final class CategoryController extends Controller
             'color'      => 'nullable|string|max:7',
             'sort_order' => 'nullable|integer',
             'is_taxable' => 'nullable|boolean',
+            'is_active'  => 'nullable|boolean',
+            'description' => 'nullable|string|max:2000',
+            'image_url'  => 'nullable|string|max:500',
         ]);
 
         $data['name'] = Sanitizer::string($data['name']);
@@ -95,7 +104,13 @@ final class CategoryController extends Controller
         }
 
         $data['is_taxable'] = !empty($data['is_taxable']) ? 1 : 0;
+        $data['is_active'] = isset($data['is_active']) ? (!empty($data['is_active']) ? 1 : 0) : 1;
+        $data['description'] = $data['description'] ?? null;
+        $data['image_url'] = $data['image_url'] ?? null;
         $data['updated_at'] = date('Y-m-d H:i:s');
+
+        // Prevent overwriting system fields
+        unset($data['is_system'], $data['system_slug']);
 
         $this->repo->update($id, $data);
         $category = $this->repo->findById($id);
@@ -108,6 +123,11 @@ final class CategoryController extends Controller
         $category = $this->repo->findById($id);
         if (!$category) {
             throw new NotFoundException('Category not found');
+        }
+
+        // System categories cannot be deleted
+        if (!empty($category['is_system'])) {
+            return $this->error('System categories cannot be deleted. You can deactivate them instead.', 403);
         }
 
         $this->repo->delete($id);

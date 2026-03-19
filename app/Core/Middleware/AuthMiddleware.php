@@ -47,9 +47,18 @@ final class AuthMiddleware implements MiddlewareInterface
         '/forgot-password',
         '/reset-password',
         '/verify-email',
+        '/privacy-policy',
+        '/terms',
         '/api/auth/verify-email',
         '/api/auth/resend-verification',
         '/api/auth/google',
+        // Tenant public pages & API
+        '/api/public/',
+        '/sessions',
+        '/schedule',
+        '/facilities',
+        '/book-court',
+        '/dashboard',
     ];
 
     public function __construct(JwtService $jwt, Connection $db)

@@ -359,7 +359,7 @@ $squareJsUrl = $paymentsConfig[$squareEnv]['web_payments_url'] ?? 'https://sandb
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0">
             <!-- Slide-in panel from right -->
-            <div class="absolute right-0 top-0 bottom-0 w-full max-w-2xl bg-white dark:bg-surface-900 flex flex-col shadow-2xl"
+            <div class="absolute right-0 top-0 bottom-0 w-full md:w-1/2 bg-white dark:bg-surface-900 flex flex-col shadow-2xl"
                  @click.stop
                  x-transition:enter="transition transform ease-out duration-300"
                  x-transition:enter-start="translate-x-full"
@@ -433,8 +433,8 @@ $squareJsUrl = $paymentsConfig[$squareEnv]['web_payments_url'] ?? 'https://sandb
 
                         <!-- Attendee rows -->
                         <template x-for="att in filteredAttendees" :key="att.id">
-                            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 overflow-hidden" x-data="{ showActions: false, editing: false, editData: {} }">
-                                <div class="flex items-center gap-3 px-3 py-2.5">
+                            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800" x-data="{ showActions: false, editing: false, editData: {} }">
+                                <div class="flex items-start gap-3 px-3 py-2.5">
                                     <!-- Avatar -->
                                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                                          :style="'background:' + (att.status === 'cancelled' ? '#ef4444' : att.status === 'reserved' ? '#f59e0b' : att.checked_in ? '#10b981' : '#6366f1')">
@@ -471,24 +471,30 @@ $squareJsUrl = $paymentsConfig[$squareEnv]['web_payments_url'] ?? 'https://sandb
                                         <div class="flex items-center gap-2 mt-0.5 text-[10px] text-surface-400 flex-wrap">
                                             <span x-show="att.email" x-text="att.email"></span>
                                             <span x-show="att.phone" x-text="att.phone"></span>
-                                            <span x-show="att.amount_paid > 0" class="text-green-600 dark:text-green-400 font-medium" x-text="'Paid $' + parseFloat(att.amount_paid || 0).toFixed(2)"></span>
-                                            <span class="text-surface-400 font-medium" x-text="(att.payment_method === 'cash' ? '💵 Cash' : att.payment_method === 'card' ? '💳 Card' : att.payment_method === 'terminal' ? '📟 Terminal' : att.payment_method === 'free' ? '🆓 Free' : '')"></span>
+                                            <span x-show="att.payment_method !== 'free' && att.amount_paid > 0" class="text-green-600 dark:text-green-400 font-medium" x-text="'Paid $' + parseFloat(att.amount_paid || 0).toFixed(2)"></span>
+                                            <span x-show="att.payment_method === 'free'" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] border border-emerald-200">🆓 FREE — No Charge</span>
+                                            <span x-show="att.payment_method !== 'free'" class="text-surface-400 font-medium" x-text="(att.payment_method === 'cash' ? '💵 Cash' : att.payment_method === 'card' ? '💳 Card' : att.payment_method === 'terminal' ? '📟 Terminal' : '')"></span>
+                                            <span x-show="att.payment_method !== 'free' && att.tax_amount > 0" class="text-orange-500 font-medium" x-text="'Tax +$' + parseFloat(att.tax_amount || 0).toFixed(2)"></span>
                                             <span x-show="att.discount_code" class="text-purple-500 font-medium" x-text="'🏷 ' + att.discount_code + ' -$' + parseFloat(att.discount_amount || 0).toFixed(2)"></span>
                                             <span x-show="att.credit_amount > 0" class="text-blue-500 font-medium" x-text="'Credit -$' + parseFloat(att.credit_amount || 0).toFixed(2)"></span>
                                             <span x-show="att.gift_amount > 0" class="text-pink-500 font-medium" x-text="'Gift -$' + parseFloat(att.gift_amount || 0).toFixed(2)"></span>
-                                            <span x-show="att.tax_amount > 0" class="text-orange-500 font-medium" x-text="'Tax +$' + parseFloat(att.tax_amount || 0).toFixed(2)"></span>
+
                                             <span x-show="att.booking_group_id" class="text-indigo-500 font-medium">🔄 Rolling</span>
                                         </div>
-                                        <!-- Labels row -->
-                                        <div x-show="att.labels && att.labels.length > 0" class="flex items-center gap-1 mt-1 flex-wrap">
+                                        <!-- Labels row with inline Add button -->
+                                        <div class="flex items-center gap-1 mt-1 flex-wrap">
                                             <template x-for="lbl in (att.labels || [])" :key="lbl.id">
                                                 <span class="text-[9px] px-1.5 py-0.5 rounded-full font-medium text-white" :style="'background:' + (lbl.color || '#6366f1')" x-text="lbl.name"></span>
                                             </template>
+                                            <button @click.stop="openLabelPicker(att)" class="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full border border-dashed border-surface-300 dark:border-surface-600 text-surface-400 hover:border-primary-400 hover:text-primary-500 transition-colors" title="Manage Labels">
+                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                                Label
+                                            </button>
                                         </div>
                                         <div x-show="att.notes" class="mt-0.5 text-[10px] text-surface-400 italic truncate" x-text="'📝 ' + att.notes"></div>
                                     </div>
-                                    <!-- Actions -->
-                                    <div class="flex items-center gap-1 flex-shrink-0">
+                                    <!-- Actions: pushed to far right -->
+                                    <div class="flex items-center gap-1 ml-auto flex-shrink-0">
                                         <!-- Check-in toggle -->
                                         <button @click="att.checked_in = att.checked_in ? 0 : 1; updateAttendee(att)"
                                                 class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
@@ -497,14 +503,13 @@ $squareJsUrl = $paymentsConfig[$squareEnv]['web_payments_url'] ?? 'https://sandb
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                         </button>
                                         <!-- Action menu -->
-                                        <div class="relative" x-data="{ open: false }">
-                                            <button @click.stop="open = !open" class="w-7 h-7 rounded-lg flex items-center justify-center bg-surface-100 dark:bg-surface-700 text-surface-400 hover:text-surface-600 transition-colors">
+                                        <div class="relative" x-data="{ open: false, dx: 0, dt: 0, db: 0, dup: false }">
+                                            <button @click.stop="const r=$el.getBoundingClientRect(); dx=r.right-210; dt=r.bottom+6; db=window.innerHeight-r.top+6; dup=(window.innerHeight-r.bottom)<260; open=!open" class="w-7 h-7 rounded-lg flex items-center justify-center bg-surface-100 dark:bg-surface-700 text-surface-400 hover:text-surface-600 transition-colors">
                                                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                                             </button>
                                             <div x-show="open" @click.outside="open = false" x-cloak x-transition
-                                                 class="absolute right-0 mt-1 w-52 bg-white dark:bg-surface-800 rounded-xl shadow-xl border border-surface-200 dark:border-surface-700 py-1 text-xs"
-                                                 :class="att._dropUp ? 'bottom-full mb-1' : 'top-full'"
-                                                 x-init="$watch('open', v => { if(v) { const rect = $el.parentElement.getBoundingClientRect(); att._dropUp = (window.innerHeight - rect.bottom) < 220; } })">
+                                                 class="w-52 bg-white dark:bg-surface-800 rounded-xl shadow-2xl border border-surface-200 dark:border-surface-700 py-1 text-xs"
+                                                 :style="'position:fixed;z-index:9999;left:'+dx+'px;'+(dup?'bottom:'+db+'px':'top:'+dt+'px')">
                                                 <!-- Edit -->
                                                 <button @click="editing = true; editData = { first_name: att.first_name, last_name: att.last_name || '', email: att.email || '', phone: att.phone || '', notes: att.notes || '' }; open = false"
                                                         class="w-full text-left px-3 py-2 hover:bg-surface-50 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-200">
@@ -589,28 +594,52 @@ $squareJsUrl = $paymentsConfig[$squareEnv]['web_payments_url'] ?? 'https://sandb
                     </div>
 
                     <!-- ── LABEL PICKER OVERLAY ── -->
-                    <div x-show="labelPicker.open" x-cloak class="absolute inset-0 z-50 bg-white/95 dark:bg-surface-900/95 flex flex-col">
-                        <div class="flex items-center justify-between p-4 border-b border-surface-200 dark:border-surface-700">
-                            <h3 class="text-sm font-bold text-surface-800 dark:text-surface-100">🏷️ Manage Labels</h3>
-                            <button @click="labelPicker.open = false" class="text-surface-400 hover:text-surface-600">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <div x-show="labelPicker.open" x-cloak class="absolute inset-0 z-50 bg-white dark:bg-surface-900 flex flex-col">
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-surface-200 dark:border-surface-700 flex-shrink-0">
+                            <div>
+                                <h3 class="text-sm font-bold text-surface-800 dark:text-surface-100">🏷️ Manage Labels</h3>
+                                <p class="text-[10px] text-surface-400 mt-0.5" x-text="labelPicker.attendee ? 'For: ' + labelPicker.attendee.first_name + ' ' + (labelPicker.attendee.last_name || '') : ''"></p>
+                            </div>
+                            <button @click="labelPicker.open = false" class="text-surface-400 hover:text-surface-600 p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
-                        <div class="p-4 flex-1 overflow-y-auto space-y-2">
-                            <p x-show="!orgLabels.length" class="text-xs text-surface-400 text-center py-4">No labels created yet. Create labels in the Labels module first.</p>
+
+                        <!-- Inline create label -->
+                        <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50" x-data="{ newName: '', newColor: '#6366f1', creating: false }">
+                            <p class="text-[10px] font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2">Create New Label</p>
+                            <div class="flex gap-2 items-center">
+                                <input type="color" x-model="newColor" class="w-8 h-8 rounded-lg border border-surface-200 dark:border-surface-700 cursor-pointer p-0.5 flex-shrink-0" title="Pick color">
+                                <input type="text" x-model="newName" @keydown.enter="if(newName.trim()) { createLabel(newName.trim(), newColor); newName = ''; }" placeholder="Label name..." class="flex-1 text-xs rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-primary-500/20 dark:text-white">
+                                <button @click="if(newName.trim()) { createLabel(newName.trim(), newColor); newName = ''; }" :disabled="!newName.trim()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary-500 hover:bg-primary-600 text-white disabled:opacity-40 transition-colors flex-shrink-0">Add</button>
+                            </div>
+                        </div>
+
+                        <!-- Label list -->
+                        <div class="flex-1 overflow-y-auto">
+                            <div x-show="!orgLabels.length" class="flex flex-col items-center justify-center py-10 px-4 text-center">
+                                <div class="w-12 h-12 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center mb-3">
+                                    <svg class="w-6 h-6 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                </div>
+                                <p class="text-sm font-medium text-surface-600 dark:text-surface-300">No labels yet</p>
+                                <p class="text-xs text-surface-400 mt-1">Create your first label above — type a name, pick a color and click Add.</p>
+                            </div>
                             <template x-for="lbl in orgLabels" :key="lbl.id">
-                                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer">
-                                    <input type="checkbox" :checked="labelPicker.selectedIds.includes(lbl.id)" @change="toggleLabel(lbl.id)" class="rounded border-surface-300 text-primary-500 focus:ring-primary-500/20">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <span class="w-3 h-3 rounded-full flex-shrink-0" :style="'background:' + (lbl.color || '#6366f1')"></span>
-                                        <span class="text-sm text-surface-700 dark:text-surface-200" x-text="lbl.name"></span>
-                                    </span>
-                                </label>
+                                <div class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-50 dark:hover:bg-surface-800 border-b border-surface-50 dark:border-surface-800/50 group">
+                                    <input type="checkbox" :checked="labelPicker.selectedIds.includes(lbl.id)" @change="toggleLabel(lbl.id)" class="w-4 h-4 rounded border-surface-300 text-primary-500 focus:ring-primary-500/20 flex-shrink-0 cursor-pointer">
+                                    <span class="w-4 h-4 rounded-full flex-shrink-0 shadow-sm" :style="'background:' + (lbl.color || '#6366f1')"></span>
+                                    <span class="flex-1 text-sm text-surface-700 dark:text-surface-200 font-medium cursor-pointer" @click="toggleLabel(lbl.id)" x-text="lbl.name"></span>
+                                    <span x-show="labelPicker.selectedIds.includes(lbl.id)" class="text-[10px] font-semibold text-primary-500">✓</span>
+                                    <button @click.stop="deleteLabel(lbl.id, lbl.name)" class="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-md text-surface-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex-shrink-0" title="Delete label">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
                             </template>
                         </div>
-                        <div class="p-4 border-t border-surface-200 dark:border-surface-700 flex gap-2">
-                            <button @click="saveLabelSelection()" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors">Save Labels</button>
-                            <button @click="labelPicker.open = false" class="flex-1 py-2 text-xs font-semibold rounded-xl border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors">Cancel</button>
+
+                        <div class="p-4 border-t border-surface-200 dark:border-surface-700 flex gap-2 flex-shrink-0">
+                            <button @click="saveLabelSelection()" class="flex-1 py-2.5 text-sm font-semibold rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors">Save Labels</button>
+                            <button @click="labelPicker.open = false" class="py-2.5 px-4 text-sm font-semibold rounded-xl border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors">Cancel</button>
                         </div>
                     </div>
 
@@ -811,8 +840,8 @@ $squareJsUrl = $paymentsConfig[$squareEnv]['web_payments_url'] ?? 'https://sandb
                                             :class="booking.paymentMethod === 'terminal' ? 'bg-purple-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300'">
                                         📟 Terminal
                                     </button>
-                                    <button @click="booking.paymentMethod = 'free'" class="flex-1 py-2 text-xs font-semibold transition-colors"
-                                            :class="booking.paymentMethod === 'free' ? 'bg-surface-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300'">
+                                                    <button @click="booking.paymentMethod = 'free'; booking.taxAmount = 0; booking.finalAmount = 0; booking.manualAmount = 0" class="flex-1 py-2 text-xs font-semibold transition-colors"
+                                            :class="booking.paymentMethod === 'free' ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300'">
                                         🆓 Free
                                     </button>
                                 </div>
@@ -1822,10 +1851,18 @@ function masterSchedule() {
             const afterCredit = Math.max(0, afterDiscount - this.booking.creditAmount);
             const subtotal = Math.max(0, afterCredit - this.booking.giftAmount);
 
+            // Free bookings: no charge, no tax
+            if (this.booking.paymentMethod === 'free' || subtotal <= 0) {
+                this.booking.taxAmount = 0;
+                this.booking.finalAmount = 0;
+                this.booking.manualAmount = 0;
+                return;
+            }
+
             // Tax calculation: apply tax if category is taxable and facility has a tax rate
             const isTaxable = this.selectedEvent?.extendedProps?.isTaxable;
             const taxRate = parseFloat(this.selectedEvent?.extendedProps?.taxRate || 0);
-            if (isTaxable && taxRate > 0 && subtotal > 0) {
+            if (isTaxable && taxRate > 0) {
                 this.booking.taxAmount = Math.round(subtotal * taxRate) / 100;
             } else {
                 this.booking.taxAmount = 0;
@@ -2350,6 +2387,42 @@ function masterSchedule() {
                 const json = await res.json();
                 this.orgLabels = json.data || [];
             } catch(e) { this.orgLabels = []; }
+        },
+
+        async createLabel(name, color) {
+            try {
+                const res = await authFetch(baseApi + '/api/labels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, color })
+                });
+                const json = await res.json();
+                if (json.data) {
+                    this.orgLabels.push(json.data);
+                    this.labelPicker.selectedIds.push(json.data.id);
+                    this.showToast('Label "' + name + '" created');
+                } else {
+                    this.showToast(json.message || 'Failed to create label', 'error');
+                }
+            } catch(e) { this.showToast('Error creating label', 'error'); }
+        },
+
+        async deleteLabel(id, name) {
+            if (!confirm('Delete label "' + name + '"? It will be removed from all attendees.')) return;
+            try {
+                const res = await authFetch(baseApi + '/api/labels/' + id, { method: 'DELETE' });
+                if (res.ok) {
+                    this.orgLabels = this.orgLabels.filter(l => l.id !== id);
+                    this.labelPicker.selectedIds = this.labelPicker.selectedIds.filter(i => i !== id);
+                    // Remove from any already-loaded attendee cards
+                    (this.attendees || []).forEach(a => {
+                        if (a.labels) a.labels = a.labels.filter(l => l.id !== id);
+                    });
+                    this.showToast('Label "' + name + '" deleted');
+                } else {
+                    this.showToast('Failed to delete label', 'error');
+                }
+            } catch(e) { this.showToast('Error deleting label', 'error'); }
         },
 
         openLabelPicker(att) {

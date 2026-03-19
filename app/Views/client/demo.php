@@ -1,154 +1,139 @@
-<?php $pageTitle = 'Request a Demo — K2 Pickleball'; ?>
+<?php $pageTitle = 'Schedule Consultation — K2 Pickleball Platform'; ?>
 
 <!-- Hero -->
-<section class="relative pt-32 pb-20 hero-glow">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="max-w-3xl mx-auto text-center">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-sm font-medium text-brand-400 mb-6">Schedule a Demo</div>
-            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
-                See K2 Pickleball <span class="gradient-text">in action</span>
-            </h1>
-            <p class="mt-6 text-lg text-surface-400">Get a personalized walkthrough of our platform. Our team will show you exactly how K2 can work for your facility.</p>
-        </div>
+<section class="relative pt-32 pb-20 hero-glow overflow-hidden">
+    <div class="absolute inset-0 grid-bg opacity-30"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 text-xs font-semibold text-gold-400 uppercase tracking-widest mb-6 animate-fade-in-up">Free Consultation</div>
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight animate-fade-in-up" style="animation-delay:0.1s">
+            Schedule Your <span class="gradient-gold">Consultation</span>
+        </h1>
+        <p class="mt-6 text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed animate-fade-in-up" style="animation-delay:0.2s">
+            Speak with our partnership team about your facility vision. No pressure, no commitment — just an honest conversation about what K2 can do for you.
+        </p>
     </div>
 </section>
 
-<!-- Demo Form + Benefits -->
-<section class="pb-24">
+<!-- Form + Sidebar -->
+<section class="py-24 lg:py-32 relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid lg:grid-cols-5 gap-12">
+        <div class="grid lg:grid-cols-5 gap-12 lg:gap-16" data-animate>
             <!-- Form -->
-            <div class="lg:col-span-3" x-data="demoForm()">
-                <div class="p-8 rounded-2xl border border-surface-800/60 bg-surface-900/30">
-                    <h2 class="text-xl font-bold text-white mb-6">Request your free demo</h2>
-                    <form @submit.prevent="submit" class="space-y-5">
+            <div class="lg:col-span-3">
+                <div class="glass-card rounded-2xl p-8 sm:p-10">
+                    <h2 class="font-display text-2xl font-extrabold text-white mb-2">Tell Us About Your Plans</h2>
+                    <p class="text-sm text-slate-400 mb-8">Complete the form below and our team will reach out within one business day to schedule your consultation.</p>
+
+                    <form x-data="{ sending: false, sent: false, facilityStage: '' }" @submit.prevent="sending = true; setTimeout(() => { sending = false; sent = true; }, 1500)" class="space-y-5">
                         <div class="grid sm:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-medium text-surface-300 mb-2">First Name *</label>
-                                <input type="text" x-model="form.firstName" required class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="John">
+                                <label class="block text-sm font-medium text-slate-300 mb-1.5">First Name *</label>
+                                <input type="text" required class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm" placeholder="John">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-surface-300 mb-2">Last Name *</label>
-                                <input type="text" x-model="form.lastName" required class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="Doe">
+                                <label class="block text-sm font-medium text-slate-300 mb-1.5">Last Name *</label>
+                                <input type="text" required class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm" placeholder="Smith">
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-surface-300 mb-2">Work Email *</label>
-                            <input type="email" x-model="form.email" required class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="john@yourclub.com">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-surface-300 mb-2">Phone Number</label>
-                            <input type="tel" x-model="form.phone" class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="(555) 123-4567">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-surface-300 mb-2">Facility Name *</label>
-                            <input type="text" x-model="form.facility" required class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="Ace Pickleball Club">
-                        </div>
+
                         <div class="grid sm:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-medium text-surface-300 mb-2">Number of Courts</label>
-                                <select x-model="form.courts" class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors">
-                                    <option value="">Select range</option>
-                                    <option>1–4 courts</option>
-                                    <option>5–10 courts</option>
-                                    <option>11–20 courts</option>
-                                    <option>20+ courts</option>
-                                </select>
+                                <label class="block text-sm font-medium text-slate-300 mb-1.5">Email *</label>
+                                <input type="email" required class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm" placeholder="john@example.com">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-surface-300 mb-2">Current Software</label>
-                                <select x-model="form.currentSoftware" class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors">
-                                    <option value="">Select option</option>
-                                    <option>None / Spreadsheets</option>
-                                    <option>CourtReserve</option>
-                                    <option>PlayByPoint</option>
-                                    <option>Other</option>
-                                </select>
+                                <label class="block text-sm font-medium text-slate-300 mb-1.5">Phone</label>
+                                <input type="tel" class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm" placeholder="(555) 123-4567">
                             </div>
                         </div>
+
                         <div>
-                            <label class="block text-sm font-medium text-surface-300 mb-2">Anything else we should know?</label>
-                            <textarea x-model="form.notes" rows="3" class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors resize-none" placeholder="Tell us about your facility and goals..."></textarea>
+                            <label class="block text-sm font-medium text-slate-300 mb-1.5">Where are you in the process? *</label>
+                            <select x-model="facilityStage" required class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm">
+                                <option value="" class="bg-navy-900">Select your stage</option>
+                                <option value="exploring" class="bg-navy-900">Just exploring the idea</option>
+                                <option value="planning" class="bg-navy-900">Actively planning a facility</option>
+                                <option value="location" class="bg-navy-900">Have a location identified</option>
+                                <option value="building" class="bg-navy-900">Currently in buildout</option>
+                                <option value="operating" class="bg-navy-900">Already operating a facility</option>
+                                <option value="expanding" class="bg-navy-900">Expanding to additional locations</option>
+                            </select>
                         </div>
 
-                        <div x-show="success" x-transition class="p-4 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm">
-                            Thank you! Our team will reach out within 1 business day to schedule your demo.
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1.5">Planned Location (City, State)</label>
+                            <input type="text" class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm" placeholder="Tampa, FL">
                         </div>
 
-                        <button type="submit" :disabled="loading" class="w-full inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl shadow-lg shadow-brand-600/25 transition-all hover:-translate-y-0.5">
-                            <span x-show="!loading">Request Demo</span>
-                            <span x-show="loading" class="flex items-center gap-2">
-                                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
-                                Submitting...
-                            </span>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1.5">Number of Courts Planned</label>
+                            <select class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm">
+                                <option value="" class="bg-navy-900">Select range</option>
+                                <option value="2-4" class="bg-navy-900">2-4 courts</option>
+                                <option value="5-8" class="bg-navy-900">5-8 courts</option>
+                                <option value="9-12" class="bg-navy-900">9-12 courts</option>
+                                <option value="13+" class="bg-navy-900">13+ courts</option>
+                                <option value="unsure" class="bg-navy-900">Not sure yet</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1.5">Tell us about your vision</label>
+                            <textarea rows="4" class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm resize-none" placeholder="Share any details about your facility plans, target market, timeline, or questions you have..."></textarea>
+                        </div>
+
+                        <button type="submit" :disabled="sending" class="w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-base font-bold text-navy-950 gradient-gold-bg rounded-xl shadow-gold hover:shadow-gold-lg transition-all duration-300 disabled:opacity-70">
+                            <span x-show="!sending && !sent">Request Consultation</span>
+                            <span x-show="sending" x-cloak>Submitting...</span>
+                            <span x-show="sent" x-cloak>Request Submitted!</span>
+                            <svg x-show="!sending && !sent" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Benefits sidebar -->
+            <!-- Sidebar -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="p-6 rounded-2xl border border-surface-800/60 bg-surface-900/30">
-                    <h3 class="text-lg font-semibold text-white mb-4">What to expect</h3>
-                    <ul class="space-y-4">
+                <div class="glass-card rounded-xl p-6 gold-border">
+                    <h3 class="font-display text-lg font-bold text-white mb-4">What to Expect</h3>
+                    <div class="space-y-4">
                         <?php
                         $steps = [
-                            ['num' => '1', 'title' => 'We reach out', 'desc' => 'Our team will contact you within 1 business day to schedule a time.'],
-                            ['num' => '2', 'title' => '30-minute walkthrough', 'desc' => 'A personalized demo tailored to your facility\'s needs and goals.'],
-                            ['num' => '3', 'title' => 'Q&A session', 'desc' => 'Ask anything — pricing, features, migration, integrations, and more.'],
-                            ['num' => '4', 'title' => 'Free trial setup', 'desc' => 'Walk away with a free account ready to explore on your own.'],
+                            ['1', 'Discovery Call', 'A 30-minute conversation about your vision, market, and goals.'],
+                            ['2', 'Platform Demo', 'Live walkthrough of the K2 Platform tailored to your use case.'],
+                            ['3', 'Partnership Proposal', 'Custom partnership terms based on your facility scope and timeline.'],
+                            ['4', 'Launch Planning', 'Detailed launch roadmap with milestones and support schedule.'],
                         ];
                         foreach ($steps as $step): ?>
-                        <li class="flex gap-3">
-                            <div class="h-8 w-8 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center flex-shrink-0">
-                                <span class="text-sm font-bold text-brand-400"><?= $step['num'] ?></span>
+                        <div class="flex gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
+                                <span class="text-sm font-bold text-gold-500"><?= $step[0] ?></span>
                             </div>
                             <div>
-                                <h4 class="text-sm font-semibold text-white"><?= $step['title'] ?></h4>
-                                <p class="text-xs text-surface-400 mt-0.5"><?= $step['desc'] ?></p>
+                                <h4 class="text-sm font-bold text-white"><?= $step[1] ?></h4>
+                                <p class="text-xs text-slate-400 mt-0.5"><?= $step[2] ?></p>
                             </div>
-                        </li>
+                        </div>
                         <?php endforeach; ?>
-                    </ul>
-                </div>
-
-                <div class="p-6 rounded-2xl border border-surface-800/60 bg-surface-900/30">
-                    <div class="flex items-center gap-1 mb-3">
-                        <?php for ($i = 0; $i < 5; $i++): ?>
-                        <svg class="w-4 h-4 text-brand-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        <?php endfor; ?>
                     </div>
-                    <p class="text-sm text-surface-300 italic">"The demo sold us immediately. They showed us exactly how K2 would fit our 8-court facility and we signed up that week."</p>
-                    <p class="mt-3 text-sm font-medium text-white">Mike Torres</p>
-                    <p class="text-xs text-surface-500">Operations Director, Summit Sports</p>
                 </div>
 
-                <div class="p-6 rounded-2xl border border-surface-800/60 bg-surface-900/30">
-                    <h3 class="text-sm font-semibold text-white mb-2">Prefer to explore on your own?</h3>
-                    <p class="text-xs text-surface-400 mb-3">Create a free account and start using K2 Pickleball right away.</p>
-                    <a href="<?= $baseUrl ?>/register" class="inline-flex items-center gap-2 text-sm font-medium text-brand-400 hover:text-brand-300 transition-colors">
-                        Start Free →
-                    </a>
+                <div class="glass-card rounded-xl p-6">
+                    <h3 class="font-display text-lg font-bold text-white mb-3">No Obligation</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        This consultation is completely free with no strings attached. We believe in earning your partnership, not pressuring you into it.
+                    </p>
+                </div>
+
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="text-3xl font-extrabold gradient-gold font-display">$1M+</div>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Annual revenue generated at our flagship Tampa Bay facility — proof that the K2 model works.
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 </section>
-
-<script>
-function demoForm() {
-    return {
-        form: { firstName: '', lastName: '', email: '', phone: '', facility: '', courts: '', currentSoftware: '', notes: '' },
-        loading: false,
-        success: false,
-        submit() {
-            this.loading = true;
-            setTimeout(() => {
-                this.loading = false;
-                this.success = true;
-                this.form = { firstName: '', lastName: '', email: '', phone: '', facility: '', courts: '', currentSoftware: '', notes: '' };
-            }, 1000);
-        }
-    }
-}
-</script>

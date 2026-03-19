@@ -503,7 +503,7 @@ function extensionsManager() {
                 const res = await authFetch(APP_BASE + '/api/extensions/' + this.settingsPanel.ext.slug + '/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.settingsPanel.orgSettings),
+                    body: JSON.stringify({ settings: this.settingsPanel.orgSettings }),
                 });
                 const json = await res.json();
                 if (res.ok) {
@@ -524,7 +524,7 @@ function extensionsManager() {
                 const res = await authFetch(APP_BASE + '/api/extensions/' + this.settingsPanel.ext.slug + '/facilities/' + facility.id + '/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(facility.settings),
+                    body: JSON.stringify({ settings: facility.settings }),
                 });
                 const json = await res.json();
                 if (res.ok) {
@@ -586,7 +586,7 @@ function terminalPairing(facility, extSlug) {
                 const res = await authFetch(APP_BASE + '/api/extensions/' + extSlug + '/facilities/' + facility.id + '/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(settings),
+                    body: JSON.stringify({ settings }),
                 });
                 const json = await res.json();
                 if (!res.ok) console.error('Failed to save device:', json.message);

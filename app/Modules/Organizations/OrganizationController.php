@@ -99,6 +99,9 @@ final class OrganizationController extends Controller
         $id = $this->repo->create($data);
         $org = $this->repo->findById($id);
 
+        // Seed mandatory system categories for the new organization
+        $this->seedSystemCategories($id);
+
         // Link the creating user to this organization if they don't have one
         $userId = $request->getAttribute('user_id');
         if ($userId) {
@@ -112,6 +115,36 @@ final class OrganizationController extends Controller
         }
 
         return $this->created($org, 'Organization created');
+    }
+
+    /**
+     * Seed mandatory system categories for a new organization.
+     */
+    private function seedSystemCategories(int $orgId): void
+    {
+        $systemCategories = [
+            [
+                'system_slug' => 'book-a-court',
+                'name'        => 'Book a Court',
+                'color'       => '#d4af37',
+                'description' => 'Reserve a court for your group. Pick your date, time, and court — instant confirmation.',
+            ],
+        ];
+
+        foreach ($systemCategories as $i => $cat) {
+            $exists = $this->db->fetch(
+                "SELECT `id` FROM `categories` WHERE `organization_id` = ? AND `system_slug` = ?",
+                [$orgId, $cat['system_slug']]
+            );
+            if ($exists) continue;
+
+            $uuid = $this->generateUuid();
+            $this->db->query(
+                "INSERT INTO `categories` (`uuid`, `organization_id`, `name`, `color`, `sort_order`, `is_taxable`, `is_system`, `system_slug`, `is_active`, `description`, `created_at`, `updated_at`)
+                 VALUES (?, ?, ?, ?, ?, 0, 1, ?, 1, ?, NOW(), NOW())",
+                [$uuid, $orgId, $cat['name'], $cat['color'], $i + 1, $cat['system_slug'], $cat['description']]
+            );
+        }
     }
 
     /**

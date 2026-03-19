@@ -1,0 +1,103 @@
+<?php
+/**
+ * Player Dashboard Home
+ * Overview with welcome message, upcoming bookings, and quick actions.
+ */
+?>
+
+<div x-data="dashboardHome()" x-init="load()">
+    <!-- Welcome -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-extrabold text-surface-900">
+            Welcome back, <span x-text="$root.querySelector('[x-data=dashboardApp]')?.__x?.$data?.player?.first_name || 'Player'"></span>!
+        </h1>
+        <p class="mt-1 text-surface-500">Here's what's coming up for you.</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white rounded-2xl border border-surface-100 p-5">
+            <div class="text-xs font-bold text-surface-400 uppercase tracking-wider">Upcoming</div>
+            <div class="mt-1 text-2xl font-extrabold text-surface-900" x-text="upcoming.length"></div>
+            <div class="text-xs text-surface-400 mt-0.5">booked sessions</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-surface-100 p-5">
+            <div class="text-xs font-bold text-surface-400 uppercase tracking-wider">This Month</div>
+            <div class="mt-1 text-2xl font-extrabold text-surface-900" x-text="monthCount"></div>
+            <div class="text-xs text-surface-400 mt-0.5">sessions attended</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-surface-100 p-5 flex items-center gap-4">
+            <div>
+                <div class="text-xs font-bold text-surface-400 uppercase tracking-wider">Quick Action</div>
+                <a href="/schedule" class="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl transition-colors">
+                    Book a Session
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Bookings -->
+    <div class="bg-white rounded-2xl border border-surface-100">
+        <div class="px-6 py-4 border-b border-surface-100 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-surface-800">Upcoming Bookings</h2>
+            <a href="/dashboard/bookings" class="text-sm font-semibold text-primary-600 hover:text-primary-700">View all →</a>
+        </div>
+
+        <!-- Loading -->
+        <div x-show="loading" class="p-6 text-center text-surface-400 text-sm">Loading...</div>
+
+        <!-- Bookings list -->
+        <div x-show="!loading && upcoming.length > 0" class="divide-y divide-surface-50">
+            <template x-for="b in upcoming.slice(0, 5)" :key="b.id">
+                <div class="flex items-center gap-4 px-6 py-4 hover:bg-surface-50 transition-colors">
+                    <div class="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
+                        <div class="text-center">
+                            <div class="text-[10px] font-bold text-primary-500 uppercase" x-text="formatMonth(b.start_time)"></div>
+                            <div class="text-lg font-extrabold text-primary-700 -mt-0.5" x-text="formatDay(b.start_time)"></div>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-bold text-surface-800" x-text="b.session_type_name || b.session_name || 'Session'"></div>
+                        <div class="text-xs text-surface-400" x-text="formatTime(b.start_time) + ' – ' + formatTime(b.end_time)"></div>
+                    </div>
+                    <span class="text-xs font-bold px-2.5 py-1 rounded-full"
+                          :class="b.status === 'registered' ? 'bg-green-100 text-green-700' : b.status === 'waitlisted' ? 'bg-amber-100 text-amber-700' : 'bg-surface-100 text-surface-600'"
+                          x-text="b.status"></span>
+                </div>
+            </template>
+        </div>
+
+        <!-- Empty -->
+        <div x-show="!loading && upcoming.length === 0" class="p-8 text-center">
+            <p class="text-sm text-surface-500">No upcoming bookings.</p>
+            <a href="/schedule" class="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-primary-600">Browse schedule →</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function dashboardHome() {
+    return {
+        upcoming: [],
+        monthCount: 0,
+        loading: true,
+
+        async load() {
+            this.loading = true;
+            try {
+                const app = document.querySelector('[x-data*=dashboardApp]').__x.$data;
+                const res = await app.authFetch(baseApi + '/api/auth/me');
+                const json = await res.json();
+                // Load bookings via player data if available
+                this.upcoming = json.data?.upcoming_bookings || [];
+                this.monthCount = json.data?.month_sessions || 0;
+            } catch(e) {}
+            this.loading = false;
+        },
+
+        formatMonth(dt) { return dt ? new Date(dt).toLocaleDateString('en-US', { month: 'short' }) : ''; },
+        formatDay(dt) { return dt ? new Date(dt).getDate() : ''; },
+        formatTime(dt) { return dt ? new Date(dt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : ''; },
+    };
+}
+</script>

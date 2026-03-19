@@ -1,334 +1,111 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — K2 Pickleball</title>
+    <title>Partner Login — K2 Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    colors: {
-                        brand: { 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857' },
-                        surface: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a', 950: '#020617' }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .gradient-text { background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    </style>
-</head>
-<body class="h-full bg-surface-950 font-sans text-white antialiased" x-data="loginPage()" x-init="init()">
-    <div class="min-h-full flex">
-        <!-- Left panel - branding -->
-        <div class="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-surface-900 to-surface-950 items-center justify-center p-12">
-            <div class="absolute inset-0 overflow-hidden">
-                <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-brand-500/5 rounded-full blur-3xl"></div>
-                <div class="absolute bottom-1/3 right-1/4 w-96 h-96 bg-brand-600/3 rounded-full blur-3xl"></div>
-            </div>
-            <div class="relative max-w-md">
-                <a href="<?= $baseUrl ?>/" class="flex items-center gap-3 mb-12">
-                    <div class="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <span class="text-xl font-bold">K2 Pickleball</span>
-                </a>
-                <h1 class="text-3xl font-extrabold leading-tight">Welcome back to<br><span class="gradient-text">your dashboard</span></h1>
-                <p class="mt-4 text-surface-400">Manage your courts, members, and bookings — all in one place.</p>
-                <div class="mt-12 space-y-4">
-                    <div class="flex items-center gap-3 text-sm text-surface-400">
-                        <svg class="w-5 h-5 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
-                        Real-time court availability
-                    </div>
-                    <div class="flex items-center gap-3 text-sm text-surface-400">
-                        <svg class="w-5 h-5 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
-                        Member & booking management
-                    </div>
-                    <div class="flex items-center gap-3 text-sm text-surface-400">
-                        <svg class="w-5 h-5 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
-                        Revenue analytics & reports
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right panel - form -->
-        <div class="flex-1 flex items-center justify-center p-6 sm:p-12">
-            <div class="w-full max-w-md">
-                <!-- Mobile logo -->
-                <div class="lg:hidden mb-8">
-                    <a href="<?= $baseUrl ?>/" class="flex items-center gap-3">
-                        <div class="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        </div>
-                        <span class="text-xl font-bold">K2 Pickleball</span>
-                    </a>
-                </div>
-
-                <h2 class="text-2xl font-extrabold">Sign in to your account</h2>
-                <p class="mt-2 text-sm text-surface-400">
-                    Don't have an account?
-                    <a href="<?= $baseUrl ?>/register" class="text-brand-400 hover:text-brand-300 font-medium">Create one free</a>
-                </p>
-
-                <div class="mt-6">
-                    <?php if (!empty($_ENV['GOOGLE_CLIENT_ID'] ?? '')): ?>
-                    <div id="google-signin-btn" class="flex justify-center"></div>
-                    <div class="relative my-5 flex items-center gap-3">
-                        <div class="flex-1 border-t border-surface-800"></div>
-                        <span class="text-xs text-surface-500 uppercase tracking-wide">or sign in with email</span>
-                        <div class="flex-1 border-t border-surface-800"></div>
-                    </div>
-                    <?php endif; ?>
-                </div>
-
-                <form @submit.prevent="login" class="mt-4 space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-surface-300 mb-2">Email address</label>
-                        <input type="email" x-model="email" required autofocus class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors" placeholder="you@example.com">
-                    </div>
-
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="text-sm font-medium text-surface-300">Password</label>
-                            <a href="<?= $baseUrl ?>/forgot-password" class="text-xs text-brand-400 hover:text-brand-300">Forgot password?</a>
-                        </div>
-                        <div class="relative">
-                            <input :type="showPass ? 'text' : 'password'" x-model="password" required class="w-full px-4 py-3 rounded-xl bg-surface-900/50 border border-surface-700/60 text-white placeholder-surface-500 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30 transition-colors pr-11" placeholder="••••••••">
-                            <button type="button" @click="showPass = !showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500 hover:text-surface-300">
-                                <svg x-show="!showPass" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                <svg x-show="showPass" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <button type="submit" :disabled="loading" class="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl shadow-lg shadow-brand-600/25 transition-all hover:-translate-y-0.5">
-                        <span x-show="!loading">Sign In</span>
-                        <span x-show="loading" class="flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
-                            Signing in...
-                        </span>
-                    </button>
-                </form>
-
-                <p class="mt-8 text-center text-xs text-surface-500">
-                    By signing in, you agree to our <a href="<?= $baseUrl ?>/terms" class="hover:text-surface-300 underline">Terms of Service</a> and <a href="<?= $baseUrl ?>/privacy-policy" class="hover:text-surface-300 underline">Privacy Policy</a>.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    const GOOGLE_CID = '<?= htmlspecialchars($_ENV["GOOGLE_CLIENT_ID"] ?? "", ENT_QUOTES) ?>';
-    function loginPage() {
-        const baseUrl = '<?= $baseUrl ?>';
-        return {
-            email: '',
-            password: '',
-            showPass: false,
-            loading: false,
-            showAlert(message, icon = 'error', title = 'Sign In Failed') {
-                return Swal.fire({
-                    title,
-                    text: message,
-                    icon,
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#059669',
-                    background: '#020617',
-                    color: '#e2e8f0'
-                });
-            },
-            getAlertMeta(message) {
-                const text = (message || '').toLowerCase();
-                if (text.includes('inactive')) {
-                    return { icon: 'warning', title: 'Account Inactive' };
-                }
-                if (text.includes('suspended')) {
-                    return { icon: 'error', title: 'Account Suspended' };
-                }
-                if (text.includes('verify')) {
-                    return { icon: 'info', title: 'Email Verification Required' };
-                }
-                if (text.includes('locked')) {
-                    return { icon: 'warning', title: 'Account Locked' };
-                }
-                return { icon: 'error', title: 'Sign In Failed' };
-            },
-            googleSvg: '<svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>',
-            init() {
-                const el = document.getElementById('google-signin-btn');
-                if (!el) return;
-                // Always show a styled button immediately
-                el.innerHTML = '<button type="button" data-google-btn class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white text-gray-800 font-medium text-sm hover:bg-gray-100 active:bg-gray-200 transition-colors shadow-sm border border-gray-200">' + this.googleSvg + 'Sign in with Google</button>';
-                if (!GOOGLE_CID) {
-                    el.querySelector('button').addEventListener('click', async () => {
-                        await this.showAlert('Google login is not configured. Set GOOGLE_CLIENT_ID in .env', 'warning', 'Google Sign-In Unavailable');
-                    });
-                    return;
-                }
-                // Try to load real GSI button — replaces placeholder when library loads
-                this.waitForGoogle(() => {
-                    google.accounts.id.initialize({ client_id: GOOGLE_CID, callback: r => this.googleCallback(r) });
-                    google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'signin_with', width: el.offsetWidth || 400 });
-                });
-            },
-            waitForGoogle(callback, tries = 0) {
-                if (typeof google !== 'undefined' && google.accounts) {
-                    callback();
-                } else if (tries < 50) {
-                    setTimeout(() => this.waitForGoogle(callback, tries + 1), 100);
-                }
-            },
-            async login() {
-                this.loading = true;
-                try {
-                    const res = await fetch(baseUrl + '/api/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: this.email, password: this.password })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        const msg = data.message || data.error || 'Invalid email or password.';
-                        if (msg.toLowerCase().includes('verify') || msg.toLowerCase().includes('verification')) {
-                            const result = await Swal.fire({
-                                title: 'Email Verification Required',
-                                text: msg,
-                                icon: 'info',
-                                showCancelButton: true,
-                                confirmButtonText: 'Resend Verification Email',
-                                cancelButtonText: 'Close',
-                                confirmButtonColor: '#059669',
-                                background: '#020617',
-                                color: '#e2e8f0'
-                            });
-                            if (result.isConfirmed) {
-                                await this.resendVerification();
-                            }
-                        } else {
-                            const meta = this.getAlertMeta(msg);
-                            await this.showAlert(msg, meta.icon, meta.title);
-                        }
-                        this.loading = false;
-                        return;
-                    }
-                    const d = data.data || data;
-                    localStorage.setItem('access_token', d.access_token);
-                    localStorage.setItem('refresh_token', d.refresh_token);
-                    if (d.user) localStorage.setItem('user', JSON.stringify(d.user));
-
-                    // Complete pending registration (org + subscription) if exists
-                    await this.completePendingRegistration(d.access_token);
-
-                    window.location.href = baseUrl + '/admin';
-                } catch (e) {
-                    await this.showAlert('Network error. Please try again.', 'error', 'Connection Error');
-                    this.loading = false;
-                }
-            },
-
-            async completePendingRegistration(token) {
-                const raw = sessionStorage.getItem('k2_pending_reg');
-                if (!raw) return;
-                try {
-                    const reg = JSON.parse(raw);
-                    // Create organization
-                    if (reg.org_name) {
-                        const orgRes = await fetch(baseUrl + '/api/organizations', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({
-                                name: reg.org_name,
-                                slug: reg.org_slug || undefined,
-                                email: reg.email || undefined,
-                                phone: reg.org_phone || undefined,
-                                address_line1: reg.org_address || undefined
-                            })
-                        });
-                        const orgData = await orgRes.json();
-                        const orgId = orgData.data?.id || orgData.id;
-
-                        // Create subscription if org was created and plan selected
-                        if (orgId && reg.plan_id) {
-                            // Process payment for paid plans
-                            if (reg.payment_nonce && reg.plan_price > 0) {
-                                const amount = Math.round(reg.plan_price * 100);
-                                const payRes = await fetch(baseUrl + '/api/payments', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                                    body: JSON.stringify({ source_id: reg.payment_nonce, amount, currency: 'USD', description: 'Subscription payment' })
-                                });
-                                if (!payRes.ok) {
-                                    console.warn('Payment failed:', await payRes.json());
-                                }
-                            }
-                            await fetch(baseUrl + '/api/subscriptions/create-for-org', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                                body: JSON.stringify({
-                                    organization_id: orgId,
-                                    plan_id: reg.plan_id,
-                                    billing_cycle: 'monthly'
-                                })
-                            });
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Post-registration setup:', e);
-                }
-                sessionStorage.removeItem('k2_pending_reg');
-            },
-            async resendVerification() {
-                if (!this.email) {
-                    await this.showAlert('Please enter your email address above first.', 'warning', 'Email Required');
-                    return;
-                }
-                try {
-                    await fetch(baseUrl + '/api/auth/resend-verification', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: this.email })
-                    });
-                    await this.showAlert('Verification email sent! Check your inbox.', 'success', 'Email Sent');
-                } catch {
-                    await this.showAlert('Failed to send. Please try again.', 'error', 'Request Failed');
-                }
-            },
-            async googleCallback(response) {
-                this.loading = true;
-                try {
-                    const res = await fetch(baseUrl + '/api/auth/google', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ credential: response.credential })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        const message = data.message || 'Google sign-in failed.';
-                        await this.showAlert(message, 'error', 'Google Sign-In Failed');
-                        this.loading = false;
-                        return;
-                    }
-                    const d = data.data || data;
-                    localStorage.setItem('access_token', d.access_token);
-                    localStorage.setItem('refresh_token', d.refresh_token);
-                    if (d.user) localStorage.setItem('user', JSON.stringify(d.user));
-                    window.location.href = baseUrl + '/admin';
-                } catch {
-                    await this.showAlert('Google sign-in failed. Please try again.', 'error', 'Google Sign-In Failed');
-                    this.loading = false;
-                }
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    navy: { 950:'#060d1a', 900:'#0b1629', 850:'#101f36', 800:'#162844', 700:'#1e3658', 600:'#27466e', 500:'#3160a0', 400:'#4a7ec4' },
+                    gold: { 300:'#f0d878', 400:'#e8c84e', 500:'#d4af37', 600:'#b8952d', 700:'#9c7c24', 800:'#7d6420' }
+                },
+                fontFamily: { display: ['Plus Jakarta Sans', 'sans-serif'], body: ['Inter', 'sans-serif'] }
             }
         }
     }
     </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-gold { background: linear-gradient(135deg, #f0d878, #d4af37, #b8952d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gradient-gold-bg { background: linear-gradient(135deg, #f0d878, #d4af37, #b8952d); }
+        .grid-bg { background-image: radial-gradient(rgba(212,175,55,0.08) 1px, transparent 1px); background-size: 32px 32px; }
+    </style>
+</head>
+<body class="bg-navy-950 text-white min-h-screen flex">
+    <!-- Left Panel - Branding -->
+    <div class="hidden lg:flex lg:w-1/2 relative bg-navy-900 items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 grid-bg opacity-40"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-gold-500/5 rounded-full blur-[120px]"></div>
+        <div class="relative text-center px-12">
+            <div class="flex items-center justify-center gap-3 mb-8">
+                <div class="relative">
+                    <svg class="w-12 h-12 text-gold-500" viewBox="0 0 40 40" fill="currentColor">
+                        <path d="M20 2L23 14L35 14L25 22L28 34L20 27L12 34L15 22L5 14L17 14Z"/>
+                    </svg>
+                </div>
+                <span class="font-display text-3xl font-extrabold tracking-tight">K2 <span class="gradient-gold">Platform</span></span>
+            </div>
+            <h2 class="font-display text-2xl font-bold text-white mb-4">Welcome Back, Partner</h2>
+            <p class="text-slate-400 leading-relaxed max-w-sm mx-auto">Access your facility dashboard, manage operations, and track performance — all in one place.</p>
+            <div class="mt-12 grid grid-cols-2 gap-4 max-w-xs mx-auto">
+                <div class="text-center p-4 rounded-xl bg-navy-800/40 border border-navy-700/40">
+                    <div class="text-2xl font-extrabold gradient-gold font-display">$1M+</div>
+                    <div class="text-xs text-slate-500 mt-1">Revenue Generated</div>
+                </div>
+                <div class="text-center p-4 rounded-xl bg-navy-800/40 border border-navy-700/40">
+                    <div class="text-2xl font-extrabold gradient-gold font-display">94%</div>
+                    <div class="text-xs text-slate-500 mt-1">Court Utilization</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel - Form -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center px-6 py-12">
+        <div class="w-full max-w-md" x-data="{ showPassword: false, loading: false }">
+            <!-- Mobile Logo -->
+            <div class="lg:hidden flex items-center justify-center gap-2 mb-10">
+                <svg class="w-8 h-8 text-gold-500" viewBox="0 0 40 40" fill="currentColor">
+                    <path d="M20 2L23 14L35 14L25 22L28 34L20 27L12 34L15 22L5 14L17 14Z"/>
+                </svg>
+                <span class="font-display text-xl font-extrabold">K2 <span class="gradient-gold">Platform</span></span>
+            </div>
+
+            <h1 class="font-display text-3xl font-extrabold text-white">Partner Login</h1>
+            <p class="mt-2 text-sm text-slate-400">Sign in to your facility management dashboard.</p>
+
+            <form class="mt-8 space-y-5" @submit.prevent="loading = true">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Email Address</label>
+                    <input type="email" required autocomplete="email" class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm" placeholder="you@example.com">
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-sm font-medium text-slate-300">Password</label>
+                        <a href="<?= $baseUrl ?>/forgot-password" class="text-xs font-medium text-gold-500 hover:text-gold-400 transition-colors">Forgot password?</a>
+                    </div>
+                    <div class="relative">
+                        <input :type="showPassword ? 'text' : 'password'" required autocomplete="current-password" class="w-full px-4 py-3 rounded-xl bg-navy-900/60 border border-navy-700/60 text-white placeholder-slate-500 focus:border-gold-500/40 focus:ring-1 focus:ring-gold-500/20 transition-colors text-sm pr-11" placeholder="••••••••">
+                        <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+                            <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <svg x-show="showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="remember" class="w-4 h-4 rounded border-navy-700 bg-navy-900/60 text-gold-500 focus:ring-gold-500/20">
+                    <label for="remember" class="text-sm text-slate-400">Keep me signed in</label>
+                </div>
+
+                <button type="submit" :disabled="loading" class="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-bold text-navy-950 gradient-gold-bg rounded-xl shadow-lg shadow-gold-500/20 hover:shadow-gold-500/30 transition-all duration-300 disabled:opacity-70">
+                    <span x-show="!loading">Sign In</span>
+                    <span x-show="loading" x-cloak>Signing in...</span>
+                </button>
+            </form>
+
+            <p class="mt-8 text-center text-sm text-slate-500">
+                Interested in becoming a partner? <a href="<?= $baseUrl ?>/demo" class="font-medium text-gold-500 hover:text-gold-400 transition-colors">Schedule a consultation</a>
+            </p>
+        </div>
+    </div>
 </body>
 </html>

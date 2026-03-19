@@ -1,0 +1,401 @@
+<?php
+/**
+ * Tenant Schedule Detail / Booking Page
+ * Shows class info, pricing tiers, court info, availability, and inline booking form.
+ * Route: /schedule/{id}  —  $routeParam = class id
+ */
+?>
+
+<div x-data="classDetailPage()" x-init="load()">
+    <!-- Loading -->
+    <div x-show="loading" class="py-32 text-center">
+        <div class="inline-flex items-center gap-3 text-surface-400">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Loading class details...
+        </div>
+    </div>
+
+    <!-- Not found -->
+    <div x-show="!loading && !cls" class="py-32 text-center">
+        <div class="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <p class="text-lg font-semibold text-surface-600">Class not found</p>
+        <a href="/schedule" class="inline-flex items-center gap-2 mt-4 text-primary-600 hover:text-primary-700 font-semibold text-sm">← Back to Schedule</a>
+    </div>
+
+    <!-- Class Detail Content -->
+    <template x-if="!loading && cls">
+        <div>
+            <!-- Breadcrumb + Back -->
+            <section class="bg-white border-b border-surface-100">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                    <nav class="flex items-center gap-2 text-sm text-surface-400">
+                        <a href="/schedule" class="hover:text-primary-600 transition-colors">Schedule</a>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <span class="text-surface-700 font-medium" x-text="cls.session_type_name"></span>
+                    </nav>
+                </div>
+            </section>
+
+            <!-- Main Layout: Details + Booking Sidebar -->
+            <section class="py-10 bg-surface-50">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="lg:grid lg:grid-cols-3 lg:gap-10">
+                        <!-- Left: Class Information -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- Header Card -->
+                            <div class="bg-white rounded-2xl border border-surface-100 p-6 sm:p-8">
+                                <!-- Category + Facility -->
+                                <div class="flex flex-wrap items-center gap-2 mb-3">
+                                    <span class="text-xs px-2.5 py-1 rounded-full font-semibold text-white" :style="'background:' + (cls.category_color || '#6366f1')" x-text="cls.category_name || 'General'"></span>
+                                    <span x-show="cls.facility_name" class="text-xs px-2.5 py-1 rounded-full bg-surface-100 text-surface-600 font-medium" x-text="cls.facility_name"></span>
+                                    <span x-show="cls.skill_levels" class="text-xs px-2.5 py-1 rounded-full bg-surface-100 text-surface-600 font-medium" x-text="cls.skill_levels"></span>
+                                </div>
+
+                                <h1 class="text-2xl sm:text-3xl font-extrabold text-surface-900" x-text="cls.session_type_name || 'Session'"></h1>
+                                <p x-show="cls.session_name" class="mt-1 text-surface-500" x-text="cls.session_name"></p>
+
+                                <!-- Date & Time -->
+                                <div class="mt-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-bold text-surface-800" x-text="formatDate(cls.start_time)"></div>
+                                            <div class="text-xs text-surface-400" x-text="formatTime(cls.start_time) + ' – ' + formatTime(cls.end_time)"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3" x-show="cls.courts && cls.courts.length">
+                                        <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-bold text-surface-800" x-text="cls.courts.map(c => c.name).join(', ')"></div>
+                                            <div class="text-xs text-surface-400" x-text="cls.courts.map(c => (c.is_indoor ? 'Indoor' : 'Outdoor') + ' · ' + c.sport_type).join(', ')"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div x-show="cls.description" class="bg-white rounded-2xl border border-surface-100 p-6 sm:p-8">
+                                <h2 class="text-lg font-bold text-surface-800 mb-3">About This Session</h2>
+                                <div class="prose prose-sm max-w-none text-surface-600" x-html="cls.description"></div>
+                            </div>
+
+                            <!-- Pricing Tiers -->
+                            <div x-show="cls.rolling_prices && cls.rolling_prices.length" class="bg-white rounded-2xl border border-surface-100 p-6 sm:p-8">
+                                <h2 class="text-lg font-bold text-surface-800 mb-4">Package Options</h2>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <template x-for="rp in cls.rolling_prices" :key="rp.weeks">
+                                        <button @click="selectPackage(rp)"
+                                                class="relative text-left p-4 rounded-xl border-2 transition-all"
+                                                :class="selectedPackage?.weeks === rp.weeks ? 'border-primary-500 bg-primary-50/50' : 'border-surface-100 hover:border-surface-200'">
+                                            <div class="text-xs font-bold text-surface-400 uppercase tracking-wider" x-text="rp.weeks + '-Week Package'"></div>
+                                            <div class="mt-1 text-xl font-extrabold text-surface-900" x-text="'$' + parseFloat(rp.total_price).toFixed(2)"></div>
+                                            <div class="text-xs text-surface-500" x-text="'$' + parseFloat(rp.per_session_price).toFixed(2) + '/session'"></div>
+                                            <span x-show="rp.savings_label" class="mt-2 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700" x-text="rp.savings_label"></span>
+                                            <div x-show="selectedPackage?.weeks === rp.weeks" class="absolute top-3 right-3">
+                                                <svg class="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Booking Sidebar -->
+                        <div class="mt-8 lg:mt-0">
+                            <div class="bg-white rounded-2xl border border-surface-100 shadow-sm sticky top-24">
+                                <!-- Price Header -->
+                                <div class="p-6 border-b border-surface-100">
+                                    <!-- Hot Deal -->
+                                    <div x-show="cls.hot_deal" class="mb-3 p-3 rounded-xl bg-red-50 border border-red-100">
+                                        <div class="flex items-center gap-2 text-red-600">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"/></svg>
+                                            <span class="text-xs font-bold uppercase tracking-wider" x-text="cls.hot_deal.label || 'Hot Deal!'"></span>
+                                        </div>
+                                        <div class="mt-1">
+                                            <span class="text-lg font-extrabold text-red-600" x-text="'$' + parseFloat(cls.hot_deal.deal_price).toFixed(2)"></span>
+                                            <span class="ml-2 text-sm text-red-400 line-through" x-text="'$' + parseFloat(cls.hot_deal.original_price).toFixed(2)"></span>
+                                        </div>
+                                    </div>
+                                    <!-- Early Bird -->
+                                    <div x-show="cls.early_bird && !cls.hot_deal" class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
+                                        <div class="flex items-center gap-2 text-amber-600">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span class="text-xs font-bold uppercase tracking-wider" x-text="cls.early_bird.label || 'Early Bird'"></span>
+                                        </div>
+                                        <div class="mt-1">
+                                            <span class="text-lg font-extrabold text-amber-700" x-text="'$' + parseFloat(cls.early_bird.discounted_price).toFixed(2)"></span>
+                                            <span class="ml-2 text-sm text-amber-400 line-through" x-text="'$' + parseFloat(cls.early_bird.original_price).toFixed(2)"></span>
+                                        </div>
+                                        <div class="text-[10px] text-amber-500 mt-1">
+                                            Offer ends <span x-text="formatDate(cls.early_bird.cutoff_date)"></span>
+                                        </div>
+                                    </div>
+                                    <!-- Regular Price -->
+                                    <div x-show="!cls.hot_deal && !cls.early_bird">
+                                        <template x-if="effectivePrice() > 0">
+                                            <div class="text-3xl font-extrabold text-surface-900" x-text="'$' + effectivePrice().toFixed(2)"></div>
+                                        </template>
+                                        <template x-if="effectivePrice() === 0">
+                                            <div class="text-3xl font-extrabold text-primary-500">Free</div>
+                                        </template>
+                                        <div class="text-sm text-surface-400 mt-0.5">per person</div>
+                                    </div>
+
+                                    <!-- Availability -->
+                                    <div class="mt-4 flex items-center gap-2">
+                                        <div class="w-2 h-2 rounded-full" :class="cls.is_full ? 'bg-red-500' : 'bg-green-500'"></div>
+                                        <span class="text-sm font-bold" :class="cls.is_full ? 'text-red-500' : 'text-green-600'"
+                                              x-text="cls.is_full ? 'Session Full' : cls.spots_left + ' spots remaining'"></span>
+                                    </div>
+                                    <div class="text-xs text-surface-400 mt-1" x-text="cls.booked_count + ' of ' + cls.max_participants + ' registered'"></div>
+                                </div>
+
+                                <!-- Booking Form -->
+                                <div class="p-6" x-show="!cls.is_full && !bookingSuccess">
+                                    <h3 class="text-sm font-bold text-surface-800 mb-4">Book Your Spot</h3>
+                                    <form @submit.prevent="submitBooking()" class="space-y-3">
+                                        <div>
+                                            <label class="text-xs font-semibold text-surface-600 block mb-1">First Name *</label>
+                                            <input x-model="form.first_name" type="text" required
+                                                   class="w-full px-3 py-2.5 text-sm border border-surface-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                                   placeholder="Your first name">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-surface-600 block mb-1">Last Name</label>
+                                            <input x-model="form.last_name" type="text"
+                                                   class="w-full px-3 py-2.5 text-sm border border-surface-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                                   placeholder="Your last name">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-surface-600 block mb-1">Email *</label>
+                                            <input x-model="form.email" type="email" required
+                                                   class="w-full px-3 py-2.5 text-sm border border-surface-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                                   placeholder="your@email.com">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-surface-600 block mb-1">Phone</label>
+                                            <input x-model="form.phone" type="tel"
+                                                   class="w-full px-3 py-2.5 text-sm border border-surface-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                                   placeholder="(555) 123-4567">
+                                        </div>
+
+                                        <!-- Discount Code -->
+                                        <div>
+                                            <button type="button" @click="showDiscount = !showDiscount" class="text-xs font-semibold text-primary-600 hover:text-primary-700">
+                                                + Have a discount code?
+                                            </button>
+                                            <div x-show="showDiscount" x-collapse class="mt-2">
+                                                <input x-model="form.discount_code" type="text"
+                                                       class="w-full px-3 py-2.5 text-sm border border-surface-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                                       placeholder="Enter code" @input.debounce.500ms="validateDiscount()">
+                                                <div x-show="discountMsg" class="text-xs mt-1" :class="discountValid ? 'text-green-600' : 'text-red-500'" x-text="discountMsg"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Price Summary -->
+                                        <div class="bg-surface-50 rounded-xl p-4 space-y-2">
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-surface-500">Session Fee</span>
+                                                <span class="font-bold text-surface-800" x-text="'$' + effectivePrice().toFixed(2)"></span>
+                                            </div>
+                                            <div x-show="discountValid && discountAmt > 0" class="flex justify-between text-sm text-green-600">
+                                                <span>Discount</span>
+                                                <span class="font-bold" x-text="'-$' + discountAmt.toFixed(2)"></span>
+                                            </div>
+                                            <div class="border-t border-surface-200 pt-2 flex justify-between">
+                                                <span class="text-sm font-bold text-surface-800">Total</span>
+                                                <span class="text-lg font-extrabold text-surface-900" x-text="'$' + totalPrice().toFixed(2)"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Submit -->
+                                        <button type="submit" :disabled="booking"
+                                                class="w-full py-3.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl shadow-lg shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                            <span x-show="!booking">Book Now</span>
+                                            <span x-show="booking" class="inline-flex items-center gap-2">
+                                                <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                                Processing...
+                                            </span>
+                                        </button>
+                                        <div x-show="bookingError" class="text-xs text-red-500 text-center" x-text="bookingError"></div>
+                                    </form>
+                                </div>
+
+                                <!-- Full state -->
+                                <div x-show="cls.is_full && !bookingSuccess" class="p-6 text-center">
+                                    <p class="text-sm text-surface-500">This session is currently full.</p>
+                                    <a href="/schedule" class="inline-flex items-center gap-2 mt-3 text-primary-600 hover:text-primary-700 font-semibold text-sm">
+                                        Browse Other Sessions →
+                                    </a>
+                                </div>
+
+                                <!-- Booking Success -->
+                                <div x-show="bookingSuccess" class="p-6 text-center">
+                                    <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                                        <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-surface-800">You're Booked!</h3>
+                                    <p class="text-sm text-surface-500 mt-2">You'll receive a confirmation email shortly.</p>
+                                    <a href="/schedule" class="inline-flex items-center gap-2 mt-4 px-5 py-2.5 text-sm font-bold text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-xl transition-colors">
+                                        Browse More Sessions
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </template>
+</div>
+
+<script>
+function classDetailPage() {
+    return {
+        cls: null,
+        loading: true,
+        selectedPackage: null,
+        showDiscount: false,
+        discountMsg: '',
+        discountValid: false,
+        discountAmt: 0,
+        booking: false,
+        bookingError: '',
+        bookingSuccess: false,
+        form: { first_name: '', last_name: '', email: '', phone: '', discount_code: '' },
+
+        async load() {
+            this.loading = true;
+            // Extract class ID from URL: /schedule/{id}
+            const parts = window.location.pathname.split('/');
+            const classId = parts[parts.length - 1];
+            if (!classId || isNaN(classId)) {
+                this.cls = null;
+                this.loading = false;
+                return;
+            }
+            try {
+                const res = await fetch(baseApi + '/api/public/classes/' + classId);
+                const json = await res.json();
+                this.cls = json.data || null;
+
+                // Pre-fill from logged-in player
+                const player = window.tenantApp?.player;
+                if (player) {
+                    this.form.first_name = player.first_name || '';
+                    this.form.last_name = player.last_name || '';
+                    this.form.email = player.email || '';
+                    this.form.phone = player.phone || '';
+                }
+            } catch(e) {
+                this.cls = null;
+            }
+            this.loading = false;
+        },
+
+        effectivePrice() {
+            if (!this.cls) return 0;
+            if (this.cls.hot_deal) return parseFloat(this.cls.hot_deal.deal_price) || 0;
+            if (this.cls.early_bird) return parseFloat(this.cls.early_bird.discounted_price) || 0;
+            if (this.selectedPackage) return parseFloat(this.selectedPackage.per_session_price) || 0;
+            return parseFloat(this.cls.price) || 0;
+        },
+
+        totalPrice() {
+            return Math.max(0, this.effectivePrice() - this.discountAmt);
+        },
+
+        selectPackage(rp) {
+            this.selectedPackage = this.selectedPackage?.weeks === rp.weeks ? null : rp;
+        },
+
+        async validateDiscount() {
+            const code = this.form.discount_code.trim();
+            if (!code) { this.discountMsg = ''; this.discountValid = false; this.discountAmt = 0; return; }
+            try {
+                const token = localStorage.getItem('player_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                const res = await fetch(baseApi + '/api/session-types/' + this.cls.session_type_id + '/classes/' + this.cls.id + '/validate-credit-code', {
+                    method: 'POST', headers, body: JSON.stringify({ code })
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    this.discountValid = true;
+                    this.discountAmt = parseFloat(json.data?.discount_amount || json.data?.balance || 0);
+                    this.discountMsg = 'Code applied!';
+                } else {
+                    this.discountValid = false;
+                    this.discountAmt = 0;
+                    this.discountMsg = json.error || 'Invalid code';
+                }
+            } catch(e) {
+                this.discountValid = false;
+                this.discountMsg = 'Could not validate code';
+            }
+        },
+
+        async submitBooking() {
+            this.bookingError = '';
+            if (!this.form.first_name.trim() || !this.form.email.trim()) {
+                this.bookingError = 'First name and email are required.';
+                return;
+            }
+            this.booking = true;
+            try {
+                const payload = {
+                    first_name: this.form.first_name.trim(),
+                    last_name: this.form.last_name.trim(),
+                    email: this.form.email.trim(),
+                    phone: this.form.phone.trim(),
+                    payment_method: this.totalPrice() > 0 ? 'manual' : 'manual',
+                    quote_amount: this.effectivePrice(),
+                    amount_paid: 0,
+                };
+
+                const player = window.tenantApp?.player;
+                if (player?.id) payload.player_id = player.id;
+                if (this.selectedPackage) payload.rolling_package_weeks = this.selectedPackage.weeks;
+                if (this.discountValid && this.form.discount_code) {
+                    payload.credit_code = this.form.discount_code.trim();
+                    payload.credit_amount = this.discountAmt;
+                }
+
+                const token = localStorage.getItem('player_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                const res = await fetch(baseApi + '/api/session-types/' + this.cls.session_type_id + '/classes/' + this.cls.id + '/book', {
+                    method: 'POST', headers, body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    this.bookingSuccess = true;
+                    if (window.tenantApp?.showToast) window.tenantApp.showToast('Booking confirmed!', 'success');
+                } else {
+                    this.bookingError = json.error || 'Booking failed. Please try again.';
+                }
+            } catch(e) {
+                this.bookingError = 'Something went wrong. Please try again.';
+            }
+            this.booking = false;
+        },
+
+        formatDate(dt) {
+            if (!dt) return '';
+            return new Date(dt).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        },
+        formatTime(dt) {
+            if (!dt) return '';
+            return new Date(dt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+    };
+}
+</script>

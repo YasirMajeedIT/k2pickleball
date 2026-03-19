@@ -1,88 +1,40 @@
-<?php $pageTitle = 'Terms of Service — K2 Pickleball'; ?>
+<?php $pageTitle = 'Terms of Service — K2 Pickleball Platform'; ?>
 
-<section class="py-20 px-6">
-    <div class="max-w-3xl mx-auto">
-        <h1 class="text-4xl font-extrabold text-white mb-4">Terms of Service</h1>
-        <p class="text-surface-400 mb-12">Last updated: <?= date('F j, Y') ?></p>
+<section class="relative pt-32 pb-20 hero-glow overflow-hidden">
+    <div class="absolute inset-0 grid-bg opacity-30"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
+        <h1 class="font-display text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight animate-fade-in-up">
+            Terms of <span class="gradient-gold">Service</span>
+        </h1>
+        <p class="mt-4 text-sm text-slate-400 animate-fade-in-up" style="animation-delay:0.1s">Last updated: <?= date('F j, Y') ?></p>
+    </div>
+</section>
 
-        <div class="prose prose-invert max-w-none space-y-8 text-surface-300 leading-relaxed">
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">1. Acceptance of Terms</h2>
-                <p>By accessing or using the K2 Pickleball platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">2. Description of Service</h2>
-                <p>K2 Pickleball provides a cloud-based management platform for pickleball and sports facilities, including but not limited to court scheduling, membership management, billing and invoicing, and organizational tools.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">3. Account Registration</h2>
-                <p>To use the Service, you must create an account with accurate and complete information, including your name, email, and phone number. You are responsible for maintaining the confidentiality of your login credentials and for all activities that occur under your account.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">4. Subscription Plans &amp; Billing</h2>
-                <ul class="list-disc pl-6 mt-2 space-y-1">
-                    <li>Access to the Service requires an active subscription plan.</li>
-                    <li>Subscription fees are billed on the cycle selected (monthly or annually) and are non-refundable except as required by law.</li>
-                    <li>We reserve the right to modify pricing with at least 30 days' notice before the next billing cycle.</li>
-                    <li>If payment fails, your account may be downgraded or suspended until the balance is resolved.</li>
-                </ul>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">5. Acceptable Use</h2>
-                <p>You agree not to:</p>
-                <ul class="list-disc pl-6 mt-2 space-y-1">
-                    <li>Use the Service for any unlawful purpose.</li>
-                    <li>Attempt to gain unauthorized access to any part of the Service.</li>
-                    <li>Interfere with or disrupt the integrity or performance of the Service.</li>
-                    <li>Upload or transmit malicious code, viruses, or harmful content.</li>
-                    <li>Resell, sublicense, or redistribute the Service without prior written consent.</li>
-                </ul>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">6. Data Ownership</h2>
-                <p>You retain ownership of the data you input into the Service. By using the Service, you grant us a limited license to process your data solely for the purpose of providing the Service. We will not use your data for unrelated purposes or share it with third parties except as described in our <a href="privacy-policy" class="text-brand-400 hover:underline">Privacy Policy</a>.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">7. Service Availability</h2>
-                <p>We strive to keep the Service operational at all times but do not guarantee uninterrupted access. We may perform scheduled maintenance, and the Service may be temporarily unavailable due to updates, technical issues, or events beyond our control.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">8. Termination</h2>
-                <p>Either party may terminate the agreement at any time. You may cancel your subscription from the portal settings. We may suspend or terminate your account if you violate these Terms. Upon termination, your access to the Service will cease, and we may delete your data after a reasonable retention period.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">9. Limitation of Liability</h2>
-                <p>To the maximum extent permitted by law, K2 Pickleball shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service. Our total liability shall not exceed the amount you paid for the Service in the 12 months preceding the claim.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">10. Disclaimer of Warranties</h2>
-                <p>The Service is provided "as is" and "as available" without warranties of any kind, either express or implied. We disclaim all warranties, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">11. Changes to Terms</h2>
-                <p>We reserve the right to modify these Terms at any time. Material changes will be communicated via email or a prominent notice on the platform. Continued use of the Service after changes take effect constitutes acceptance of the revised Terms.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">12. Governing Law</h2>
-                <p>These Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which K2 Pickleball operates, without regard to conflict of law principles.</p>
-            </div>
-
-            <div>
-                <h2 class="text-xl font-bold text-white mb-3">13. Contact Us</h2>
-                <p>If you have questions about these Terms, please contact us at:</p>
-                <p class="mt-2"><a href="mailto:support@k2pickleball.com" class="text-brand-400 hover:underline">support@k2pickleball.com</a></p>
-            </div>
+<section class="py-16 lg:py-24 relative">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 prose-custom">
+        <?php
+        $sections = [
+            ['Agreement to Terms', 'These Terms of Service ("Terms") constitute a legally binding agreement between you and K2 Pickleball Platform ("K2", "we", "us") governing your access to and use of our website, platform, and services. By accessing or using our services, you agree to be bound by these Terms. If you do not agree, do not use our services.'],
+            ['Description of Services', 'K2 provides a cloud-based facility management platform for pickleball facilities, including court scheduling, membership management, payment processing, point-of-sale, event management, analytics, and related services. Access to the platform is provided through our partnership program under separately negotiated partnership agreements.'],
+            ['Account Registration', 'To access certain features, you must create an account. You agree to:<br>• Provide accurate, current, and complete information<br>• Maintain and update your information as needed<br>• Keep your login credentials secure and confidential<br>• Notify us immediately of any unauthorized access to your account<br>• Accept responsibility for all activities under your account'],
+            ['Partnership Terms', 'Platform access for facility operators is governed by individual Partnership Agreements that specify launch fees, ongoing platform fees, payment processing terms, and service scope. These Terms supplement but do not replace the specific provisions of your Partnership Agreement. In case of conflict, the Partnership Agreement shall prevail.'],
+            ['Payment Terms', 'Partners agree to pay all fees as specified in their Partnership Agreement. Payment processing for facility transactions is handled through our integrated Square payment system. Standard processing rates apply as disclosed during onboarding. K2 reserves the right to modify fees with reasonable notice as specified in the Partnership Agreement.'],
+            ['Acceptable Use', 'You agree not to:<br>• Use the platform for any unlawful purpose<br>• Attempt to gain unauthorized access to any part of the platform<br>• Interfere with or disrupt the platform or servers<br>• Transmit malicious code, viruses, or harmful content<br>• Scrape, crawl, or collect data without authorization<br>• Impersonate another person or entity<br>• Use the platform to send spam or unsolicited communications'],
+            ['Intellectual Property', 'The K2 platform, including all software, design, content, logos, and trademarks, is owned by K2 and protected by intellectual property laws. Your partnership grants you a limited, non-exclusive, non-transferable license to use the platform for your facility operations. You may not copy, modify, distribute, or reverse engineer any part of the platform.'],
+            ['Data Ownership', 'You retain ownership of your facility data, including customer records, transaction history, and operational data. K2 has a license to use this data as necessary to provide platform services and generate aggregated, anonymized analytics. Upon termination, you may request export of your data in standard formats.'],
+            ['Service Availability', 'We strive for 99.9% platform uptime but do not guarantee uninterrupted access. Scheduled maintenance will be communicated in advance. We are not liable for downtime caused by factors beyond our reasonable control, including internet outages, natural disasters, or third-party service failures.'],
+            ['Limitation of Liability', 'To the maximum extent permitted by law, K2 shall not be liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the platform. Our total liability shall not exceed the amount of fees paid by you in the twelve (12) months preceding the claim.'],
+            ['Indemnification', 'You agree to indemnify and hold harmless K2, its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorney fees) arising from your use of the platform, violation of these Terms, or infringement of any third-party rights.'],
+            ['Termination', 'Either party may terminate the relationship as specified in the Partnership Agreement. Upon termination, your access to the platform will be revoked. Provisions that by their nature should survive termination (including intellectual property, limitation of liability, and indemnification) shall survive.'],
+            ['Governing Law', 'These Terms shall be governed by and construed in accordance with the laws of the State of Florida, without regard to conflict of law principles. Any disputes shall be resolved in the courts located in Hillsborough County, Florida.'],
+            ['Changes to Terms', 'We may modify these Terms at any time. Material changes will be communicated to partners via email and platform notification. Continued use of the platform after changes take effect constitutes acceptance of the revised Terms.'],
+            ['Contact Information', 'For questions regarding these Terms, contact us at:<br><br>K2 Pickleball Platform<br>Tampa Bay, Florida<br>Email: legal@k2pickleball.com'],
+        ];
+        foreach ($sections as $i => $sec): ?>
+        <div class="<?= $i > 0 ? 'mt-10 pt-10 border-t border-navy-800/60' : '' ?>">
+            <h2 class="font-display text-xl font-bold text-white mb-4"><?= ($i + 1) . '. ' . $sec[0] ?></h2>
+            <div class="text-sm text-slate-400 leading-relaxed"><?= $sec[1] ?></div>
         </div>
+        <?php endforeach; ?>
     </div>
 </section>

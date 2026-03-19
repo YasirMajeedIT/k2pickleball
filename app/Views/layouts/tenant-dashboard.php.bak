@@ -1,0 +1,219 @@
+<?php
+/**
+ * Tenant Dashboard Layout
+ * Sidebar navigation + main content area for authenticated player pages.
+ * Extends tenant.php layout but replaces main body with sidebar+content grid.
+ */
+$orgName = htmlspecialchars($org['name'] ?? 'Sports Club');
+$primaryColor = $branding['primary_color'] ?? '#6366f1';
+$accentColor = $branding['accent_color'] ?? '#f59e0b';
+$logoUrl = $branding['logo_url'] ?? '';
+
+// ── Color generation ──
+if (!function_exists('hexToHSL')) {
+    function hexToHSL(string $hex): array {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) === 3) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        $r = hexdec(substr($hex,0,2))/255; $g = hexdec(substr($hex,2,2))/255; $b = hexdec(substr($hex,4,2))/255;
+        $max = max($r,$g,$b); $min = min($r,$g,$b); $l = ($max+$min)/2;
+        if ($max === $min) { $h=$s=0; } else {
+            $d = $max-$min; $s = $l>0.5 ? $d/(2-$max-$min) : $d/($max+$min);
+            if ($max===$r) $h = ($g-$b)/$d + ($g<$b?6:0);
+            elseif ($max===$g) $h = ($b-$r)/$d + 2;
+            else $h = ($r-$g)/$d + 4;
+            $h *= 60;
+        }
+        return [$h, $s*100, $l*100];
+    }
+}
+
+[$ph, $ps, $pl] = hexToHSL($primaryColor);
+
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$navItems = [
+    ['label' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
+    ['label' => 'My Bookings', 'href' => '/dashboard/bookings', 'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
+    ['label' => 'Profile', 'href' => '/dashboard/profile', 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
+    ['label' => 'Notifications', 'href' => '/dashboard/notifications', 'icon' => 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'],
+];
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($pageTitle ?? 'Dashboard') ?> — <?= $orgName ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .gradient-text { background: linear-gradient(135deg, hsl(<?= $ph ?>,<?= $ps ?>%,<?= $pl ?>%), hsl(<?= $ph+20 ?>,<?= $ps ?>%,<?= $pl+10 ?>%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+    <script>
+    tailwind.config = {
+        theme: { extend: { colors: {
+            primary: {
+                50: 'hsl(<?= $ph ?>,<?= $ps ?>%,97%)', 100: 'hsl(<?= $ph ?>,<?= $ps ?>%,94%)',
+                200: 'hsl(<?= $ph ?>,<?= $ps ?>%,86%)', 300: 'hsl(<?= $ph ?>,<?= $ps ?>%,74%)',
+                400: 'hsl(<?= $ph ?>,<?= $ps ?>%,60%)', 500: 'hsl(<?= $ph ?>,<?= $ps ?>%,<?= $pl ?>%)',
+                600: 'hsl(<?= $ph ?>,<?= $ps ?>%,<?= max($pl-8,15) ?>%)', 700: 'hsl(<?= $ph ?>,<?= $ps ?>%,<?= max($pl-16,10) ?>%)',
+                800: 'hsl(<?= $ph ?>,<?= $ps ?>%,<?= max($pl-24,8) ?>%)', 900: 'hsl(<?= $ph ?>,<?= $ps ?>%,<?= max($pl-30,5) ?>%)'
+            },
+            surface: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' }
+        }}}
+    }
+    const baseApi = window.location.origin;
+    const ORG = <?= json_encode([
+        'id' => $org['id'] ?? 0,
+        'name' => $org['name'] ?? '',
+        'facilities' => array_map(fn($f) => ['id'=>$f['id'],'name'=>$f['name'],'slug'=>$f['slug'],'city'=>$f['city']??'','state'=>$f['state']??''], $facilities ?? [])
+    ]) ?>;
+    </script>
+</head>
+<body class="min-h-screen bg-surface-50" x-data="dashboardApp()" x-init="init()">
+
+    <!-- Top bar -->
+    <header class="fixed top-0 left-0 right-0 h-16 bg-white border-b border-surface-100 z-40 flex items-center px-4 lg:px-6">
+        <!-- Mobile sidebar toggle -->
+        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg hover:bg-surface-100 mr-3">
+            <svg class="w-5 h-5 text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2 mr-auto">
+            <?php if ($logoUrl): ?>
+            <img src="<?= htmlspecialchars($logoUrl) ?>" alt="<?= $orgName ?>" class="h-8">
+            <?php else: ?>
+            <div class="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center text-white font-extrabold text-sm">
+                <?= htmlspecialchars(strtoupper(substr($org['name'] ?? 'S', 0, 1))) ?>
+            </div>
+            <?php endif; ?>
+            <span class="text-sm font-bold text-surface-800 hidden sm:block"><?= $orgName ?></span>
+        </a>
+
+        <!-- User menu -->
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-surface-50 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-xs font-bold" x-text="player ? (player.first_name?.[0] || '').toUpperCase() : '?'"></div>
+                <span class="text-sm font-medium text-surface-700 hidden sm:block" x-text="player ? player.first_name : 'Account'"></span>
+                <svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-surface-100 shadow-lg py-1 z-50">
+                <a href="/" class="block px-4 py-2 text-sm text-surface-600 hover:bg-surface-50">← Back to site</a>
+                <a href="/dashboard/profile" class="block px-4 py-2 text-sm text-surface-600 hover:bg-surface-50">Profile Settings</a>
+                <button @click="logout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar (desktop: fixed, mobile: overlay) -->
+    <aside class="fixed top-16 left-0 bottom-0 w-64 bg-white border-r border-surface-100 z-30 transform transition-transform lg:translate-x-0"
+           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+        <!-- Mobile overlay backdrop -->
+        <div class="fixed inset-0 bg-black/30 lg:hidden" x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity></div>
+
+        <nav class="relative bg-white h-full p-4 space-y-1 z-10">
+            <?php foreach ($navItems as $item):
+                $active = $currentPath === $item['href'];
+            ?>
+            <a href="<?= $item['href'] ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors <?= $active ? 'bg-primary-50 text-primary-700' : 'text-surface-600 hover:bg-surface-50 hover:text-surface-800' ?>">
+                <svg class="w-5 h-5 <?= $active ? 'text-primary-500' : 'text-surface-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $item['icon'] ?>"/></svg>
+                <?= htmlspecialchars($item['label']) ?>
+            </a>
+            <?php endforeach; ?>
+
+            <div class="pt-4 mt-4 border-t border-surface-100">
+                <a href="/schedule" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-surface-600 hover:bg-surface-50 hover:text-surface-800 transition-colors">
+                    <svg class="w-5 h-5 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    Book a Session
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main content area -->
+    <main class="lg:ml-64 pt-16 min-h-screen">
+        <div class="p-6 lg:p-8 max-w-6xl">
+            <?php
+            $contentPath = dirname(__DIR__) . '/' . $contentView;
+            if (file_exists($contentPath)) {
+                include $contentPath;
+            }
+            ?>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-transition class="fixed bottom-6 right-6 z-50">
+        <div class="flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white"
+             :class="toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-blue-500' : 'bg-green-500'">
+            <span x-text="toast.message"></span>
+        </div>
+    </div>
+
+    <script>
+    function dashboardApp() {
+        return {
+            player: null,
+            sidebarOpen: false,
+            toast: { show: false, message: '', type: 'success' },
+
+            async init() {
+                const token = localStorage.getItem('player_token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+                try {
+                    const res = await fetch(baseApi + '/api/auth/me', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        this.player = json.data;
+                    } else {
+                        localStorage.removeItem('player_token');
+                        localStorage.removeItem('player_refresh');
+                        window.location.href = '/login';
+                    }
+                } catch(e) {
+                    window.location.href = '/login';
+                }
+            },
+
+            async authFetch(url, opts = {}) {
+                const token = localStorage.getItem('player_token');
+                if (!opts.headers) opts.headers = {};
+                opts.headers['Authorization'] = 'Bearer ' + token;
+                if (!opts.headers['Content-Type'] && opts.method && opts.method !== 'GET') {
+                    opts.headers['Content-Type'] = 'application/json';
+                }
+                return fetch(url, opts);
+            },
+
+            async logout() {
+                const refresh = localStorage.getItem('player_refresh');
+                if (refresh) {
+                    try {
+                        await this.authFetch(baseApi + '/api/auth/logout', {
+                            method: 'POST',
+                            body: JSON.stringify({ refresh_token: refresh })
+                        });
+                    } catch(e) {}
+                }
+                localStorage.removeItem('player_token');
+                localStorage.removeItem('player_refresh');
+                window.location.href = '/login';
+            },
+
+            showToast(msg, type = 'success') {
+                this.toast = { show: true, message: msg, type };
+                setTimeout(() => this.toast.show = false, 4000);
+            }
+        };
+    }
+    </script>
+</body>
+</html>
