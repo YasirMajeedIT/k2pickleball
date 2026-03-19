@@ -246,10 +246,12 @@ class PublicApiController extends Controller
         $end = $request->input('end', date('Y-m-d', strtotime('+14 days')));
         $categoryId = (int) $request->input('category_id', 0);
 
-        $sql = "SELECT cls.`id`, cls.`session_type_id`, cls.`start_time`, cls.`end_time`,
-                       cls.`max_participants`, cls.`status`,
-                       st.`name` as `session_type_name`, st.`price`, st.`description`,
-                       st.`skill_levels`, st.`is_public`,
+        $sql = "SELECT cls.`id`, cls.`session_type_id`,
+                       cls.`scheduled_at` AS `start_time`,
+                       DATE_ADD(cls.`scheduled_at`, INTERVAL st.`duration` MINUTE) AS `end_time`,
+                       cls.`slots` AS `max_participants`,
+                       st.`title` AS `session_type_name`, st.`standard_price` AS `price`,
+                       sd.`description`,
                        cat.`name` as `category_name`, cat.`color` as `category_color`,
                        sd.`session_name`, sd.`picture`,
                        (SELECT COUNT(*) FROM `st_class_attendees` a
@@ -260,10 +262,10 @@ class PublicApiController extends Controller
                 LEFT JOIN `sessions` sd ON sd.`id` = st.`session_id`
                 WHERE st.`organization_id` = ?
                   AND st.`facility_id` = ?
-                  AND cls.`start_time` >= ?
-                  AND cls.`start_time` <= ?
-                  AND cls.`status` = 'active'
-                  AND st.`is_public` = 1";
+                  AND cls.`scheduled_at` >= ?
+                  AND cls.`scheduled_at` <= ?
+                  AND cls.`is_active` = 1
+                  AND st.`private` = 0";
         $params = [$orgId, $facilityId, $start . ' 00:00:00', $end . ' 23:59:59'];
 
         if ($categoryId > 0) {
@@ -271,7 +273,7 @@ class PublicApiController extends Controller
             $params[] = $categoryId;
         }
 
-        $sql .= " ORDER BY cls.`start_time` ASC";
+        $sql .= " ORDER BY cls.`scheduled_at` ASC";
         $classes = $this->db->fetchAll($sql, $params);
 
         // Add availability
@@ -293,8 +295,13 @@ class PublicApiController extends Controller
         if ($orgId instanceof Response) return $orgId;
 
         $class = $this->db->fetch(
-            "SELECT cls.*, st.`name` as `session_type_name`, st.`price`, st.`description`,
-                    st.`skill_levels`, st.`facility_id`, st.`category_id`,
+            "SELECT cls.*,
+                    cls.`scheduled_at` AS `start_time`,
+                    DATE_ADD(cls.`scheduled_at`, INTERVAL st.`duration` MINUTE) AS `end_time`,
+                    cls.`slots` AS `max_participants`,
+                    st.`title` AS `session_type_name`, st.`standard_price` AS `price`,
+                    sd.`description`,
+                    st.`facility_id`, st.`category_id`, st.`duration`,
                     cat.`name` as `category_name`, cat.`color` as `category_color`,
                     sd.`session_name`, sd.`picture`,
                     f.`name` as `facility_name`, f.`slug` as `facility_slug`,
@@ -305,7 +312,7 @@ class PublicApiController extends Controller
              LEFT JOIN `categories` cat ON cat.`id` = st.`category_id`
              LEFT JOIN `sessions` sd ON sd.`id` = st.`session_id`
              LEFT JOIN `facilities` f ON f.`id` = st.`facility_id`
-             WHERE cls.`id` = ? AND st.`organization_id` = ? AND st.`is_public` = 1",
+             WHERE cls.`id` = ? AND st.`organization_id` = ? AND st.`private` = 0",
             [$id, $orgId]
         );
 
