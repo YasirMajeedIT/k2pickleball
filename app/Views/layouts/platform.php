@@ -196,7 +196,7 @@
     </div>
     <script>
         if (!localStorage.getItem('access_token')) {
-            window.location.href = '<?= htmlspecialchars(($baseUrl ?? '') . '/admin/login', ENT_QUOTES) ?>';
+            window.location.href = '<?= htmlspecialchars(($baseUrl ?? '') . '/platform/login', ENT_QUOTES) ?>';
         }
         function platformLogout() {
             const token = localStorage.getItem('refresh_token');
@@ -207,7 +207,7 @@
             }).finally(() => {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
-                window.location.href = APP_BASE + '/admin/login';
+                window.location.href = APP_BASE + '/platform/login';
             });
         }
     </script>

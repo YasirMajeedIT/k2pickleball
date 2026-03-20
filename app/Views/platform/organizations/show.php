@@ -278,7 +278,7 @@ function orgShow() {
                     fetch(APP_BASE + '/api/platform/extensions?per_page=100', { headers }),
                     fetch(APP_BASE + '/api/plans?per_page=100', { headers }),
                 ]);
-                if (orgRes.status === 401) { window.location.href = APP_BASE + '/admin/login'; return; }
+                if (orgRes.status === 401) { window.location.href = APP_BASE + '/platform/login'; return; }
                 const orgJson = await orgRes.json(); this.org = orgJson.data;
                 const extJson = await extRes.json();
                 const installed = (this.org.extensions || []).map(x => x.extension_id || x.id);

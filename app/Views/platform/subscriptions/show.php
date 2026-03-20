@@ -144,7 +144,7 @@ function subShow() {
                     fetch(APP_BASE + '/api/subscriptions/' + subId, { headers }),
                     fetch(APP_BASE + '/api/plans?per_page=100', { headers }),
                 ]);
-                if (subRes.status === 401) { window.location.href = APP_BASE + '/admin/login'; return; }
+                if (subRes.status === 401) { window.location.href = APP_BASE + '/platform/login'; return; }
                 const subJson = await subRes.json(); this.sub = subJson.data;
                 const plansJson = await plansRes.json(); this.plans = (plansJson.data || []).filter(p => p.is_active);
             } catch (e) { console.error(e); }

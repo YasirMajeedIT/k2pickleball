@@ -10,6 +10,9 @@ use App\Modules\Platform\PlatformApiController;
  * Platform (Super Admin) panel HTML routes.
  */
 return function (Router $router): void {
+    // Auth pages (standalone — no sidebar layout)
+    $router->get('/platform/login', [PlatformController::class, 'handleRequest']);
+
     // HTML pages
     $router->get('/platform', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/organizations', [PlatformController::class, 'handleRequest']);

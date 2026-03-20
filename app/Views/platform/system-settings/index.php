@@ -97,7 +97,7 @@ function systemSettings() {
         async init() {
             try {
                 const res = await fetch(APP_BASE + '/api/platform/settings', { headers });
-                if (res.status === 401) { window.location.href = APP_BASE + '/admin/login'; return; }
+                if (res.status === 401) { window.location.href = APP_BASE + '/platform/login'; return; }
                 const json = await res.json();
                 this.settings = (json.data || []).map(s => ({
                     key: s.key || '',

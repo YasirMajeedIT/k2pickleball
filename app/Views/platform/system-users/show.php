@@ -107,7 +107,7 @@ function userShow() {
         async init() {
             try {
                 const res = await fetch(APP_BASE + '/api/platform/users/' + userId, { headers });
-                if (res.status === 401) { window.location.href = APP_BASE + '/admin/login'; return; }
+                if (res.status === 401) { window.location.href = APP_BASE + '/platform/login'; return; }
                 const json = await res.json(); this.user = json.data;
             } catch (e) { console.error(e); }
             this.loading = false;

@@ -43,7 +43,7 @@ function planEditForm() {
                 const res = await fetch(APP_BASE + '/api/plans/' + id, {
                     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token'), 'Accept': 'application/json' }
                 });
-                if (res.status === 401) { window.location.href = APP_BASE + '/admin/login'; return; }
+                if (res.status === 401) { window.location.href = APP_BASE + '/platform/login'; return; }
                 const json = await res.json();
                 const d = json.data;
                 this.form = {

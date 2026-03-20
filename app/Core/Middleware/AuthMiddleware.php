@@ -49,6 +49,8 @@ final class AuthMiddleware implements MiddlewareInterface
         '/verify-email',
         '/privacy-policy',
         '/terms',
+        // Client portal HTML pages (JS handles auth redirect on the frontend)
+        '/portal',
         '/api/auth/verify-email',
         '/api/auth/resend-verification',
         '/api/auth/google',

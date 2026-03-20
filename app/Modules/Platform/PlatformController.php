@@ -11,6 +11,9 @@ use App\Core\Http\Response;
 class PlatformController extends Controller
 {
     private array $viewMap = [
+        // Auth (standalone pages — no sidebar)
+        'login'                         => 'platform/auth/login.php',
+
         'dashboard'                     => 'platform/dashboard.php',
         'organizations'                 => 'platform/organizations/index.php',
         'organizations/create'          => 'platform/organizations/create.php',
