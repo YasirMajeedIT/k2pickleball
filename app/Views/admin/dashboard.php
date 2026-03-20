@@ -4,6 +4,25 @@ $breadcrumbs = [];
 
 ob_start();
 ?>
+<!-- ─── Quick Actions Bar ─── -->
+<div x-data="dashboardActions()" x-init="init()" class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 shadow-soft px-5 py-4">
+    <div class="flex items-center gap-3">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-md shadow-primary-500/20">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+        </div>
+        <div>
+            <p class="text-sm font-bold text-surface-900 dark:text-white" x-text="orgName || 'Your Organization'"></p>
+            <p class="text-xs text-surface-400">Admin Dashboard</p>
+        </div>
+    </div>
+    <a x-show="clientUrl" :href="clientUrl" target="_blank" rel="noopener"
+       class="inline-flex items-center gap-2 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 px-4 py-2 text-sm font-semibold text-surface-700 dark:text-surface-200 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253M3.157 7.582A8.959 8.959 0 003 12c0 .778.099 1.533.284 2.253"/></svg>
+        View Client Site
+        <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+    </a>
+</div>
+
 <!-- ─── Stats Cards ─── -->
 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
 
@@ -189,6 +208,27 @@ ob_start();
 </div>
 
 <script>
+function dashboardActions() {
+    return {
+        orgName: '',
+        clientUrl: '',
+        async init() {
+            try {
+                const json = await getMe();
+                const user = json.data || json;
+                const org = user.organization || null;
+                if (!org) return;
+                this.orgName = org.name || '';
+                const slug = org.slug || '';
+                if (!slug) return;
+                const hostname = window.location.hostname; // e.g. admin.k2pickleball.local
+                const baseDomain = hostname.replace(/^admin\./, '');
+                this.clientUrl = window.location.protocol + '//' + slug + '.' + baseDomain;
+            } catch (_) {}
+        }
+    };
+}
+
 (function () {
     'use strict';
 

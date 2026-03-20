@@ -40,6 +40,14 @@ ob_start();
                 Edit
             </a>
             <template x-if="org && (org.status === 'active' || org.status === 'trial')">
+                <a :href="clientSiteUrl()" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-800 px-4 py-2 text-sm font-semibold text-surface-700 dark:text-surface-200 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 shadow-soft transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253M3.157 7.582A8.959 8.959 0 003 12c0 .778.099 1.533.284 2.253"/></svg>
+                    View Client Site
+                    <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                </a>
+            </template>
+            <template x-if="org && (org.status === 'active' || org.status === 'trial')">
                 <button @click="viewAdminDashboard()" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 hover:from-purple-700 hover:to-purple-800 transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     View Admin Dashboard
@@ -270,6 +278,12 @@ function orgShow() {
     return {
         org: null, loading: true, showExtModal: false, showSubscribeModal: false,
         availableExts: [], plans: [], subForm: { plan_id: '', billing_cycle: 'monthly' },
+        clientSiteUrl() {
+            if (!this.org || !this.org.slug) return '#';
+            const hostname = window.location.hostname; // e.g. platform.k2pickleball.local
+            const baseDomain = hostname.replace(/^platform\./, '');
+            return window.location.protocol + '//' + this.org.slug + '.' + baseDomain;
+        },
         statusColors: {
             active: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400',
             suspended: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
