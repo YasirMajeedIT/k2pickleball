@@ -71,7 +71,7 @@ function userEditForm() {
                 const rolesJson = await rolesRes.json();
                 if (rolesRes.ok && rolesJson.data) {
                     const select = this.$el.querySelector('select[data-field="role_id"]');
-                    if (select) rolesJson.data.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; select.appendChild(o); });
+                    if (select) rolesJson.data.filter(r => r.slug !== 'super-admin').forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; select.appendChild(o); });
                 } else {
                     window.dispatchEvent(new CustomEvent('toast', { detail: { message: rolesJson.message || 'Unable to load roles', type: 'error' } }));
                 }

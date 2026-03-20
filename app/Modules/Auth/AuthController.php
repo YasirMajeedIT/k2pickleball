@@ -58,11 +58,19 @@ final class AuthController extends Controller
             'phone' => 'required|phone',
             'organization_id' => 'nullable|integer',
             'role_slug' => 'nullable|string|max:50',
+            'organization_name' => 'nullable|string|max:255',
+            'organization_slug' => 'nullable|slug|max:100',
         ]);
 
         $data['email'] = Sanitizer::email($data['email']);
         $data['first_name'] = Sanitizer::string($data['first_name']);
         $data['last_name'] = Sanitizer::string($data['last_name']);
+        if (!empty($data['organization_name'])) {
+            $data['organization_name'] = Sanitizer::string($data['organization_name']);
+        }
+        if (!empty($data['organization_slug'])) {
+            $data['organization_slug'] = Sanitizer::slug($data['organization_slug']);
+        }
 
         $user = $this->auth->register($data);
 
@@ -230,9 +238,24 @@ final class AuthController extends Controller
         $db = $container->make(\App\Core\Database\Connection::class);
         $user = $db->fetch("SELECT `id`, `uuid`, `email`, `first_name`, `last_name`, `phone`, `avatar_url`, `status`, `organization_id`, `created_at` FROM `users` WHERE `id` = ? LIMIT 1", [$userId]);
 
+        $orgId = $request->organizationId() ?? ($user['organization_id'] ?? null);
+        $organization = null;
+        if ($orgId) {
+            $org = $db->fetch("SELECT `id`, `name`, `slug`, `status`, `trial_ends_at` FROM `organizations` WHERE `id` = ? LIMIT 1", [(int) $orgId]);
+            if ($org) {
+                $organization = [
+                    'id'            => (int) $org['id'],
+                    'name'          => $org['name'] ?? '',
+                    'slug'          => $org['slug'] ?? '',
+                    'status'        => $org['status'] ?? '',
+                    'trial_ends_at' => $org['trial_ends_at'] ?? null,
+                ];
+            }
+        }
+
         return $this->success([
             'user_id'         => $request->userId(),
-            'organization_id' => $request->organizationId(),
+            'organization_id' => $orgId,
             'roles'           => $request->userRoles(),
             'permissions'     => $request->getAttributes()['user_permissions'] ?? [],
             'first_name'      => $user['first_name'] ?? '',
@@ -240,6 +263,7 @@ final class AuthController extends Controller
             'email'           => $user['email'] ?? '',
             'phone'           => $user['phone'] ?? '',
             'avatar_url'      => $user['avatar_url'] ?? '',
+            'organization'    => $organization,
         ]);
     }
 }

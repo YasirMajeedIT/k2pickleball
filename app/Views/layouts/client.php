@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle ?? 'K2 Platform — Launch & Operate Your Own Pickleball Facility') ?></title>
+    <title><?= htmlspecialchars($pageTitle ?? 'K2Pickleball.com — Launch & Operate Your Own Pickleball Facility') ?></title>
     <meta name="description" content="<?= htmlspecialchars($pageDescription ?? 'The proven system for launching and operating profitable pickleball venues. White-label facility management software backed by real-world operational expertise.') ?>">
-    <meta property="og:title" content="<?= htmlspecialchars($pageTitle ?? 'K2 Platform Partnership') ?>">
-    <meta property="og:description" content="Launch & operate your own pickleball facility with the K2 Platform — proven systems, technology, and operational expertise.">
+    <meta property="og:title" content="<?= htmlspecialchars($pageTitle ?? 'K2Pickleball.com') ?>">
+    <meta property="og:description" content="Launch & operate your own pickleball facility with K2Pickleball.com — proven systems, technology, and operational expertise.">
     <meta property="og:type" content="website">
     <script>window.APP_BASE = '<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>';</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
@@ -34,8 +34,8 @@
                         },
                     },
                     fontFamily: {
-                        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Poppins', 'system-ui', 'sans-serif'],
+                        sans: ['Poppins', 'system-ui', 'sans-serif'],
                     },
                     boxShadow: {
                         'gold': '0 0 30px rgba(212,175,55,0.15)',
@@ -75,7 +75,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #27466e; }
     </style>
 </head>
-<body class="font-sans bg-surface-950 text-white antialiased">
+<body class="font-sans bg-navy-950 text-white antialiased">
 
     <!-- Navigation -->
     <nav x-data="{ open: false, scrolled: false }" 
@@ -95,7 +95,7 @@
                     </div>
                     <div class="font-display">
                         <span class="text-xl font-extrabold tracking-tight text-white">K2</span>
-                        <span class="text-xl font-light tracking-tight text-gold-500 ml-1">Platform</span>
+                        <span class="text-xl font-light tracking-tight text-gold-500 ml-1">Pickleball</span>
                     </div>
                 </a>
 
@@ -175,7 +175,7 @@
                         </div>
                         <div class="font-display">
                             <span class="text-lg font-extrabold text-white">K2</span>
-                            <span class="text-lg font-light text-gold-500 ml-1">Platform</span>
+                            <span class="text-lg font-light text-gold-500 ml-1">Pickleball</span>
                         </div>
                     </a>
                     <p class="text-sm text-slate-400 leading-relaxed max-w-sm">
@@ -198,7 +198,7 @@
                 <div>
                     <h4 class="text-xs font-semibold text-gold-500 uppercase tracking-wider mb-4">Partnership</h4>
                     <ul class="space-y-3">
-                        <li><a href="<?= $baseUrl ?>/product" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">The K2 Platform</a></li>
+                        <li><a href="<?= $baseUrl ?>/product" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">The K2Pickleball Platform</a></li>
                         <li><a href="<?= $baseUrl ?>/pricing" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Partnership Structure</a></li>
                         <li><a href="<?= $baseUrl ?>/demo" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Schedule Consultation</a></li>
                     </ul>
@@ -221,13 +221,12 @@
                     <ul class="space-y-3">
                         <li><a href="<?= $baseUrl ?>/login" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Partner Login</a></li>
                         <li><a href="<?= $baseUrl ?>/register" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Apply Now</a></li>
-                        <li><a href="<?= $baseUrl ?>/portal" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Partner Portal</a></li>
                     </ul>
                 </div>
             </div>
 
             <div class="mt-12 pt-8 border-t border-navy-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-sm text-slate-600">&copy; <?= date('Y') ?> K2 Platform Partnership. All rights reserved.</p>
+                <p class="text-sm text-slate-600">&copy; <?= date('Y') ?> K2Pickleball.com. All rights reserved.</p>
                 <p class="text-xs text-slate-600">Built with proven operational expertise from Tampa Bay's flagship pickleball facility.</p>
             </div>
         </div>

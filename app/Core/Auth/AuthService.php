@@ -73,7 +73,7 @@ final class AuthService
         $this->db->update('users', [
             'failed_login_attempts' => 0,
             'locked_until' => null,
-            'last_login_at' => date('Y-m-d H:i:s'),
+            'last_login_at' => gmdate('Y-m-d H:i:s'),
             'last_login_ip' => $ip,
         ], ['id' => $user['id']]);
 
@@ -108,7 +108,7 @@ final class AuthService
     }
 
     /**
-     * Register a new user.
+     * Register a new user, optionally creating an organization.
      */
     public function register(array $data): array
     {
@@ -122,6 +122,35 @@ final class AuthService
             throw new ValidationException(['email' => 'Email address is already registered']);
         }
 
+        // If creating a new organization, validate slug uniqueness
+        $orgId = $data['organization_id'] ?? null;
+        if (!empty($data['organization_name']) && !empty($data['organization_slug'])) {
+            $slugTaken = $this->db->fetch(
+                "SELECT `id` FROM `organizations` WHERE `slug` = ?",
+                [$data['organization_slug']]
+            );
+            if ($slugTaken) {
+                throw new ValidationException(['organization_slug' => 'This organization slug is already taken']);
+            }
+
+            $orgUuid = $this->generateUuid();
+            $trialEndsAt = gmdate('Y-m-d H:i:s', time() + 7 * 86400); // 7-day trial
+            $orgId = $this->db->insert('organizations', [
+                'uuid'          => $orgUuid,
+                'name'          => $data['organization_name'],
+                'slug'          => $data['organization_slug'],
+                'email'         => $data['email'],
+                'phone'         => $data['phone'] ?? null,
+                'status'        => 'trial',
+                'trial_ends_at' => $trialEndsAt,
+                'created_at'    => gmdate('Y-m-d H:i:s'),
+                'updated_at'    => gmdate('Y-m-d H:i:s'),
+            ]);
+
+            // Seed mandatory system categories for the new organization
+            $this->seedSystemCategories($orgId);
+        }
+
         $uuid = $this->generateUuid();
         $passwordHash = password_hash($data['password'], PASSWORD_BCRYPT, [
             'cost' => Config::get('auth.password.bcrypt_cost', 12),
@@ -129,7 +158,7 @@ final class AuthService
 
         $userId = $this->db->insert('users', [
             'uuid'             => $uuid,
-            'organization_id'  => $data['organization_id'] ?? null,
+            'organization_id'  => $orgId,
             'email'            => $data['email'],
             'password_hash'    => $passwordHash,
             'first_name'       => $data['first_name'],
@@ -137,8 +166,8 @@ final class AuthService
             'phone'            => $data['phone'] ?? null,
             'status'           => 'active',
             'email_verified_at'=> null,
-            'created_at'       => date('Y-m-d H:i:s'),
-            'updated_at'       => date('Y-m-d H:i:s'),
+            'created_at'       => gmdate('Y-m-d H:i:s'),
+            'updated_at'       => gmdate('Y-m-d H:i:s'),
         ]);  
 
         // Send verification email
@@ -149,8 +178,26 @@ final class AuthService
             $verifyToken
         );
 
-        // Assign default role if organization is specified
-        if (!empty($data['organization_id']) && !empty($data['role_slug'])) {
+        // If a new org was created, assign org-owner role
+        if (!empty($data['organization_name']) && !empty($data['organization_slug']) && $orgId) {
+            $ownerRole = $this->db->fetch(
+                "SELECT `id` FROM `roles` WHERE `slug` = 'org-owner' LIMIT 1"
+            );
+            if ($ownerRole) {
+                $this->db->insert('user_roles', [
+                    'user_id' => $userId,
+                    'role_id' => $ownerRole['id'],
+                    'organization_id' => $orgId,
+                    'created_at' => gmdate('Y-m-d H:i:s'),
+                ]);
+            }
+        } elseif (!empty($data['organization_id']) && !empty($data['role_slug'])) {
+            // Joining an existing organization with a specific role
+            $blockedSlugs = ['super-admin', 'super_admin', 'superadmin', 'org-owner', 'org_owner', 'org-admin', 'org_admin'];
+            if (in_array(strtolower($data['role_slug']), $blockedSlugs, true)) {
+                throw new ValidationException(['role_slug' => 'This role cannot be self-assigned']);
+            }
+
             $role = $this->db->fetch(
                 "SELECT `id` FROM `roles` WHERE `slug` = ? AND (`organization_id` = ? OR `organization_id` IS NULL) LIMIT 1",
                 [$data['role_slug'], $data['organization_id']]
@@ -161,7 +208,7 @@ final class AuthService
                     'user_id' => $userId,
                     'role_id' => $role['id'],
                     'organization_id' => $data['organization_id'],
-                    'created_at' => date('Y-m-d H:i:s'),
+                    'created_at' => gmdate('Y-m-d H:i:s'),
                 ]);
             }
         }
@@ -172,6 +219,7 @@ final class AuthService
             'email' => $data['email'],
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
+            'organization_id' => $orgId,
         ];
     }
 
@@ -216,13 +264,13 @@ final class AuthService
 
         $token = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $token);
-        $expiresAt = date('Y-m-d H:i:s', time() + 3600); // 1 hour
+        $expiresAt = gmdate('Y-m-d H:i:s', time() + 3600); // 1 hour
 
         $this->db->insert('password_resets', [
             'email' => $email,
             'token_hash' => $tokenHash,
             'expires_at' => $expiresAt,
-            'created_at' => date('Y-m-d H:i:s'),
+            'created_at' => gmdate('Y-m-d H:i:s'),
         ]);
 
         // Send reset email (also fetch first_name for personalisation)
@@ -310,7 +358,7 @@ final class AuthService
         // Lock account after 5 failed attempts for 15 minutes
         $user = $this->db->fetch("SELECT `failed_login_attempts` FROM `users` WHERE `id` = ?", [$userId]);
         if ($user && (int) $user['failed_login_attempts'] >= 5) {
-            $lockUntil = date('Y-m-d H:i:s', time() + 900);
+            $lockUntil = gmdate('Y-m-d H:i:s', time() + 900);
             $this->db->update('users', ['locked_until' => $lockUntil], ['id' => $userId]);
         }
     }
@@ -346,13 +394,13 @@ final class AuthService
 
         $token    = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $token);
-        $expiresAt = date('Y-m-d H:i:s', time() + 86400); // 24 hours
+        $expiresAt = gmdate('Y-m-d H:i:s', time() + 86400); // 24 hours
 
         $this->db->insert('email_verifications', [
             'email'      => $email,
             'token_hash' => $tokenHash,
             'expires_at' => $expiresAt,
-            'created_at' => date('Y-m-d H:i:s'),
+            'created_at' => gmdate('Y-m-d H:i:s'),
         ]);
 
         return $token;
@@ -493,5 +541,37 @@ final class AuthService
         $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
+
+    /**
+     * Seed mandatory system categories for a new organization.
+     */
+    private function seedSystemCategories(int $orgId): void
+    {
+        $systemCategories = [
+            [
+                'system_slug' => 'book-a-court',
+                'name'        => 'Book a Court',
+                'color'       => '#d4af37',
+                'description' => 'Reserve a court for your group. Pick your date, time, and court — instant confirmation.',
+            ],
+        ];
+
+        foreach ($systemCategories as $i => $cat) {
+            $exists = $this->db->fetch(
+                "SELECT `id` FROM `categories` WHERE `organization_id` = ? AND `system_slug` = ?",
+                [$orgId, $cat['system_slug']]
+            );
+            if ($exists) {
+                continue;
+            }
+
+            $uuid = $this->generateUuid();
+            $this->db->query(
+                "INSERT INTO `categories` (`uuid`, `organization_id`, `name`, `color`, `sort_order`, `is_taxable`, `is_system`, `system_slug`, `is_active`, `description`, `created_at`, `updated_at`)
+                 VALUES (?, ?, ?, ?, ?, 0, 1, ?, 1, ?, NOW(), NOW())",
+                [$uuid, $orgId, $cat['name'], $cat['color'], $i + 1, $cat['system_slug'], $cat['description']]
+            );
+        }
     }
 }

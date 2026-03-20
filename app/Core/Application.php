@@ -205,6 +205,13 @@ final class Application
             $this->checkPermission($request, $match['permission']);
         }
 
+        // Protect all /api/platform/* routes — super-admin only
+        if (str_starts_with($path, '/api/platform/')) {
+            if (!$request->isSuperAdmin()) {
+                return Response::error('Forbidden. Super-admin access required.', 403);
+            }
+        }
+
         // Resolve and call the handler
         return $this->callHandler($match['handler'], $match['params'], $request);
     }

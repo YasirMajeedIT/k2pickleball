@@ -47,9 +47,22 @@ final class RateLimitMiddleware implements MiddlewareInterface
 
     private function resolveLimit(Request $request): int
     {
-        // Stricter limits for auth endpoints
-        if (str_starts_with($request->path(), '/api/auth/')) {
-            return (int) ($_ENV['RATE_LIMIT_AUTH'] ?? 5);
+        $path = $request->path();
+        $method = strtoupper($request->method());
+
+        // Public form submissions — very strict (3 per window)
+        if ($method === 'POST' && in_array($path, ['/api/contact', '/api/consultations'], true)) {
+            return (int) ($_ENV['RATE_LIMIT_FORMS'] ?? 3);
+        }
+
+        // Read-only auth endpoints — use default (generous) limit
+        if ($path === '/api/auth/me' || $path === '/api/auth/refresh') {
+            return (int) ($_ENV['RATE_LIMIT_DEFAULT'] ?? 60);
+        }
+
+        // Sensitive write auth endpoints — stricter limit
+        if (str_starts_with($path, '/api/auth/')) {
+            return (int) ($_ENV['RATE_LIMIT_AUTH'] ?? 10);
         }
 
         return (int) ($_ENV['RATE_LIMIT_DEFAULT'] ?? 60);

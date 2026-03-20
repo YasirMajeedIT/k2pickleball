@@ -34,6 +34,9 @@ ob_start();
                         <p class="text-xs text-surface-400 font-mono" x-text="ext.slug"></p>
                     </div>
                     <span :class="ext.is_active ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-surface-100 text-surface-600'" class="rounded-full px-2 py-0.5 text-xs font-medium" x-text="ext.is_active ? 'Active' : 'Inactive'"></span>
+                    <button @click.stop="toggleActive(ext)" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" :class="ext.is_active ? 'bg-green-500' : 'bg-surface-300 dark:bg-surface-600'" role="switch" :aria-checked="ext.is_active ? 'true' : 'false'" :title="ext.is_active ? 'Deactivate' : 'Activate'">
+                        <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" :class="ext.is_active ? 'translate-x-4' : 'translate-x-0'"></span>
+                    </button>
                 </div>
                 <div class="px-5 py-3 space-y-2">
                     <p class="text-xs text-surface-500 line-clamp-2" x-text="ext.description || 'No description'"></p>
@@ -149,6 +152,24 @@ function extensionsPage() {
                 const json = await res.json();
                 if (res.ok) { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Extension deleted', type: 'success' } })); this.fetchData(); }
                 else { window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Failed', type: 'error' } })); }
+            } catch (e) { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } })); }
+        },
+        async toggleActive(ext) {
+            const newStatus = ext.is_active ? 0 : 1;
+            const action = newStatus ? 'activate' : 'deactivate';
+            try {
+                const res = await fetch(APP_BASE + '/api/platform/extensions/' + ext.id, {
+                    method: 'PUT',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: ext.name, slug: ext.slug, description: ext.description, version: ext.version, category: ext.category, price_monthly: ext.price_monthly, price_yearly: ext.price_yearly, is_active: newStatus, sort_order: ext.sort_order })
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    ext.is_active = newStatus;
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Extension ' + action + 'd', type: 'success' } }));
+                } else {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Failed to ' + action, type: 'error' } }));
+                }
             } catch (e) { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } })); }
         }
     };

@@ -46,6 +46,14 @@ final class OrganizationController extends Controller
      */
     public function show(Request $request, int $id): Response
     {
+        // Org-owners can only view their own organization
+        if (!$request->isSuperAdmin()) {
+            $userOrgId = $request->organizationId();
+            if ($userOrgId !== $id) {
+                return $this->error('You are not authorized to view this organization.', 403);
+            }
+        }
+
         $org = $this->repo->findWithDomains($id);
 
         if (!$org) {
@@ -152,6 +160,14 @@ final class OrganizationController extends Controller
      */
     public function update(Request $request, int $id): Response
     {
+        // Org-owners can only update their own organization
+        if (!$request->isSuperAdmin()) {
+            $userOrgId = $request->organizationId();
+            if ($userOrgId !== $id) {
+                return $this->error('You are not authorized to update this organization.', 403);
+            }
+        }
+
         $org = $this->repo->findById($id);
         if (!$org) {
             throw new NotFoundException('Organization not found');

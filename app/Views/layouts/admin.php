@@ -127,6 +127,54 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
             <!-- Top Bar -->
             <?php include __DIR__ . '/../components/topbar.php'; ?>
 
+            <!-- Trial Expiry Banner -->
+            <div x-data="trialBanner()" x-init="init()" x-cloak>
+                <!-- Expired -->
+                <div x-show="status === 'expired'" class="flex items-center justify-between gap-4 bg-red-600 text-white px-6 py-3 text-sm font-medium">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Your free trial has expired. Subscribe to keep using K2 Pickleball.
+                    </span>
+                    <a href="<?= ($baseUrl ?? '') ?>/admin/account#subscription" class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-white text-red-600 hover:bg-red-50 font-semibold px-4 py-1.5 text-xs transition-colors">
+                        Choose a Plan <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </a>
+                </div>
+                <!-- Expiring soon (≤ 7 days) -->
+                <div x-show="status === 'expiring'" class="flex items-center justify-between gap-4 bg-amber-500 text-white px-6 py-3 text-sm font-medium">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Your trial expires in <strong x-text="daysLeft + ' day' + (daysLeft === 1 ? '' : 's')"></strong>. Upgrade now to avoid interruption.</span>
+                    </span>
+                    <a href="<?= ($baseUrl ?? '') ?>/admin/account#subscription" class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-white text-amber-600 hover:bg-amber-50 font-semibold px-4 py-1.5 text-xs transition-colors">
+                        Upgrade Now <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Announcement Banners -->
+            <div x-data="announcementBanner()" x-init="init()" x-cloak>
+                <template x-for="ann in visible" :key="ann.id">
+                    <div class="flex items-center justify-between gap-4 px-6 py-3 text-sm font-medium text-white"
+                         :class="{
+                             'bg-blue-600':   ann.type === 'info',
+                             'bg-amber-500':  ann.type === 'warning',
+                             'bg-red-600':    ann.type === 'critical',
+                             'bg-purple-600': ann.type === 'maintenance'
+                         }">
+                        <span class="flex min-w-0 items-center gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                            </svg>
+                            <span class="font-semibold" x-text="ann.title"></span>
+                            <span class="hidden sm:inline opacity-90 truncate" x-text="ann.message"></span>
+                        </span>
+                        <button @click="dismiss(ann.id)" class="flex-shrink-0 ml-4 rounded-full p-1 hover:bg-white/20 transition-colors" aria-label="Dismiss">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+
             <!-- Page Content -->
             <main class="mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8">
                 <!-- Breadcrumbs -->
@@ -193,6 +241,64 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
     </div>
 
     <script>
+    // Shared /api/auth/me promise — all components reuse this single request
+    window._mePromise = null;
+    function getMe() {
+        if (!window._mePromise) {
+            window._mePromise = authFetch(APP_BASE + '/api/auth/me')
+                .then(r => r.json())
+                .catch(() => ({}));
+        }
+        return window._mePromise;
+    }
+
+    function trialBanner() {
+        return {
+            status: '', // 'expiring' | 'expired' | ''
+            daysLeft: 0,
+            async init() {
+                try {
+                    const json = await getMe();
+                    const user = json.data || json;
+                    const org = user.organization || null;
+                    if (!org || org.status !== 'trial') return;
+                    const trialEnds = org.trial_ends_at ? new Date(org.trial_ends_at) : null;
+                    if (!trialEnds) return;
+                    const now = new Date();
+                    const msLeft = trialEnds - now;
+                    const days = Math.ceil(msLeft / 86400000);
+                    if (days <= 0) {
+                        this.status = 'expired';
+                    } else if (days <= 7) {
+                        this.daysLeft = days;
+                        this.status = 'expiring';
+                    }
+                } catch (_) {}
+            }
+        };
+    }
+
+    function announcementBanner() {
+        return {
+            visible: [],
+            async init() {
+                try {
+                    const res = await authFetch(APP_BASE + '/api/announcements/active');
+                    if (!res.ok) return;
+                    const json = await res.json();
+                    const dismissed = JSON.parse(localStorage.getItem('k2_dismissed_announcements') || '[]');
+                    this.visible = (json.data || []).filter(a => !dismissed.includes(a.id));
+                } catch (_) {}
+            },
+            dismiss(id) {
+                this.visible = this.visible.filter(a => a.id !== id);
+                const dismissed = JSON.parse(localStorage.getItem('k2_dismissed_announcements') || '[]');
+                dismissed.push(id);
+                localStorage.setItem('k2_dismissed_announcements', JSON.stringify(dismissed));
+            }
+        };
+    }
+
     function themeToggle() {
         const THEMES = ['light', 'dark', 'system'];
         const LABELS = { light: 'Light mode', dark: 'Dark mode', system: 'System theme' };

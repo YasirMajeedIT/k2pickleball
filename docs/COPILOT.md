@@ -351,6 +351,11 @@ The `categories` table has system-managed rows:
 
 | Date | Change |
 |------|--------|
+| 2026-03-20 | Added Google Sign-In button to tenant login page (`tenant/auth/login.php`) |
+| 2026-03-20 | Added Google Sign-In button to tenant register page (`tenant/auth/register.php`) |
+| 2026-03-20 | Fixed `GoogleAuthController` — accepts `organization_id`, assigns `player` role for tenant sign-ups |
+| 2026-03-20 | Fixed `json.success` → `json.status === 'success'` in tenant register page |
+| 2026-03-20 | Fixed schedule SQL: `cls.start_time` → `cls.scheduled_at`, `cls.max_participants` → `cls.slots`, etc. |
 | 2026-03-19 | Fixed `window.baseApi` undefined — added `window.baseApi = baseApi` in `tenant.php` |
 | 2026-03-19 | Fixed `json.success` → `json.status === 'success'` in `book-court.php` |
 | 2026-03-19 | Fixed facility auto-select in `book-court.php` (was reading `localStorage` only) |

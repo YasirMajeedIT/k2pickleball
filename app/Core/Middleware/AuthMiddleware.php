@@ -30,6 +30,10 @@ final class AuthMiddleware implements MiddlewareInterface
         '/api/webhooks/square',
         '/api/health',
         '/api/plans',
+        '/api/consultations',
+        '/api/contact',
+        '/api/site-status',
+        '/api/site-verify-password',
         '/',
     ];
 

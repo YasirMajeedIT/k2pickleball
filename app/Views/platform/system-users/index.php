@@ -18,8 +18,8 @@ $columns = [
 $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/platform/system-users/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
 ];
-$createUrl = null;
-$createLabel = null;
+$createUrl = ($baseUrl ?? '') . '/platform/system-users/create';
+$createLabel = 'Create User';
 
 ob_start();
 include __DIR__ . '/../../components/data-table.php';

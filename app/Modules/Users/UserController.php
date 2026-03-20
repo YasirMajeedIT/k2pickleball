@@ -98,6 +98,11 @@ final class UserController extends Controller
         $roleId = isset($data['role_id']) ? (int) $data['role_id'] : null;
         unset($data['role_id']);
 
+        // Platform super-admins may provide an explicit organization_id in the body
+        if (!$orgId && !empty($request->input('organization_id'))) {
+            $orgId = (int) $request->input('organization_id');
+        }
+
         $data['uuid'] = $this->generateUuid();
         $data['organization_id'] = $orgId;
         $data['password_hash'] = password_hash($data['password'], PASSWORD_BCRYPT, [
@@ -110,7 +115,8 @@ final class UserController extends Controller
 
         $id = $this->repo->create($data);
 
-        if ($roleId && $orgId) {
+        if ($roleId) {
+            // orgId may be null for super-admin users (no org context)
             $this->repo->assignRole($id, $roleId, $orgId);
         }
 

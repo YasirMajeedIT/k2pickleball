@@ -36,12 +36,12 @@ $initials = strtoupper(substr($user['first_name'] ?? 'A', 0, 1) . substr($user['
 
         <div class="flex items-center gap-2">
             <!-- Notifications -->
-            <div x-data="{ dropOpen: false }" class="relative">
+            <div x-data="notificationBell()" x-init="init()" class="relative">
                 <button x-on:click="dropOpen = !dropOpen" class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-surface-200 bg-surface-50 hover:bg-surface-100 hover:border-surface-300 dark:border-surface-700 dark:bg-surface-800 dark:hover:bg-surface-700 transition-all">
                     <svg class="w-[18px] h-[18px] text-surface-500 dark:text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
                     </svg>
-                    <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium ring-2 ring-white dark:ring-surface-900" id="notification-badge" style="display:none;">0</span>
+                    <span x-show="totalCount > 0" x-cloak class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium ring-2 ring-white dark:ring-surface-900" x-text="totalCount > 9 ? '9+' : totalCount"></span>
                 </button>
 
                 <div x-show="dropOpen" x-on:click.away="dropOpen = false" x-cloak
@@ -52,14 +52,41 @@ $initials = strtoupper(substr($user['first_name'] ?? 'A', 0, 1) . substr($user['
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-95"
                      class="absolute -right-16 mt-3 flex w-80 flex-col rounded-2xl border border-surface-200 bg-white shadow-lg dark:border-surface-700 dark:bg-surface-800 sm:right-0 overflow-hidden">
-                    <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800">
+                    <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800 flex items-center justify-between">
                         <h5 class="text-sm font-semibold text-surface-800 dark:text-white">Notifications</h5>
+                        <button x-show="items.length > 0" @click="markAllRead()" class="text-xs font-medium text-primary-500 hover:text-primary-600">Mark all read</button>
                     </div>
-                    <div class="max-h-[300px] overflow-y-auto px-5 py-4" id="notification-list">
-                        <div class="flex flex-col items-center gap-2 py-4">
-                            <svg class="w-10 h-10 text-surface-300 dark:text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
-                            <p class="text-sm text-surface-400">No new notifications</p>
-                        </div>
+                    <div class="max-h-[300px] overflow-y-auto">
+                        <template x-if="items.length === 0">
+                            <div class="flex flex-col items-center gap-2 py-6 px-5">
+                                <svg class="w-10 h-10 text-surface-300 dark:text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                                <p class="text-sm text-surface-400">No new notifications</p>
+                            </div>
+                        </template>
+                        <template x-for="item in items" :key="item._key">
+                            <div class="px-5 py-3 border-b border-surface-50 dark:border-surface-700/50 hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors cursor-pointer" :class="!item.read ? 'bg-primary-50/30 dark:bg-primary-500/5' : ''">
+                                <div class="flex items-start gap-3">
+                                    <div class="mt-0.5 flex-shrink-0">
+                                        <span class="flex h-7 w-7 items-center justify-center rounded-lg" :class="{
+                                            'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400': item.type === 'info',
+                                            'bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400': item.type === 'warning',
+                                            'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400': item.type === 'critical',
+                                            'bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400': item.type === 'maintenance',
+                                            'bg-surface-100 text-surface-600 dark:bg-surface-700 dark:text-surface-400': !['info','warning','critical','maintenance'].includes(item.type)
+                                        }">
+                                            <svg x-show="item.source === 'announcement'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                                            <svg x-show="item.source !== 'announcement'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                        </span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-surface-800 dark:text-white truncate" x-text="item.title"></p>
+                                        <p class="text-xs text-surface-500 mt-0.5 line-clamp-2" x-text="item.message"></p>
+                                        <p class="text-[10px] text-surface-400 mt-1" x-text="item.timeAgo"></p>
+                                    </div>
+                                    <span x-show="!item.read" class="mt-1 h-2 w-2 rounded-full bg-primary-500 flex-shrink-0"></span>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                     <div class="border-t border-surface-100 dark:border-surface-700 px-5 py-3 bg-surface-50/50 dark:bg-surface-800">
                         <a href="<?= ($baseUrl ?? '') . '/admin/notifications' ?>" class="text-xs font-medium text-primary-500 hover:text-primary-600 transition-colors">View All Notifications &rarr;</a>
@@ -130,6 +157,73 @@ $initials = strtoupper(substr($user['first_name'] ?? 'A', 0, 1) . substr($user['
 </header>
 
 <script>
+function notificationBell() {
+    return {
+        dropOpen: false,
+        items: [],
+        totalCount: 0,
+        async init() {
+            await this.fetchAll();
+            // Refresh every 60 seconds
+            setInterval(() => this.fetchAll(), 60000);
+        },
+        async fetchAll() {
+            try {
+                const headers = { 'Authorization': 'Bearer ' + localStorage.getItem('access_token'), 'Accept': 'application/json' };
+                const [notifRes, annRes] = await Promise.all([
+                    fetch(APP_BASE + '/api/notifications?read=0&per_page=10', { headers }),
+                    fetch(APP_BASE + '/api/announcements/active', { headers })
+                ]);
+                const merged = [];
+                if (notifRes.ok) {
+                    const nJson = await notifRes.json();
+                    (nJson.data || []).forEach(n => merged.push({
+                        _key: 'n_' + n.id, id: n.id, title: n.title, message: n.message,
+                        type: n.type || 'info', source: 'notification', read: !!n.read_at,
+                        timeAgo: this.ago(n.created_at), sortDate: new Date(n.created_at)
+                    }));
+                }
+                if (annRes.ok) {
+                    const aJson = await annRes.json();
+                    const dismissed = JSON.parse(localStorage.getItem('dismissed_announcements') || '[]');
+                    (aJson.data || []).forEach(a => {
+                        if (!dismissed.includes(a.id)) {
+                            merged.push({
+                                _key: 'a_' + a.id, id: a.id, title: a.title, message: a.message,
+                                type: a.type || 'info', source: 'announcement', read: false,
+                                timeAgo: this.ago(a.created_at), sortDate: new Date(a.created_at)
+                            });
+                        }
+                    });
+                }
+                merged.sort((a, b) => b.sortDate - a.sortDate);
+                this.items = merged.slice(0, 15);
+                this.totalCount = merged.filter(i => !i.read).length;
+            } catch (e) { console.error('Notification fetch error', e); }
+        },
+        async markAllRead() {
+            try {
+                const headers = { 'Authorization': 'Bearer ' + localStorage.getItem('access_token'), 'Accept': 'application/json', 'Content-Type': 'application/json' };
+                await fetch(APP_BASE + '/api/notifications/read-all', { method: 'POST', headers });
+                // Dismiss announcements locally
+                const annIds = this.items.filter(i => i.source === 'announcement').map(i => i.id);
+                const dismissed = JSON.parse(localStorage.getItem('dismissed_announcements') || '[]');
+                localStorage.setItem('dismissed_announcements', JSON.stringify([...new Set([...dismissed, ...annIds])]));
+                this.items.forEach(i => i.read = true);
+                this.totalCount = 0;
+            } catch (e) { console.error(e); }
+        },
+        ago(dateStr) {
+            if (!dateStr) return '';
+            const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+    };
+}
+
 function logout() {
     const token = localStorage.getItem('refresh_token');
     fetch(APP_BASE + '/api/auth/logout', {

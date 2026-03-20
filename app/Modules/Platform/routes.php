@@ -23,12 +23,16 @@ return function (Router $router): void {
     $router->get('/platform/subscriptions/{id}', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/revenue', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/system-users', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/system-users/create', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/system-users/{id}', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/invoices', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/extensions', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/announcements', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/system-settings', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/audit-logs', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/consultations', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/contact-submissions', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/site-settings', [PlatformController::class, 'handleRequest']);
 
     // Platform API endpoints — Stats & Dashboard
     $router->get('/api/platform/stats', [PlatformApiController::class, 'stats']);
@@ -61,6 +65,10 @@ return function (Router $router): void {
 
     // Platform API — Impersonation
     $router->post('/api/platform/impersonate/{id}', [PlatformApiController::class, 'impersonate']);
+    $router->post('/api/platform/organizations/{id}/impersonate', [PlatformApiController::class, 'impersonateOrgOwner']);
+
+    // Platform API — Active Announcements (admin-facing)
+    $router->get('/api/announcements/active', [PlatformApiController::class, 'activeAnnouncements']);
 
     // Platform API — Settings & Audit
     $router->get('/api/platform/settings', [PlatformApiController::class, 'settings']);

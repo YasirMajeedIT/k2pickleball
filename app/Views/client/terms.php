@@ -28,7 +28,7 @@
             ['Termination', 'Either party may terminate the relationship as specified in the Partnership Agreement. Upon termination, your access to the platform will be revoked. Provisions that by their nature should survive termination (including intellectual property, limitation of liability, and indemnification) shall survive.'],
             ['Governing Law', 'These Terms shall be governed by and construed in accordance with the laws of the State of Florida, without regard to conflict of law principles. Any disputes shall be resolved in the courts located in Hillsborough County, Florida.'],
             ['Changes to Terms', 'We may modify these Terms at any time. Material changes will be communicated to partners via email and platform notification. Continued use of the platform after changes take effect constitutes acceptance of the revised Terms.'],
-            ['Contact Information', 'For questions regarding these Terms, contact us at:<br><br>K2 Pickleball Platform<br>Tampa Bay, Florida<br>Email: legal@k2pickleball.com'],
+            ['Contact Information', 'For questions regarding these Terms, contact us at:<br><br>K2 Pickleball Platform<br>Tampa Bay, Florida<br>Email: info@k2pickleball.com'],
         ];
         foreach ($sections as $i => $sec): ?>
         <div class="<?= $i > 0 ? 'mt-10 pt-10 border-t border-navy-800/60' : '' ?>">

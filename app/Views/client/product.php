@@ -1,16 +1,16 @@
-<?php $pageTitle = 'The K2 Platform — Pickleball Facility Management Software'; ?>
+<?php $pageTitle = 'K2Pickleball — Pickleball Facility Management Software'; ?>
 
 <!-- Hero -->
 <section class="relative pt-32 pb-20 hero-glow overflow-hidden">
     <div class="absolute inset-0 grid-bg opacity-30"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div class="text-center max-w-4xl mx-auto">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 text-xs font-semibold text-gold-400 uppercase tracking-widest mb-6 animate-fade-in-up">The K2 Platform</div>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 text-xs font-semibold text-gold-400 uppercase tracking-widest mb-6 animate-fade-in-up">K2Pickleball Platform</div>
             <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight animate-fade-in-up" style="animation-delay:0.1s">
                 The Operating System for<br><span class="gradient-gold">Pickleball Facilities</span>
             </h1>
             <p class="mt-6 text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed animate-fade-in-up" style="animation-delay:0.2s">
-                Developed and refined through the real-world operation of multiple pickleball facilities, the K2 Platform serves as the complete operating system for your facility — managing day-to-day operations and customer interactions.
+                Developed and refined through the real-world operation of multiple pickleball facilities, the K2Pickleball Platform serves as the complete operating system for your facility — managing day-to-day operations and customer interactions.
             </p>
         </div>
     </div>
@@ -283,7 +283,7 @@
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gold-500/8 rounded-full blur-[120px]"></div>
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center" data-animate>
         <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
-            See the K2 Platform <span class="gradient-gold">In Action</span>
+            See the K2Pickleball Platform <span class="gradient-gold">In Action</span>
         </h2>
         <p class="mt-6 text-lg text-slate-400 max-w-2xl mx-auto">
             Schedule a personalized demo and discover how our platform can power your pickleball facility operations.

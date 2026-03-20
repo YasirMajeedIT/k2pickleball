@@ -20,6 +20,16 @@ return function (Router $router): void {
     $router->get('/privacy-policy', [ClientController::class, 'handleRequest']);
     $router->get('/terms', [ClientController::class, 'handleRequest']);
 
+    // POST for password-protection gate (form POSTs to current page)
+    $router->post('/', [ClientController::class, 'handleRequest']);
+    $router->post('/product', [ClientController::class, 'handleRequest']);
+    $router->post('/about', [ClientController::class, 'handleRequest']);
+    $router->post('/contact', [ClientController::class, 'handleRequest']);
+    $router->post('/demo', [ClientController::class, 'handleRequest']);
+    $router->post('/pricing', [ClientController::class, 'handleRequest']);
+    $router->post('/privacy-policy', [ClientController::class, 'handleRequest']);
+    $router->post('/terms', [ClientController::class, 'handleRequest']);
+
     // Auth pages
     $router->get('/login', [ClientController::class, 'handleRequest']);
     $router->get('/register', [ClientController::class, 'handleRequest']);

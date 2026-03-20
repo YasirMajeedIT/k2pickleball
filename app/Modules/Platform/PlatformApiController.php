@@ -742,4 +742,173 @@ final class PlatformApiController extends Controller
             ],
         ], 'Impersonation token generated');
     }
+
+    /**
+     * POST /api/platform/organizations/{id}/impersonate
+     * Find the org owner (or first active user) and impersonate them.
+     */
+    public function impersonateOrgOwner(Request $request, int $id): Response
+    {
+        $org = $this->db->fetch("SELECT id, name FROM organizations WHERE id = ?", [$id]);
+        if (!$org) {
+            throw new NotFoundException('Organization not found');
+        }
+
+        // Find org owner (user with org-owner role), fallback to first active user
+        $owner = $this->db->fetch(
+            "SELECT u.id FROM users u
+             JOIN user_roles ur ON ur.user_id = u.id
+             JOIN roles r ON r.id = ur.role_id
+             WHERE u.organization_id = ? AND r.slug = 'org-owner' AND u.status = 'active'
+             LIMIT 1",
+            [$id]
+        );
+
+        if (!$owner) {
+            $owner = $this->db->fetch(
+                "SELECT id FROM users WHERE organization_id = ? AND status = 'active' ORDER BY id ASC LIMIT 1",
+                [$id]
+            );
+        }
+
+        if (!$owner) {
+            return $this->error('No active users found for this organization', 404);
+        }
+
+        return $this->impersonate($request, (int) $owner['id']);
+    }
+
+    // =========================================================================
+    // Create User (Platform)
+    // =========================================================================
+
+    /**
+     * POST /api/platform/users
+     */
+    public function createUser(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'first_name'      => 'required|string|max:100',
+            'last_name'       => 'required|string|max:100',
+            'email'           => 'required|email|max:255',
+            'password'        => 'required|string|min:8|max:255',
+            'organization_id' => 'nullable|integer',
+            'role_id'         => 'required|integer',
+            'status'          => 'nullable|in:active,inactive,suspended,pending',
+        ]);
+
+        $data['first_name'] = Sanitizer::string($data['first_name']);
+        $data['last_name'] = Sanitizer::string($data['last_name']);
+
+        // Check email uniqueness
+        $existing = $this->db->fetch("SELECT id FROM users WHERE email = ?", [$data['email']]);
+        if ($existing) {
+            return $this->validationError(['email' => ['A user with this email already exists']]);
+        }
+
+        // Validate organization exists if provided
+        $orgId = !empty($data['organization_id']) ? (int) $data['organization_id'] : null;
+        if ($orgId) {
+            $org = $this->db->fetch("SELECT id FROM organizations WHERE id = ?", [$orgId]);
+            if (!$org) {
+                return $this->validationError(['organization_id' => ['Organization not found']]);
+            }
+        }
+
+        // Validate role exists
+        $role = $this->db->fetch("SELECT id, slug FROM roles WHERE id = ?", [(int) $data['role_id']]);
+        if (!$role) {
+            return $this->validationError(['role_id' => ['Role not found']]);
+        }
+
+        // Super-admin role must not be linked to an org
+        if ($role['slug'] === 'super-admin' && $orgId) {
+            return $this->validationError(['role_id' => ['Super-admin users cannot belong to an organization']]);
+        }
+
+        // Non-super-admin roles need an org
+        if ($role['slug'] !== 'super-admin' && !$orgId) {
+            return $this->validationError(['organization_id' => ['Organization is required for this role']]);
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $userId = $this->db->insert('users', [
+            'first_name'      => $data['first_name'],
+            'last_name'       => $data['last_name'],
+            'email'           => $data['email'],
+            'password_hash'   => password_hash($data['password'], PASSWORD_BCRYPT),
+            'organization_id' => $orgId,
+            'status'          => $data['status'] ?? 'active',
+            'created_at'      => $now,
+            'updated_at'      => $now,
+        ]);
+
+        // Assign role
+        $this->db->insert('user_roles', [
+            'user_id' => $userId,
+            'role_id' => (int) $data['role_id'],
+        ]);
+
+        // Log action
+        $this->db->insert('activity_logs', [
+            'organization_id' => $orgId,
+            'user_id'         => $request->userId(),
+            'action'          => 'create',
+            'entity_type'     => 'user',
+            'entity_id'       => $userId,
+            'description'     => 'Platform created user: ' . $data['email'] . ' with role: ' . $role['slug'],
+            'ip_address'      => $request->ip(),
+            'created_at'      => $now,
+        ]);
+
+        $user = $this->db->fetch(
+            "SELECT u.id, u.first_name, u.last_name, u.email, u.status, u.organization_id, o.name as organization_name
+             FROM users u LEFT JOIN organizations o ON u.organization_id = o.id WHERE u.id = ?",
+            [$userId]
+        );
+
+        return $this->created($user, 'User created successfully');
+    }
+
+    // =========================================================================
+    // Active Announcements (for admin dashboard)
+    // =========================================================================
+
+    /**
+     * GET /api/announcements/active
+     * Returns active announcements visible to the current user's organization.
+     */
+    public function activeAnnouncements(Request $request): Response
+    {
+        $orgId = $request->orgId();
+        $now = date('Y-m-d H:i:s');
+
+        $rows = $this->db->fetchAll(
+            "SELECT id, title, message, type, target, target_org_ids, starts_at, ends_at, created_at
+             FROM announcements
+             WHERE is_active = 1
+               AND (starts_at IS NULL OR starts_at <= ?)
+               AND (ends_at IS NULL OR ends_at >= ?)
+             ORDER BY created_at DESC
+             LIMIT 20",
+            [$now, $now]
+        );
+
+        // Filter by target
+        $result = [];
+        foreach ($rows as $row) {
+            if ($row['target'] === 'all') {
+                unset($row['target_org_ids']);
+                $result[] = $row;
+            } elseif ($row['target'] === 'specific' && $orgId) {
+                $targetOrgIds = array_map('intval', array_filter(explode(',', $row['target_org_ids'] ?? '')));
+                if (in_array((int) $orgId, $targetOrgIds, true)) {
+                    unset($row['target_org_ids']);
+                    $result[] = $row;
+                }
+            }
+        }
+
+        return $this->success($result);
+    }
 }

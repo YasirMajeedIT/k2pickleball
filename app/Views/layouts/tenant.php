@@ -407,7 +407,7 @@ $facilities = $org['facilities'] ?? [];
 
             <div class="mt-12 pt-8 border-t border-navy-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p class="text-sm text-slate-600">&copy; <?= date('Y') ?> <?= $orgName ?>. All rights reserved.</p>
-                <p class="text-xs text-slate-600">Powered by <a href="/" class="text-gold-500/70 hover:text-gold-400 font-medium transition-colors">K2 Platform</a></p>
+                <p class="text-xs text-slate-600">Powered by <a href="/" class="text-gold-500/70 hover:text-gold-400 font-medium transition-colors">K2Pickleball</a></p>
             </div>
         </div>
     </footer>

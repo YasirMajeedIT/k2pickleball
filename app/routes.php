@@ -75,6 +75,9 @@ return function (Router $router): void {
         'Admin',
         'Platform',
         'Extensions',
+        'Consultations',
+        'ContactSubmissions',
+        'SiteSettings',
     ];
 
     foreach ($modules as $module) {

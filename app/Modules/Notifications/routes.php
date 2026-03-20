@@ -5,7 +5,8 @@ declare(strict_types=1);
 use App\Core\Http\Router;
 
 return function (Router $router): void {
-    $router->group(['prefix' => '/api/notifications'], function (Router $router) {
+    // All notification routes are self-service — every authenticated role has notifications.view
+    $router->group(['prefix' => '/api/notifications', 'permission' => 'notifications.view'], function (Router $router) {
         $router->get('/', ['App\\Modules\\Notifications\\NotificationController', 'index']);
         $router->get('/unread-count', ['App\\Modules\\Notifications\\NotificationController', 'unreadCount']);
         $router->get('/{id}', ['App\\Modules\\Notifications\\NotificationController', 'show']);

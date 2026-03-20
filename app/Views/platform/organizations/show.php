@@ -39,6 +39,12 @@ ob_start();
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
                 Edit
             </a>
+            <template x-if="org && (org.status === 'active' || org.status === 'trial')">
+                <button @click="viewAdminDashboard()" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 hover:from-purple-700 hover:to-purple-800 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    View Admin Dashboard
+                </button>
+            </template>
         </div>
     </div>
 
@@ -296,6 +302,22 @@ function orgShow() {
                 const json = await res.json();
                 if (res.ok) { this.org.status = status; window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Status updated', type: 'success' } })); }
                 else { window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Failed', type: 'error' } })); }
+            } catch (e) { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } })); }
+        },
+        async viewAdminDashboard() {
+            if (!confirm('View this organization\'s admin dashboard? Your current session will be preserved.')) return;
+            try {
+                const res = await fetch(APP_BASE + '/api/platform/organizations/' + orgId + '/impersonate', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' } });
+                const json = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('original_token', localStorage.getItem('access_token'));
+                    localStorage.setItem('access_token', json.data.access_token);
+                    localStorage.setItem('impersonating', JSON.stringify(json.data.user));
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Entering admin dashboard as ' + json.data.user.email, type: 'success' } }));
+                    setTimeout(() => window.location.href = APP_BASE + '/admin', 500);
+                } else {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Failed to impersonate', type: 'error' } }));
+                }
             } catch (e) { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } })); }
         },
         async deleteOrg() {
