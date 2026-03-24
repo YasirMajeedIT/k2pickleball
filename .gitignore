@@ -13,3 +13,4 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+/public/storage
