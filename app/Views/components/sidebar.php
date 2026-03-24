@@ -273,16 +273,13 @@ function sidebarFooter() {
                         }
                     }
                 }
-                // Also load org name
-                const orgRes = await authFetch(APP_BASE + '/api/auth/me');
-                if (orgRes.ok) {
-                    const orgJson = await orgRes.json();
-                    const user = orgJson.data || orgJson;
+                // Also load org name (reuse cached getMe promise)
+                const orgJson = await (typeof getMe === 'function' ? getMe() : authFetch(APP_BASE + '/api/auth/me').then(r => r.json()));
+                const user = orgJson.data || orgJson;
                     if (user.organization && user.organization.name) {
                         this.orgName = user.organization.name;
                         this.orgInitials = user.organization.name.substring(0, 2).toUpperCase();
                     }
-                }
             } catch (e) { /* silent */ }
         }
     };

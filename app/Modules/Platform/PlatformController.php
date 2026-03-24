@@ -26,12 +26,16 @@ class PlatformController extends Controller
         'subscriptions/{id}'            => 'platform/subscriptions/show.php',
         'revenue'                       => 'platform/revenue/index.php',
         'system-users'                  => 'platform/system-users/index.php',
+        'system-users/create'           => 'platform/system-users/create.php',
         'system-users/{id}'             => 'platform/system-users/show.php',
         'invoices'                      => 'platform/invoices/index.php',
         'extensions'                    => 'platform/extensions/index.php',
         'announcements'                 => 'platform/announcements/index.php',
         'system-settings'               => 'platform/system-settings/index.php',
         'audit-logs'                    => 'platform/audit-logs/index.php',
+        'consultations'                 => 'platform/consultations/index.php',
+        'contact-submissions'           => 'platform/contact-submissions/index.php',
+        'site-settings'                 => 'platform/site-settings/index.php',
     ];
 
     public function handleRequest(Request $request, int|null $id = null): Response

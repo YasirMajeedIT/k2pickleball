@@ -15,6 +15,7 @@ $logoUrl     = $branding['logo_url'] ?? '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account — <?= $orgName ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -122,6 +123,20 @@ $logoUrl     = $branding['logo_url'] ?? '';
                 </button>
             </form>
 
+            <!-- Divider -->
+            <div class="flex items-center gap-4 my-6">
+                <span class="flex-1 h-px bg-navy-700"></span>
+                <span class="text-xs text-slate-500 uppercase tracking-wider">or</span>
+                <span class="flex-1 h-px bg-navy-700"></span>
+            </div>
+
+            <!-- Google Sign-Up -->
+            <button @click="googleSignUp()" :disabled="googleLoading" type="button"
+                    class="w-full py-3 rounded-xl bg-navy-800 border border-navy-700 hover:border-gold-500/30 hover:bg-navy-850 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                <span class="text-sm font-semibold text-white" x-text="googleLoading ? 'Signing up...' : 'Sign up with Google'"></span>
+            </button>
+
             <p class="text-center text-sm text-slate-500 mt-8">
                 Already have an account? <a href="/login" class="text-gold-500 hover:text-gold-400 font-semibold transition-colors">Sign In</a>
             </p>
@@ -135,7 +150,7 @@ $logoUrl     = $branding['logo_url'] ?? '';
     function registerPage() {
         return {
             form: { first_name: '', last_name: '', email: '', phone: '', password: '', password_confirmation: '' },
-            loading: false, error: '',
+            loading: false, error: '', googleLoading: false,
             async submit() {
                 this.error = '';
                 if (this.form.password.length < 8) { this.error = 'Password must be at least 8 characters.'; return; }
@@ -148,7 +163,7 @@ $logoUrl     = $branding['logo_url'] ?? '';
                         body: JSON.stringify({ ...this.form, organization_id: ORG_ID, role_slug: 'player' })
                     });
                     const json = await resp.json();
-                    if (json.success || json.data?.token || json.data?.access_token) {
+                    if (json.status === 'success' && (json.data?.access_token || json.data?.token)) {
                         const token = json.data?.access_token || json.data?.token;
                         if (token) {
                             localStorage.setItem('player_token', token);
@@ -162,6 +177,40 @@ $logoUrl     = $branding['logo_url'] ?? '';
                     }
                 } catch(e) { this.error = 'Network error. Please try again.'; }
                 finally { this.loading = false; }
+            },
+            googleSignUp() {
+                this.error = '';
+                this.googleLoading = true;
+                const clientId = '<?= htmlspecialchars($_ENV['GOOGLE_CLIENT_ID'] ?? '', ENT_QUOTES, 'UTF-8') ?>';
+                if (!clientId) { this.error = 'Google Sign-In is not configured.'; this.googleLoading = false; return; }
+                const self = this;
+                google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: async (response) => {
+                        try {
+                            const resp = await fetch(baseApi + '/api/auth/google', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ credential: response.credential, organization_id: ORG_ID })
+                            });
+                            const json = await resp.json();
+                            if (json.status === 'success' && json.data?.access_token) {
+                                localStorage.setItem('player_token', json.data.access_token);
+                                if (json.data.refresh_token) localStorage.setItem('player_refresh', json.data.refresh_token);
+                                window.location.href = '/dashboard';
+                            } else {
+                                self.error = json.message || 'Google sign-up failed.';
+                            }
+                        } catch(e) { self.error = 'Network error. Please try again.'; }
+                        finally { self.googleLoading = false; }
+                    },
+                    auto_select: false,
+                });
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        self.googleLoading = false;
+                    }
+                });
             }
         };
     }

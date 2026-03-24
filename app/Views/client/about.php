@@ -1,4 +1,4 @@
-<?php $pageTitle = 'About — K2 Pickleball Platform'; ?>
+<?php $pageTitle = 'About — K2Pickleball.com'; ?>
 
 <!-- Hero -->
 <section class="relative pt-32 pb-20 hero-glow overflow-hidden">
@@ -97,7 +97,7 @@
         </p>
         <blockquote class="mt-10 glass-card rounded-2xl p-8 text-left">
             <p class="text-lg text-slate-300 leading-relaxed italic">
-                "Every piece of the K2 Platform was built to solve a real problem we encountered operating our Tampa Bay facility. That's the difference — we're not guessing what facility operators need. We know, because we are one."
+                "Every piece of the K2Pickleball Platform was built to solve a real problem we encountered operating our Tampa Bay facility. That's the difference — we're not guessing what facility operators need. We know, because we are one."
             </p>
             <div class="mt-6 flex items-center gap-3">
                 <div class="h-10 w-10 rounded-full bg-gold-500/20 flex items-center justify-center">

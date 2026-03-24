@@ -12,6 +12,7 @@ final class NotificationRepository extends Repository
 
     public function create(array $data): int
     {
+        $data['uuid'] = $data['uuid'] ?? vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex(random_bytes(16)), 4));
         $data['created_at'] = $data['created_at'] ?? date('Y-m-d H:i:s');
         // notifications table has no updated_at column
         unset($data['updated_at']);

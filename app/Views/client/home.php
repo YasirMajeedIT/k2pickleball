@@ -1,4 +1,4 @@
-<?php $pageTitle = 'K2 Platform — Launch & Operate Your Own Pickleball Facility'; ?>
+<?php $pageTitle = 'K2Pickleball.com — Launch & Operate Your Own Pickleball Facility'; ?>
 
 <!-- Hero Section -->
 <section class="relative min-h-screen flex items-center hero-glow pt-20 overflow-hidden">
@@ -25,7 +25,7 @@
             </h1>
 
             <p class="mt-8 text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed animate-fade-in-up" style="animation-delay:0.2s">
-                The K2 Platform Partnership gives you the <span class="text-white font-medium">proven systems</span>, <span class="text-white font-medium">white-label technology</span>, and <span class="text-white font-medium">operational expertise</span> to build a profitable pickleball business — under your own brand.
+                The K2Pickleball Partnership gives you the <span class="text-white font-medium">proven systems</span>, <span class="text-white font-medium">white-label technology</span>, and <span class="text-white font-medium">operational expertise</span> to build a profitable pickleball business — under your own brand.
             </p>
 
             <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style="animation-delay:0.3s">
@@ -59,7 +59,7 @@
                         <div class="w-3 h-3 rounded-full bg-green-500/60"></div>
                     </div>
                     <div class="flex-1 flex justify-center">
-                        <div class="px-4 py-1 rounded-lg bg-navy-700/50 text-xs text-slate-500 font-mono">your-facility.k2platform.com/admin</div>
+                        <div class="px-4 py-1 rounded-lg bg-navy-700/50 text-xs text-slate-500 font-mono">https://your-domain.com/admin</div>
                     </div>
                 </div>
                 <div class="p-6 bg-gradient-to-br from-navy-900 to-navy-950">
@@ -145,7 +145,7 @@
                     Your Brand.<br><span class="gradient-gold">Our Playbook.</span>
                 </h2>
                 <p class="mt-6 text-lg text-slate-400 leading-relaxed">
-                    Through the K2 Platform Partnership, we help entrepreneurs successfully open and operate their own pickleball facilities using our operational playbook and white-label software system.
+                    Through the K2Pickleball Partnership, we help entrepreneurs successfully open and operate their own pickleball facilities using our operational playbook and white-label software system.
                 </p>
                 <p class="mt-4 text-base text-slate-500">
                     Partners operate under their own brand and identity, while leveraging our technology, systems, and operational experience to build a profitable and sustainable facility.
@@ -154,7 +154,7 @@
                 <div class="mt-8 space-y-4">
                     <?php foreach ([
                         'Proven operating model refined through real-world facility management',
-                        'White-label K2 Platform software — fully branded as your own',
+                        'White-label K2Pickleball software — fully branded as your own',
                         'Complete launch support from site selection to grand opening',
                         'Ongoing operational guidance and technology updates',
                     ] as $benefit): ?>
@@ -252,12 +252,12 @@
     </div>
 </section>
 
-<!-- The K2 Platform Features -->
+<!-- The K2Pickleball Features -->
 <section class="py-24 lg:py-32 border-y border-navy-800/60 relative">
     <div class="absolute inset-0 grid-bg opacity-20"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div class="text-center max-w-3xl mx-auto mb-16" data-animate>
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 text-xs font-semibold text-gold-400 uppercase tracking-widest mb-6">The K2 Platform</div>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 text-xs font-semibold text-gold-400 uppercase tracking-widest mb-6">The K2Pickleball Platform</div>
             <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
                 The Operating System for<br><span class="gradient-gold">Pickleball Facilities</span>
             </h2>
@@ -297,12 +297,12 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center" data-animate>
         <svg class="w-12 h-12 text-gold-500/30 mx-auto mb-8" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
         <blockquote class="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-snug">
-            The goal of the K2 Platform Partnership is to create long-term relationships with facility operators by providing the systems, technology, and operational framework necessary to
+            The goal of the K2Pickleball Partnership is to create long-term relationships with facility operators by providing the systems, technology, and operational framework necessary to
             <span class="gradient-gold">build profitable pickleball businesses.</span>
         </blockquote>
         <div class="mt-8 flex items-center justify-center gap-4">
             <div class="h-px w-12 bg-gold-500/30"></div>
-            <span class="text-sm font-medium text-gold-500">K2 Platform Partnership</span>
+            <span class="text-sm font-medium text-gold-500">K2Pickleball Partnership</span>
             <div class="h-px w-12 bg-gold-500/30"></div>
         </div>
     </div>
@@ -317,7 +317,7 @@
             Ready to Launch Your<br><span class="gradient-gold">Pickleball Facility?</span>
         </h2>
         <p class="mt-6 text-lg text-slate-400 max-w-2xl mx-auto">
-            Join the K2 Platform Partnership and leverage our proven systems, technology, and expertise to build a profitable business under your own brand.
+            Join the K2Pickleball Partnership and leverage our proven systems, technology, and expertise to build a profitable business under your own brand.
         </p>
         <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="<?= $baseUrl ?>/demo" class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 text-base font-bold text-navy-950 gradient-gold-bg rounded-xl shadow-gold hover:shadow-gold-lg transition-all duration-300 hover:-translate-y-0.5">

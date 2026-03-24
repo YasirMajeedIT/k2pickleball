@@ -17,6 +17,12 @@ $sqEnv   = ($_ENV['SQUARE_ENVIRONMENT'] ?? 'sandbox') === 'production' ? 'produc
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
             Profile
         </button>
+        <button @click="setTab('organization')"
+                class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl whitespace-nowrap transition-all"
+                :class="activeTab==='organization' ? 'bg-white dark:bg-surface-900 text-surface-900 dark:text-white shadow-sm' : 'text-surface-500 hover:text-surface-700 dark:hover:text-surface-300'">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
+            Organization
+        </button>
         <button @click="setTab('subscription')"
                 class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl whitespace-nowrap transition-all"
                 :class="activeTab==='subscription' ? 'bg-white dark:bg-surface-900 text-surface-900 dark:text-white shadow-sm' : 'text-surface-500 hover:text-surface-700 dark:hover:text-surface-300'">
@@ -35,6 +41,178 @@ $sqEnv   = ($_ENV['SQUARE_ENVIRONMENT'] ?? 'sandbox') === 'production' ? 'produc
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg>
             Payouts
         </button>
+    </div>
+
+    <!-- ═══════════ ORGANIZATION TAB ═══════════ -->
+    <div x-show="activeTab==='organization'" x-cloak>
+        <div x-show="orgMessage" x-transition class="mb-4 p-3.5 rounded-xl text-sm"
+             :class="orgMessageType === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'"
+             x-text="orgMessage"></div>
+
+        <!-- Organization Info Card -->
+        <div class="rounded-2xl border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 shadow-soft mb-4">
+            <div class="px-5 py-4 border-b border-surface-100 dark:border-surface-800 flex items-center justify-between">
+                <div>
+                    <h5 class="text-sm font-bold text-surface-900 dark:text-white">Organization Details</h5>
+                    <p class="text-xs text-surface-400 mt-0.5">Update your organization's public information and settings.</p>
+                </div>
+                <template x-if="org.status">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize"
+                          :class="{'bg-emerald-500/10 text-emerald-500': org.status==='active', 'bg-amber-500/10 text-amber-500': org.status==='trial', 'bg-red-500/10 text-red-500': org.status==='suspended' || org.status==='cancelled', 'bg-blue-500/10 text-blue-400': org.status==='inactive'}"
+                          x-text="org.status"></span>
+                </template>
+            </div>
+            <div class="p-5">
+                <div x-show="orgLoading" class="animate-pulse space-y-3">
+                    <div class="h-9 bg-surface-200 dark:bg-surface-800 rounded-xl"></div>
+                    <div class="h-9 bg-surface-200 dark:bg-surface-800 rounded-xl"></div>
+                    <div class="h-9 bg-surface-200 dark:bg-surface-800 rounded-xl"></div>
+                </div>
+                <form x-show="!orgLoading" @submit.prevent="saveOrganization" class="space-y-5">
+
+                    <!-- Basic Info -->
+                    <div>
+                        <p class="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Basic Information</p>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Organization Name <span class="text-red-400">*</span></label>
+                                <input type="text" x-model="org.name" required maxlength="255"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="My Pickleball Club">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Contact Email <span class="text-red-400">*</span></label>
+                                <input type="email" x-model="org.email" required maxlength="255"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="contact@yourclub.com">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Phone</label>
+                                <input type="tel" x-model="org.phone"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="(555) 123-4567">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Website</label>
+                                <input type="url" x-model="org.website"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="https://yoursite.com">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Timezone</label>
+                                <select x-model="org.timezone"
+                                        class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+                                    <option value="">Select timezone...</option>
+                                    <option value="America/New_York">Eastern Time (ET)</option>
+                                    <option value="America/Chicago">Central Time (CT)</option>
+                                    <option value="America/Denver">Mountain Time (MT)</option>
+                                    <option value="America/Phoenix">Arizona (no DST)</option>
+                                    <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                    <option value="America/Anchorage">Alaska Time (AKT)</option>
+                                    <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
+                                    <option value="UTC">UTC</option>
+                                    <option value="Europe/London">London (GMT/BST)</option>
+                                    <option value="Europe/Berlin">Central European (CET)</option>
+                                    <option value="Asia/Dubai">Dubai (GST)</option>
+                                    <option value="Asia/Kolkata">India (IST)</option>
+                                    <option value="Asia/Singapore">Singapore (SGT)</option>
+                                    <option value="Australia/Sydney">Sydney (AEST)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div>
+                        <p class="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Address</p>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Address Line 1</label>
+                                <input type="text" x-model="org.address_line1" maxlength="255"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="123 Main Street">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Address Line 2</label>
+                                <input type="text" x-model="org.address_line2" maxlength="255"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="Suite 100">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">City</label>
+                                <input type="text" x-model="org.city" maxlength="100"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="Tampa">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">State / Province</label>
+                                <input type="text" x-model="org.state" maxlength="100"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="FL">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">ZIP / Postal Code</label>
+                                <input type="text" x-model="org.zip_code" maxlength="20"
+                                       class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                                       placeholder="33601">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-surface-600 dark:text-surface-400 mb-1.5">Country</label>
+                                <select x-model="org.country"
+                                        class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/60 text-sm text-surface-900 dark:text-white focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+                                    <option value="">Select country...</option>
+                                    <option value="US">United States</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="AU">Australia</option>
+                                    <option value="NZ">New Zealand</option>
+                                    <option value="DE">Germany</option>
+                                    <option value="FR">France</option>
+                                    <option value="ES">Spain</option>
+                                    <option value="IN">India</option>
+                                    <option value="SG">Singapore</option>
+                                    <option value="AE">United Arab Emirates</option>
+                                    <option value="PK">Pakistan</option>
+                                    <option value="PH">Philippines</option>
+                                    <option value="MX">Mexico</option>
+                                    <option value="BR">Brazil</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Read-only info -->
+                    <div class="rounded-xl bg-surface-50 dark:bg-surface-800/30 border border-surface-200 dark:border-surface-700/40 p-4">
+                        <p class="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Account Info</p>
+                        <div class="grid sm:grid-cols-3 gap-4">
+                            <div>
+                                <p class="text-xs text-surface-400 mb-0.5">URL Slug</p>
+                                <p class="text-sm font-mono font-medium text-surface-700 dark:text-surface-300" x-text="org.slug || '—'"></p>
+                                <p class="text-xs text-surface-400 mt-0.5">Contact support to change</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-surface-400 mb-0.5">Member Since</p>
+                                <p class="text-sm font-medium text-surface-700 dark:text-surface-300" x-text="org.created_at ? new Date(org.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'"></p>
+                            </div>
+                            <div x-show="org.trial_ends_at">
+                                <p class="text-xs text-surface-400 mb-0.5">Trial Ends</p>
+                                <p class="text-sm font-medium"
+                                   :class="new Date(org.trial_ends_at) > new Date() ? 'text-amber-500' : 'text-red-400'"
+                                   x-text="org.trial_ends_at ? new Date(org.trial_ends_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : ''"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-1">
+                        <button type="submit" :disabled="savingOrg"
+                                class="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-500 disabled:opacity-50 rounded-xl transition-colors">
+                            <span x-show="!savingOrg">Save Changes</span>
+                            <span x-show="savingOrg" class="flex items-center gap-1.5"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Saving...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- ═══════════ PROFILE TAB ═══════════ -->
@@ -498,6 +676,13 @@ function accountPage() {
     return {
         activeTab: 'profile',
 
+        // ── Organization ──
+        org: { id: null, name: '', slug: '', email: '', phone: '', website: '', address_line1: '', address_line2: '', city: '', state: '', zip_code: '', country: '', timezone: '', status: '', created_at: '', trial_ends_at: '' },
+        orgLoading: true,
+        savingOrg: false,
+        orgMessage: '',
+        orgMessageType: 'success',
+
         // ── Profile ──
         profile: { first_name: '', last_name: '', email: '', phone: '' },
         loadingProfile: true,
@@ -569,7 +754,7 @@ function accountPage() {
 
         init() {
             const hash = window.location.hash.slice(1);
-            if (['profile', 'subscription', 'invoices', 'bank'].includes(hash)) this.activeTab = hash;
+            if (['profile', 'organization', 'subscription', 'invoices', 'bank'].includes(hash)) this.activeTab = hash;
 
             if (SQ_APP_ID && !window.Square) {
                 const s = document.createElement('script');
@@ -577,13 +762,103 @@ function accountPage() {
                 document.head.appendChild(s);
             }
 
-            this.loadProfile();
+            // Single /api/auth/me call shared across all tabs (reuses layout-level cache)
+            const mePromise = (typeof getMe === 'function') ? getMe() : authFetch(APP_BASE + '/api/auth/me').then(r => r.json()).catch(() => ({}));
+            this.loadProfile(mePromise);
+            this.loadOrganization(mePromise);
             this.loadSubscription();
             this.loadInvoices();
             this.loadBank();
         },
 
-        async loadProfile() {
+        async loadOrganization(mePromise) {
+            try {
+                // Resolve org_id from shared /api/auth/me promise (no extra request)
+                let orgId = null;
+                try {
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    orgId = user.organization_id || null;
+                } catch (_) {}
+                if (!orgId && mePromise) {
+                    const meJson = await mePromise;
+                    const meUser = meJson.data || meJson;
+                    orgId = meUser.organization_id || null;
+                    if (orgId) {
+                        try {
+                            const stored = JSON.parse(localStorage.getItem('user') || '{}');
+                            localStorage.setItem('user', JSON.stringify({ ...stored, organization_id: orgId }));
+                        } catch (_) {}
+                    }
+                }
+                if (!orgId) { this.orgLoading = false; return; }
+                const res = await authFetch(APP_BASE + '/api/organizations/' + orgId);
+                const json = await res.json();
+                const data = json.data || json;
+                if (data && data.id) {
+                    this.org = {
+                        id:            data.id,
+                        name:          data.name || '',
+                        slug:          data.slug || '',
+                        email:         data.email || '',
+                        phone:         data.phone || '',
+                        website:       data.website || '',
+                        address_line1: data.address_line1 || '',
+                        address_line2: data.address_line2 || '',
+                        city:          data.city || '',
+                        state:         data.state || '',
+                        zip_code:      data.zip || data.zip_code || '',
+                        country:       data.country || '',
+                        timezone:      data.timezone || '',
+                        status:        data.status || '',
+                        created_at:    data.created_at || '',
+                        trial_ends_at: data.trial_ends_at || '',
+                    };
+                }
+            } catch (e) { console.error('loadOrganization:', e); }
+            this.orgLoading = false;
+        },
+
+        async saveOrganization() {
+            if (!this.org.id) { this.orgMessage = 'No organization found.'; this.orgMessageType = 'error'; return; }
+            this.orgMessage = '';
+            this.savingOrg = true;
+            try {
+                const payload = {
+                    name:          this.org.name.trim(),
+                    slug:          this.org.slug.trim(),
+                    email:         this.org.email.trim(),
+                    phone:         this.org.phone || null,
+                    website:       this.org.website || null,
+                    address_line1: this.org.address_line1 || null,
+                    address_line2: this.org.address_line2 || null,
+                    city:          this.org.city || null,
+                    state:         this.org.state || null,
+                    zip_code:      this.org.zip_code || null,
+                    country:       this.org.country || null,
+                    timezone:      this.org.timezone || null,
+                };
+                const res = await authFetch(APP_BASE + '/api/organizations/' + this.org.id, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    this.orgMessage = 'Organization details updated successfully.';
+                    this.orgMessageType = 'success';
+                    // Refresh local org data
+                    const data = json.data || json;
+                    if (data && data.name) this.org.name = data.name;
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'Organization updated.' } }));
+                } else {
+                    const firstErr = json.errors ? Object.values(json.errors).flat()[0] : null;
+                    this.orgMessage = firstErr || json.message || 'Failed to update organization.';
+                    this.orgMessageType = 'error';
+                }
+            } catch (e) { this.orgMessage = 'Network error. Please try again.'; this.orgMessageType = 'error'; }
+            this.savingOrg = false;
+        },
+
+        async loadProfile(mePromise) {
             try {
                 const stored = JSON.parse(localStorage.getItem('user') || '{}');
                 if (stored && (stored.first_name || stored.email)) {
@@ -591,13 +866,13 @@ function accountPage() {
                     this.loadingProfile = false;
                 }
             } catch (_) {}
-            authFetch(APP_BASE + '/api/auth/me').then(r => r.json()).then(data => {
+            (mePromise || authFetch(APP_BASE + '/api/auth/me').then(r => r.json())).then(data => {
                 const user = data.data || data;
                 if (user && (user.first_name || user.email)) {
                     this.profile = { first_name: user.first_name || '', last_name: user.last_name || '', email: user.email || '', phone: user.phone || '' };
                     try {
                         const stored = JSON.parse(localStorage.getItem('user') || '{}');
-                        localStorage.setItem('user', JSON.stringify({ ...stored, ...this.profile }));
+                        localStorage.setItem('user', JSON.stringify({ ...stored, ...this.profile, organization_id: user.organization_id || stored.organization_id }));
                     } catch (_) {}
                 }
                 this.loadingProfile = false;

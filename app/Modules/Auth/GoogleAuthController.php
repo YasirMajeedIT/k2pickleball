@@ -49,6 +49,12 @@ final class GoogleAuthController extends Controller
             return $this->error('Google credential is required.', 422);
         }
 
+        // Organization context — from request body (tenant pages) or from tenant middleware
+        $requestOrgId = (int) $request->input('organization_id', 0);
+        if ($requestOrgId <= 0) {
+            $requestOrgId = (int) ($request->getAttribute('organization_id') ?? 0);
+        }
+
         // Verify the ID token with Google
         $googleUser = $this->verifyGoogleIdToken($credential);
         if ($googleUser === null) {
@@ -100,6 +106,7 @@ final class GoogleAuthController extends Controller
 
             $userId = $this->db->insert('users', [
                 'uuid'              => $uuid,
+                'organization_id'   => $requestOrgId > 0 ? $requestOrgId : null,
                 'email'             => $email,
                 'first_name'        => $firstName,
                 'last_name'         => $lastName,
@@ -113,6 +120,21 @@ final class GoogleAuthController extends Controller
             ]);
 
             $user = $this->db->fetch("SELECT * FROM `users` WHERE `id` = ? LIMIT 1", [$userId]);
+
+            // Auto-assign 'player' role when signing up via a tenant page
+            if ($requestOrgId > 0) {
+                $playerRole = $this->db->fetch(
+                    "SELECT `id` FROM `roles` WHERE `slug` = 'player' AND (`organization_id` = ? OR `organization_id` IS NULL) LIMIT 1",
+                    [$requestOrgId]
+                );
+                if ($playerRole) {
+                    $this->db->insert('user_roles', [
+                        'user_id'         => $userId,
+                        'role_id'         => $playerRole['id'],
+                        'organization_id' => $requestOrgId,
+                    ]);
+                }
+            }
         }
 
         // Issue our JWT pair
