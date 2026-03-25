@@ -23,9 +23,9 @@ $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->load();
 
 $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-$db   = $_ENV['DB_DATABASE'] ?? 'k2pickleball';
-$user = $_ENV['DB_USERNAME'] ?? 'root';
-$pass = $_ENV['DB_PASSWORD'] ?? '';
+$db   = $_ENV['DB_NAME'] ?? 'k2pickleball';
+$user = $_ENV['DB_USER'] ?? 'root';
+$pass = $_ENV['DB_PASS'] ?? '';
 
 $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
