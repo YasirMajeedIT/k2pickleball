@@ -12,7 +12,7 @@ final class GiftCertificateRepository extends Repository
 
     public function findByOrganization(int $orgId, ?string $search = null, ?int $facilityId = null, int $page = 1, int $perPage = 15): array
     {
-        $query = $this->newQuery()
+        $query = $this->query()
             ->where('organization_id', $orgId);
 
         if ($search) {
@@ -33,7 +33,7 @@ final class GiftCertificateRepository extends Repository
 
     public function codeExistsForFacility(int $facilityId, string $code, ?int $excludeId = null): bool
     {
-        $query = $this->newQuery()
+        $query = $this->query()
             ->where('facility_id', $facilityId)
             ->where('code', $code);
 
@@ -52,30 +52,17 @@ final class GiftCertificateRepository extends Repository
             return null;
         }
 
-        $stmt = $this->db->prepare(
-            "SELECT u.* FROM gift_certificate_usage u WHERE u.gift_certificate_id = ? ORDER BY u.usage_date DESC"
+        $record['usages'] = $this->db->fetchAll(
+            "SELECT u.* FROM gift_certificate_usage u WHERE u.gift_certificate_id = ? ORDER BY u.usage_date DESC",
+            [$id]
         );
-        $stmt->execute([$id]);
-        $record['usages'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         return $record;
     }
 
     public function addUsage(array $data): int
     {
-        $cols = array_keys($data);
-        $placeholders = array_fill(0, count($cols), '?');
-
-        $sql = sprintf(
-            'INSERT INTO gift_certificate_usage (%s) VALUES (%s)',
-            implode(', ', $cols),
-            implode(', ', $placeholders)
-        );
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(array_values($data));
-
-        return (int) $this->db->lastInsertId();
+        return $this->db->insert('gift_certificate_usage', $data);
     }
 
     public function generateUniqueCode(int $facilityId): string
