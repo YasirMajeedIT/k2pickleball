@@ -183,31 +183,21 @@
 
             googleLogin() {
                 this.errorMsg = '';
-                const client = google.accounts.oauth2.initCodeClient({
-                    client_id: '<?= $_ENV["GOOGLE_CLIENT_ID"] ?? "" ?>',
-                    scope: 'openid email profile',
-                    ux_mode: 'popup',
+                const clientId = '<?= htmlspecialchars($_ENV["GOOGLE_CLIENT_ID"] ?? "", ENT_QUOTES, "UTF-8") ?>';
+                if (!clientId) {
+                    this.errorMsg = 'Google sign-in is not configured on this server.';
+                    return;
+                }
+                // Use ID token flow — no client secret needed on the frontend
+                google.accounts.id.initialize({
+                    client_id: clientId,
                     callback: async (response) => {
-                        if (response.error) { this.errorMsg = 'Google sign-in was cancelled.'; return; }
                         this.loading = true;
                         try {
-                            const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                body: new URLSearchParams({
-                                    code: response.code,
-                                    client_id: '<?= $_ENV["GOOGLE_CLIENT_ID"] ?? "" ?>',
-                                    client_secret: '<?= $_ENV["GOOGLE_CLIENT_SECRET"] ?? "" ?>',
-                                    redirect_uri: 'postmessage',
-                                    grant_type: 'authorization_code'
-                                })
-                            });
-                            const tokenData = await tokenRes.json();
-                            if (!tokenData.id_token) { this.errorMsg = 'Google authentication failed.'; this.loading = false; return; }
                             const res = await fetch('/api/auth/google', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ id_token: tokenData.id_token })
+                                body: JSON.stringify({ credential: response.credential })
                             });
                             const json = await res.json();
                             if (json.status === 'success') {
@@ -224,9 +214,24 @@
                         } finally {
                             this.loading = false;
                         }
+                    },
+                    context: 'signin',
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                });
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        // One-Tap blocked — render the standard button as fallback
+                        const wrap = document.getElementById('google-btn-fallback-login');
+                        if (wrap) {
+                            wrap.style.display = 'flex';
+                            google.accounts.id.renderButton(wrap, {
+                                type: 'standard', theme: 'outline', size: 'large',
+                                text: 'signin_with', width: wrap.offsetWidth || 400,
+                            });
+                        }
                     }
                 });
-                client.requestCode();
             }
         }
     }

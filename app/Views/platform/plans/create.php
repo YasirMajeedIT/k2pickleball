@@ -19,7 +19,7 @@ $fields = [
     ['name' => 'max_courts', 'label' => 'Max Courts', 'type' => 'number', 'placeholder' => '20', 'help' => 'Leave empty for unlimited', 'min' => '0', 'cols' => 'half'],
     ['name' => 'sort_order', 'label' => 'Sort Order', 'type' => 'number', 'placeholder' => '0', 'min' => '0', 'cols' => 'half'],
     ['name' => 'is_active', 'label' => 'Active', 'type' => 'checkbox', 'help' => 'Plan is available for new subscriptions'],
-    ['name' => 'features', 'label' => 'Features (JSON)', 'type' => 'json', 'placeholder' => '["Feature 1", "Feature 2"]'],
+    ['name' => 'features', 'label' => 'Plan Features', 'type' => 'feature-list', 'placeholder' => 'e.g. Unlimited court bookings'],
 ];
 
 ob_start();
@@ -32,7 +32,7 @@ function planCreateForm() {
             name: '', slug: '', description: '',
             price_monthly: '', price_yearly: '',
             max_users: '', max_facilities: '', max_courts: '',
-            sort_order: '0', is_active: true, features: '[]'
+            sort_order: '0', is_active: true, features: []
         },
         errors: {},
         submitting: false,
@@ -45,6 +45,7 @@ function planCreateForm() {
                 payload.max_users = payload.max_users || null;
                 payload.max_facilities = payload.max_facilities || null;
                 payload.max_courts = payload.max_courts || null;
+                payload.features = JSON.stringify(payload.features || []);
 
                 const res = await fetch(APP_BASE + '/api/plans', {
                     method: 'POST',

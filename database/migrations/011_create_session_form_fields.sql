@@ -3,8 +3,8 @@
 -- shown to clients during registration.
 
 CREATE TABLE IF NOT EXISTS `session_form_fields` (
-    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `session_type_id` INT UNSIGNED NOT NULL,
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `session_type_id` BIGINT UNSIGNED NOT NULL,
     `field_label` VARCHAR(255) NOT NULL,
     `field_name` VARCHAR(255) NOT NULL,
     `field_type` ENUM('text','number','email','phone','date','textarea','select','checkbox','radio','toggle') NOT NULL DEFAULT 'text',

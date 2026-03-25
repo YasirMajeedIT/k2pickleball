@@ -24,6 +24,7 @@ final class AuthMiddleware implements MiddlewareInterface
     private const PUBLIC_ROUTES = [
         '/api/auth/login',
         '/api/auth/register',
+        '/api/auth/register-with-payment',
         '/api/auth/forgot-password',
         '/api/auth/reset-password',
         '/api/auth/refresh',

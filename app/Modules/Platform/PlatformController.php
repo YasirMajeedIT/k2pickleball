@@ -33,6 +33,7 @@ class PlatformController extends Controller
         'consultations'                 => 'platform/consultations/index.php',
         'contact-submissions'           => 'platform/contact-submissions/index.php',
         'site-settings'                 => 'platform/site-settings/index.php',
+        'migrations'                    => 'platform/migrations/index.php',
     ];
 
     public function handleRequest(Request $request, int|null $id = null): Response

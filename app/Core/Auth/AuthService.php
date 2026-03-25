@@ -134,14 +134,15 @@ final class AuthService
             }
 
             $orgUuid = $this->generateUuid();
-            $trialEndsAt = gmdate('Y-m-d H:i:s', time() + 7 * 86400); // 7-day trial
+            $orgStatus = $data['org_status'] ?? 'trial';
+            $trialEndsAt = $orgStatus === 'active' ? null : gmdate('Y-m-d H:i:s', time() + 7 * 86400);
             $orgId = $this->db->insert('organizations', [
                 'uuid'          => $orgUuid,
                 'name'          => $data['organization_name'],
                 'slug'          => $data['organization_slug'],
                 'email'         => $data['email'],
                 'phone'         => $data['phone'] ?? null,
-                'status'        => 'trial',
+                'status'        => $orgStatus,
                 'trial_ends_at' => $trialEndsAt,
                 'created_at'    => gmdate('Y-m-d H:i:s'),
                 'updated_at'    => gmdate('Y-m-d H:i:s'),
@@ -477,10 +478,22 @@ final class AuthService
 
     // ---- Email Helpers ----
 
+    private function getAppUrl(): string
+    {
+        $url = rtrim($_ENV['APP_URL'] ?? '', '/');
+        if ($url !== '') {
+            return $url;
+        }
+        // Fallback: build from request headers
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return $scheme . '://' . $host;
+    }
+
     private function sendVerificationEmail(string $email, string $firstName, string $token): void
     {
         try {
-            $appUrl    = rtrim($_ENV['APP_URL'] ?? 'http://localhost/k2pickleball', '/');
+            $appUrl    = $this->getAppUrl();
             $verifyUrl = $appUrl . '/verify-email?token=' . urlencode($token);
             $mailer    = Mailer::getInstance();
             $html      = $mailer->renderTemplate('verify-email', [
@@ -499,7 +512,7 @@ final class AuthService
 
     private function sendWelcomeEmail(string $email, string $firstName, string $lastName): void
     {
-        $appUrl    = rtrim($_ENV['APP_URL'] ?? 'http://localhost/k2pickleball', '/');
+        $appUrl    = $this->getAppUrl();
         $mailer    = Mailer::getInstance();
         $html      = $mailer->renderTemplate('welcome', [
             'firstName'      => $firstName,
@@ -515,7 +528,7 @@ final class AuthService
     private function sendPasswordResetEmail(string $email, string $firstName, string $token): void
     {
         try {
-            $appUrl   = rtrim($_ENV['APP_URL'] ?? 'http://localhost/k2pickleball', '/');
+            $appUrl   = $this->getAppUrl();
             $resetUrl = $appUrl . '/reset-password?token=' . urlencode($token);
             $mailer   = Mailer::getInstance();
             $html     = $mailer->renderTemplate('forgot-password', [

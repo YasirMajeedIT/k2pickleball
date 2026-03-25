@@ -12,6 +12,7 @@ return function (Router $router): void {
         // Public routes
         $router->post('/login', ['App\\Modules\\Auth\\AuthController', 'login']);
         $router->post('/register', ['App\\Modules\\Auth\\AuthController', 'register']);
+        $router->post('/register-with-payment', ['App\\Modules\\Auth\\AuthController', 'registerWithPayment']);
         $router->post('/refresh', ['App\\Modules\\Auth\\AuthController', 'refresh']);
         $router->post('/forgot-password', ['App\\Modules\\Auth\\AuthController', 'forgotPassword']);
         $router->post('/reset-password', ['App\\Modules\\Auth\\AuthController', 'resetPassword']);

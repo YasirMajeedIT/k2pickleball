@@ -33,6 +33,7 @@ return function (Router $router): void {
     $router->get('/platform/consultations', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/contact-submissions', [PlatformController::class, 'handleRequest']);
     $router->get('/platform/site-settings', [PlatformController::class, 'handleRequest']);
+    $router->get('/platform/migrations', [PlatformController::class, 'handleRequest']);
 
     // Platform API endpoints — Stats & Dashboard
     $router->get('/api/platform/stats', [PlatformApiController::class, 'stats']);
@@ -74,4 +75,9 @@ return function (Router $router): void {
     $router->get('/api/platform/settings', [PlatformApiController::class, 'settings']);
     $router->put('/api/platform/settings', [PlatformApiController::class, 'updateSettings']);
     $router->get('/api/platform/audit-logs', [PlatformApiController::class, 'auditLogs']);
+
+    // Platform API — Migrations
+    $router->get('/api/platform/migrations', [PlatformApiController::class, 'migrations']);
+    $router->post('/api/platform/migrations/run', [PlatformApiController::class, 'runMigration']);
+    $router->post('/api/platform/migrations/mark-executed', [PlatformApiController::class, 'markMigrationsExecuted']);
 };

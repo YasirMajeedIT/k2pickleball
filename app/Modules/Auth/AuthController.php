@@ -12,6 +12,9 @@ use App\Core\Http\Response;
 use App\Core\Security\Sanitizer;
 use App\Core\Security\Validator;
 use App\Core\Services\Container;
+use App\Core\Database\Connection;
+use App\Modules\Payments\SquarePaymentService;
+use App\Modules\Subscriptions\SubscriptionRepository;
 
 final class AuthController extends Controller
 {
@@ -226,6 +229,144 @@ final class AuthController extends Controller
         );
 
         return $this->success($user, 'Profile updated successfully');
+    }
+
+    /**
+     * POST /api/auth/register-with-payment
+     * Registration + Square payment + subscription in one step.
+     */
+    public function registerWithPayment(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'email'             => 'required|email|max:255',
+            'password'          => 'required|password|confirmed',
+            'first_name'        => 'required|string|max:100',
+            'last_name'         => 'required|string|max:100',
+            'phone'             => 'required|phone',
+            'organization_name' => 'required|string|max:255',
+            'organization_slug' => 'required|slug|max:100',
+            'plan_id'           => 'required|integer',
+            'billing_cycle'     => 'required|in:monthly,yearly',
+            'source_id'         => 'required|string',
+        ]);
+
+        $data['email'] = Sanitizer::email($data['email']);
+        $data['first_name'] = Sanitizer::string($data['first_name']);
+        $data['last_name'] = Sanitizer::string($data['last_name']);
+        $data['organization_name'] = Sanitizer::string($data['organization_name']);
+        $data['organization_slug'] = Sanitizer::slug($data['organization_slug']);
+
+        $container = Container::getInstance();
+        $db = $container->make(Connection::class);
+        $subRepo = new SubscriptionRepository($db);
+
+        // Validate plan exists and is active
+        $plan = $subRepo->findPlanById((int) $data['plan_id']);
+        if (!$plan || !$plan['is_active']) {
+            return $this->error('Selected plan is not available', 422);
+        }
+
+        $price = $data['billing_cycle'] === 'yearly'
+            ? (float) $plan['price_yearly']
+            : (float) $plan['price_monthly'];
+        $amountCents = (int) round($price * 100);
+
+        // 1. Process Square payment FIRST (fail fast before creating any records)
+        $square = new SquarePaymentService();
+        $squareCustomer = $square->createCustomer(
+            $data['email'],
+            $data['first_name'],
+            $data['last_name'],
+            $data['phone'] ?? null
+        );
+
+        $paymentResult = $square->createPayment(
+            $amountCents,
+            'USD',
+            $data['source_id'],
+            [
+                'customer_id'  => $squareCustomer['id'],
+                'reference_id' => 'REG-' . strtoupper(bin2hex(random_bytes(6))),
+                'note'         => 'K2Pickleball ' . $plan['name'] . ' plan — ' . $data['billing_cycle'],
+            ]
+        );
+
+        // 2. Register user + org (status 'active' since payment succeeded)
+        $data['org_status'] = 'active';
+        $user = $this->auth->register($data);
+
+        $orgId = $user['organization_id'];
+
+        // 3. Create subscription
+        $startDate = date('Y-m-d');
+        $endDate = $data['billing_cycle'] === 'yearly'
+            ? date('Y-m-d', strtotime('+1 year'))
+            : date('Y-m-d', strtotime('+1 month'));
+
+        $subId = $subRepo->create([
+            'organization_id'      => $orgId,
+            'plan_id'              => $data['plan_id'],
+            'status'               => 'active',
+            'billing_cycle'        => $data['billing_cycle'],
+            'current_period_start' => $startDate,
+            'current_period_end'   => $endDate,
+            'square_subscription_id' => $paymentResult['id'],
+            'created_at'           => date('Y-m-d H:i:s'),
+            'updated_at'           => date('Y-m-d H:i:s'),
+        ]);
+
+        // 4. Create invoice
+        $subRepo->createInvoice([
+            'uuid'            => $this->generateUuid(),
+            'organization_id' => $orgId,
+            'subscription_id' => $subId,
+            'invoice_number'  => 'INV-' . strtoupper(bin2hex(random_bytes(4))),
+            'subtotal'        => $price,
+            'tax'             => 0,
+            'total'           => $price,
+            'status'          => 'paid',
+            'due_date'        => $startDate,
+            'paid_at'         => date('Y-m-d H:i:s'),
+            'notes'           => 'Registration payment — ' . $plan['name'] . ' (' . $data['billing_cycle'] . ')',
+            'created_at'      => date('Y-m-d H:i:s'),
+            'updated_at'      => date('Y-m-d H:i:s'),
+        ]);
+
+        // 5. Store payment record
+        $payRepo = new \App\Modules\Payments\PaymentRepository($db);
+        $payRepo->create([
+            'uuid'               => $this->generateUuid(),
+            'organization_id'    => $orgId,
+            'user_id'            => $user['id'],
+            'amount'             => $amountCents,
+            'currency'           => 'USD',
+            'status'             => strtolower($paymentResult['status']),
+            'description'        => 'Registration — ' . $plan['name'] . ' plan',
+            'square_payment_id'  => $paymentResult['id'],
+            'square_receipt_url' => $paymentResult['receipt_url'] ?? null,
+            'idempotency_key'    => bin2hex(random_bytes(16)),
+            'metadata'           => json_encode($paymentResult),
+            'processed_at'       => date('Y-m-d H:i:s'),
+            'created_at'         => date('Y-m-d H:i:s'),
+            'updated_at'         => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->created([
+            'user'    => $user,
+            'plan'    => $plan['name'],
+            'payment' => [
+                'status'      => $paymentResult['status'],
+                'receipt_url' => $paymentResult['receipt_url'] ?? null,
+            ],
+        ], 'Registration and payment successful');
+    }
+
+    private function generateUuid(): string
+    {
+        $data = random_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
     /**

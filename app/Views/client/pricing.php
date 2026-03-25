@@ -9,7 +9,7 @@
             Choose the Right Plan for<br><span class="gradient-gold">Your Facility</span>
         </h1>
         <p class="mt-6 text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed animate-fade-in-up" style="animation-delay:0.2s">
-            Start with a <span class="text-gold-400 font-semibold">free 7-day trial</span> — no credit card required. Pick the plan that matches your facility size and grow at your own pace.
+            Pick the plan that matches your facility size and get started today. Grow at your own pace with full platform access.
         </p>
     </div>
 </section>
@@ -56,13 +56,7 @@
                         <p x-show="yearly" x-cloak class="text-xs text-gold-400 mt-1" x-text="'Billed $' + plan.price_yearly + '/year'"></p>
                     </div>
 
-                    <!-- 7-Day Trial Banner -->
-                    <div class="mb-6 p-3 rounded-lg bg-gold-500/5 border border-gold-500/15">
-                        <p class="text-xs text-gold-400 font-medium text-center">
-                            <svg class="w-4 h-4 inline -mt-0.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
-                            7-day free trial — No credit card required
-                        </p>
-                    </div>
+
 
                     <!-- Features -->
                     <ul class="flex-1 space-y-3 mb-8">
@@ -86,10 +80,10 @@
                         </li>
                     </ul>
 
-                    <a :href="'<?= $baseUrl ?>/register?plan=' + plan.slug"
+                    <a :href="'<?= $baseUrl ?>/register?plan=' + plan.slug + '&cycle=' + (yearly ? 'yearly' : 'monthly')"
                        class="block w-full text-center px-6 py-3.5 text-sm font-bold rounded-xl transition-all duration-300"
                        :class="plan.featured ? 'text-navy-950 gradient-gold-bg shadow-gold hover:shadow-gold-lg' : 'text-gold-400 border border-gold-500/30 hover:bg-gold-500/10'">
-                        Start Free Trial
+                        Get Started
                     </a>
                 </div>
             </template>
@@ -180,7 +174,7 @@
         <div class="space-y-4" x-data="{open: null}" data-animate>
             <?php
             $faqs = [
-                ['Is there a free trial?', 'Yes! Every plan includes a 7-day free trial with full platform access. No credit card is required to start. You can explore the entire K2Pickleball Platform before committing.'],
+                ['How do I get started?', 'Simply choose a plan and complete your registration with payment. You\'ll get instant access to the full K2Pickleball Platform as soon as your account is created.'],
                 ['What does the launch fee cover?', 'The launch fee is a one-time investment that covers site selection consulting, buildout guidance, launch strategy development, marketing support, full platform deployment, staff training, and ongoing onboarding. The exact fee depends on the scope and scale of your facility.'],
                 ['How is the ongoing platform fee calculated?', 'The platform fee is calculated as a percentage (3-6%) of your facility\'s gross revenue collected through the K2Pickleball Platform. This includes court reservations, memberships, retail sales, event registrations, and any other transactions processed through the system.'],
                 ['Can I upgrade or downgrade my plan?', 'Absolutely. You can change your plan at any time from your admin dashboard. Upgrades take effect immediately, and downgrades take effect at the end of your current billing cycle.'],
@@ -207,14 +201,14 @@
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gold-500/8 rounded-full blur-[120px]"></div>
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center" data-animate>
         <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
-            Start Your <span class="gradient-gold">Free Trial</span> Today
+            Get Started <span class="gradient-gold">Today</span>
         </h2>
         <p class="mt-6 text-lg text-slate-400 max-w-2xl mx-auto">
-            Get 7 days of full access to the K2Pickleball Platform — no credit card required. Ready for a full partnership? Schedule a consultation with our team.
+            Choose a plan and get instant access to the full K2Pickleball Platform. Ready for a full partnership? Schedule a consultation with our team.
         </p>
         <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="<?= $baseUrl ?>/register" class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 text-base font-bold text-navy-950 gradient-gold-bg rounded-xl shadow-gold hover:shadow-gold-lg transition-all duration-300">
-                Start Free Trial
+                Choose a Plan
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
             </a>
             <a href="<?= $baseUrl ?>/demo" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium text-slate-300 hover:text-white border border-navy-700 hover:border-gold-500/30 rounded-xl transition-all">

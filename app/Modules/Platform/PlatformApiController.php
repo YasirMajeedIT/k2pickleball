@@ -880,19 +880,24 @@ final class PlatformApiController extends Controller
      */
     public function activeAnnouncements(Request $request): Response
     {
-        $orgId = $request->orgId();
+        $orgId = $request->organizationId();
         $now = date('Y-m-d H:i:s');
 
-        $rows = $this->db->fetchAll(
-            "SELECT id, title, message, type, target, target_org_ids, starts_at, ends_at, created_at
-             FROM announcements
-             WHERE is_active = 1
-               AND (starts_at IS NULL OR starts_at <= ?)
-               AND (ends_at IS NULL OR ends_at >= ?)
-             ORDER BY created_at DESC
-             LIMIT 20",
-            [$now, $now]
-        );
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT id, title, message, type, target, target_org_ids, starts_at, ends_at, created_at
+                 FROM announcements
+                 WHERE is_active = 1
+                   AND (starts_at IS NULL OR starts_at <= ?)
+                   AND (ends_at IS NULL OR ends_at >= ?)
+                 ORDER BY created_at DESC
+                 LIMIT 20",
+                [$now, $now]
+            );
+        } catch (\Throwable $e) {
+            // Table may not exist yet
+            return $this->success([]);
+        }
 
         // Filter by target
         $result = [];
@@ -910,5 +915,263 @@ final class PlatformApiController extends Controller
         }
 
         return $this->success($result);
+    }
+
+    // =========================================================================
+    // Database Migrations
+    // =========================================================================
+
+    /**
+     * GET /api/platform/migrations
+     * List all migration files with their execution status.
+     */
+    public function migrations(Request $request): Response
+    {
+        $migrationsDir = dirname(__DIR__, 3) . '/database/migrations';
+        $files = glob($migrationsDir . '/*.sql');
+        usort($files, function ($a, $b) {
+            $aBase = basename($a);
+            $bBase = basename($b);
+            $aNum = preg_match('/^(\d+)_/', $aBase, $am) ? (int) $am[1] : 9999;
+            $bNum = preg_match('/^(\d+)_/', $bBase, $bm) ? (int) $bm[1] : 9999;
+            return $aNum !== $bNum ? $aNum - $bNum : strcmp($aBase, $bBase);
+        });
+
+        // Get already-executed migrations
+        $executed = [];
+        try {
+            $rows = $this->db->fetchAll("SELECT migration, batch, executed_at, status, error_message FROM schema_migrations");
+            foreach ($rows as $r) {
+                $executed[$r['migration']] = $r;
+            }
+        } catch (\Throwable $e) {
+            // Table may not exist yet
+        }
+
+        $result = [];
+        foreach ($files as $file) {
+            $filename = basename($file);
+            if ($filename === '.gitkeep' || str_starts_with($filename, '_')) continue;
+
+            $num = preg_match('/^(\d+)_/', $filename, $m) ? (int) $m[1] : null;
+            $ran = $executed[$filename] ?? null;
+            $result[] = [
+                'filename'      => $filename,
+                'number'        => $num,
+                'status'        => $ran ? $ran['status'] : 'pending',
+                'batch'         => $ran['batch'] ?? null,
+                'executed_at'   => $ran['executed_at'] ?? null,
+                'error_message' => $ran['error_message'] ?? null,
+            ];
+        }
+
+        return $this->success([
+            'data'  => $result,
+            'total' => count($result),
+            'page'  => 1,
+            'limit' => count($result),
+        ]);
+    }
+
+    /**
+     * POST /api/platform/migrations/run
+     * Run one or more pending migrations by filename.
+     * Body: { "migrations": ["029_create_extensions_announcements.sql"] }
+     *   or: { "run_all": true }
+     */
+    public function runMigration(Request $request): Response
+    {
+        $body = $request->all();
+        $runAll = !empty($body['run_all']);
+        $selected = $body['migrations'] ?? [];
+
+        if (!$runAll && empty($selected)) {
+            return $this->error('No migrations selected', 400);
+        }
+
+        $migrationsDir = dirname(__DIR__, 3) . '/database/migrations';
+        $cfg = require dirname(__DIR__, 3) . '/config/database.php';
+
+        // Determine next batch number
+        $lastBatch = 0;
+        try {
+            $row = $this->db->fetch("SELECT MAX(batch) as mb FROM schema_migrations");
+            $lastBatch = (int) ($row['mb'] ?? 0);
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        $batch = $lastBatch + 1;
+
+        // Get already executed
+        $executed = [];
+        try {
+            $rows = $this->db->fetchAll("SELECT migration FROM schema_migrations WHERE status = 'success'");
+            foreach ($rows as $r) {
+                $executed[$r['migration']] = true;
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        // Collect files to run
+        $files = glob($migrationsDir . '/*.sql');
+        usort($files, function ($a, $b) {
+            $aBase = basename($a);
+            $bBase = basename($b);
+            $aNum = preg_match('/^(\d+)_/', $aBase, $am) ? (int) $am[1] : 9999;
+            $bNum = preg_match('/^(\d+)_/', $bBase, $bm) ? (int) $bm[1] : 9999;
+            return $aNum !== $bNum ? $aNum - $bNum : strcmp($aBase, $bBase);
+        });
+
+        $toRun = [];
+        foreach ($files as $file) {
+            $filename = basename($file);
+            if ($filename === '.gitkeep' || str_starts_with($filename, '_')) continue;
+            if (isset($executed[$filename])) continue;
+
+            if ($runAll || in_array($filename, $selected, true)) {
+                $toRun[] = $file;
+            }
+        }
+
+        if (empty($toRun)) {
+            return $this->success(['results' => [], 'message' => 'No pending migrations to run']);
+        }
+
+        // Use mysqli for multi_query support
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $mysqli = new \mysqli($cfg['host'], $cfg['user'], $cfg['pass'], $cfg['name'], (int) $cfg['port']);
+        if ($mysqli->connect_error) {
+            return $this->error('Database connection failed: ' . $mysqli->connect_error, 500);
+        }
+        $mysqli->set_charset('utf8mb4');
+
+        $results = [];
+        foreach ($toRun as $file) {
+            $filename = basename($file);
+            $sql = file_get_contents($file);
+            $sql = preg_replace('/--[^\n]*/', '', $sql);
+            $sql = trim($sql);
+            if (empty($sql)) {
+                $this->recordMigration($filename, $batch, 'success');
+                $results[] = ['migration' => $filename, 'status' => 'success', 'message' => 'Empty file, marked as run'];
+                continue;
+            }
+
+            $errors = [];
+            try {
+                $ok = $mysqli->multi_query($sql);
+                if ($ok) {
+                    do {
+                        if ($result = $mysqli->store_result()) {
+                            $result->free();
+                        }
+                        if ($mysqli->errno && !$this->isIgnorableMigrationError($mysqli->error)) {
+                            $errors[] = $mysqli->error;
+                        }
+                    } while ($mysqli->more_results() && $mysqli->next_result());
+                }
+                if ($mysqli->errno && !$this->isIgnorableMigrationError($mysqli->error)) {
+                    if (!in_array($mysqli->error, $errors, true)) {
+                        $errors[] = $mysqli->error;
+                    }
+                }
+            } catch (\Throwable $e) {
+                if (!$this->isIgnorableMigrationError($e->getMessage())) {
+                    $errors[] = $e->getMessage();
+                }
+                while ($mysqli->more_results() && $mysqli->next_result()) {
+                    if ($result = $mysqli->store_result()) {
+                        $result->free();
+                    }
+                }
+            }
+
+            if (empty($errors)) {
+                $this->recordMigration($filename, $batch, 'success');
+                $results[] = ['migration' => $filename, 'status' => 'success', 'message' => 'OK'];
+            } else {
+                $errMsg = implode('; ', $errors);
+                $this->recordMigration($filename, $batch, 'failed', $errMsg);
+                $results[] = ['migration' => $filename, 'status' => 'failed', 'message' => $errMsg];
+            }
+        }
+
+        $mysqli->close();
+
+        $successCount = count(array_filter($results, fn($r) => $r['status'] === 'success'));
+        $failCount = count($results) - $successCount;
+
+        return $this->success([
+            'results' => $results,
+            'batch'   => $batch,
+            'message' => "{$successCount} succeeded, {$failCount} failed",
+        ]);
+    }
+
+    /**
+     * POST /api/platform/migrations/mark-executed
+     * Mark existing migrations as already executed (for existing DBs).
+     * Body: { "migrations": ["001_enhance_facilities.sql", ...] } or { "mark_all": true }
+     */
+    public function markMigrationsExecuted(Request $request): Response
+    {
+        $body = $request->all();
+        $markAll = !empty($body['mark_all']);
+        $selected = $body['migrations'] ?? [];
+
+        $migrationsDir = dirname(__DIR__, 3) . '/database/migrations';
+
+        // Get already tracked
+        $tracked = [];
+        try {
+            $rows = $this->db->fetchAll("SELECT migration FROM schema_migrations");
+            foreach ($rows as $r) {
+                $tracked[$r['migration']] = true;
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        $files = glob($migrationsDir . '/*.sql');
+        $marked = 0;
+        foreach ($files as $file) {
+            $filename = basename($file);
+            if ($filename === '.gitkeep' || str_starts_with($filename, '_')) continue;
+            if (isset($tracked[$filename])) continue;
+
+            if ($markAll || in_array($filename, $selected, true)) {
+                $this->recordMigration($filename, 0, 'success');
+                $marked++;
+            }
+        }
+
+        return $this->success(['marked' => $marked], "{$marked} migrations marked as executed");
+    }
+
+    private function recordMigration(string $filename, int $batch, string $status, ?string $error = null): void
+    {
+        try {
+            // Use REPLACE to handle re-runs of failed migrations
+            $this->db->query(
+                "REPLACE INTO schema_migrations (migration, batch, executed_at, status, error_message) VALUES (?, ?, NOW(), ?, ?)",
+                [$filename, $batch, $status, $error]
+            );
+        } catch (\Throwable $e) {
+            // Silently fail — don't break the migration run
+        }
+    }
+
+    private function isIgnorableMigrationError(string $msg): bool
+    {
+        $patterns = [
+            'already exists', 'Duplicate column', 'Duplicate entry', 'Duplicate key',
+            "Can't DROP", 'Unknown column', 'Column not found', 'check that it exists',
+            "doesn't exist", 'Table already exists', 'Foreign key constraint is incorrectly formed',
+        ];
+        foreach ($patterns as $p) {
+            if (str_contains($msg, $p)) return true;
+        }
+        return false;
     }
 }
