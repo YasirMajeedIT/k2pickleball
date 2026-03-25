@@ -21,13 +21,11 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
     <meta name="robots" content="noindex, nofollow">
     <title><?= htmlspecialchars($title) ?> — K2 Pickleball</title>
 
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Fonts (self-hosted) -->
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/css/fonts.css">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS -->
+    <script src="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/js/tailwindcss.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -51,19 +49,19 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
     </script>
 
     <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/js/alpine.min.js"></script>
 
-    <!-- Chart.js (for dashboard) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <!-- Chart.js -->
+    <script src="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/js/chart.umd.min.js"></script>
 
     <!-- Quill.js (rich text editor) -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <link href="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/css/quill.snow.css" rel="stylesheet">
+    <script src="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/js/quill.js"></script>
 
     <!-- Flatpickr (date picker) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/css/flatpickr.min.css">
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/css/flatpickr-airbnb.css">
+    <script src="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/vendor/js/flatpickr.min.js"></script>
 
     <!-- FullCalendar 6.x (local) -->
     <script src="<?= htmlspecialchars($baseUrl ?? '', ENT_QUOTES) ?>/assets/js/fullcalendar.min.js"></script>

@@ -260,6 +260,81 @@ foreach ($facilityColumns as $col => $ddl) {
 echo "\n";
 
 // ──────────────────────────────────────────────
+// 8. Ensure users table has profile columns needed by UserController
+// ──────────────────────────────────────────────
+echo "8. Ensuring users table has profile columns...\n";
+
+$userColumns = [
+    'professional_title'     => "ADD COLUMN `professional_title` VARCHAR(100) DEFAULT NULL AFTER `phone`",
+    'membership_id'          => "ADD COLUMN `membership_id` VARCHAR(50) DEFAULT NULL AFTER `professional_title`",
+    'certification_level'    => "ADD COLUMN `certification_level` VARCHAR(100) DEFAULT NULL AFTER `membership_id`",
+    'years_experience'       => "ADD COLUMN `years_experience` SMALLINT UNSIGNED DEFAULT NULL AFTER `certification_level`",
+    'emergency_contact_name' => "ADD COLUMN `emergency_contact_name` VARCHAR(150) DEFAULT NULL AFTER `years_experience`",
+    'emergency_contact_phone'=> "ADD COLUMN `emergency_contact_phone` VARCHAR(30) DEFAULT NULL AFTER `emergency_contact_name`",
+    'bio'                    => "ADD COLUMN `bio` TEXT DEFAULT NULL AFTER `emergency_contact_phone`",
+    'google_id'              => "ADD COLUMN `google_id` VARCHAR(255) DEFAULT NULL AFTER `avatar_url`",
+    'email_verified_at'      => "ADD COLUMN `email_verified_at` DATETIME DEFAULT NULL AFTER `google_id`",
+];
+
+foreach ($userColumns as $col => $ddl) {
+    $check = $pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = '$col'")->fetchColumn();
+    if ((int)$check === 0) {
+        try {
+            $pdo->exec("ALTER TABLE `users` $ddl");
+            echo "   + Added column: $col\n";
+        } catch (\Throwable $e) {
+            echo "   ! Error adding $col: " . $e->getMessage() . "\n";
+        }
+    } else {
+        echo "   = Column exists: $col\n";
+    }
+}
+
+// Add google_id index if missing
+try {
+    $idxCheck = $pdo->query("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'idx_users_google_id'")->fetchColumn();
+    if ((int)$idxCheck === 0) {
+        $pdo->exec("ALTER TABLE `users` ADD INDEX `idx_users_google_id` (`google_id`)");
+        echo "   + Added index: idx_users_google_id\n";
+    }
+} catch (\Throwable $e) {
+    echo "   ! Index error: " . $e->getMessage() . "\n";
+}
+echo "\n";
+
+// ──────────────────────────────────────────────
+// 9. Ensure user_facilities table exists
+// ──────────────────────────────────────────────
+echo "9. Ensuring user_facilities table exists...\n";
+try {
+    $tableCheck = $pdo->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_facilities'")->fetchColumn();
+    if ((int)$tableCheck === 0) {
+        $pdo->exec("
+            CREATE TABLE `user_facilities` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `user_id` BIGINT UNSIGNED NOT NULL,
+                `facility_id` BIGINT UNSIGNED NOT NULL,
+                `organization_id` BIGINT UNSIGNED NOT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY `uk_user_facility` (`user_id`, `facility_id`),
+                INDEX `idx_uf_user` (`user_id`),
+                INDEX `idx_uf_facility` (`facility_id`),
+                INDEX `idx_uf_org` (`organization_id`),
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`facility_id`) REFERENCES `facilities`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+        echo "   + Created user_facilities table\n";
+    } else {
+        echo "   = user_facilities table already exists\n";
+    }
+} catch (\Throwable $e) {
+    echo "   ! Error: " . $e->getMessage() . "\n";
+}
+echo "\n";
+
+// ──────────────────────────────────────────────
 // Summary
 // ──────────────────────────────────────────────
 $totalPerms = $pdo->query("SELECT COUNT(*) FROM permissions")->fetchColumn();
