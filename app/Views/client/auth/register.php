@@ -377,6 +377,16 @@
                     if (match) { this.selectedPlan = match; this.step = 2; }
                 }
                 if (params.get('cycle') === 'yearly') this.billingCycle = 'yearly';
+
+                // Pre-fill from Google redirect (when login detects unregistered Google user)
+                if (params.get('google_email')) {
+                    this.email = params.get('google_email') || '';
+                    this.firstName = params.get('google_first') || '';
+                    this.lastName = params.get('google_last') || '';
+                    this.orgName = this.firstName ? this.firstName + "'s Organization" : '';
+                    this.orgSlug = this.orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    this.successMsg = 'Your Google profile has been pre-filled. Please choose a plan, set a password, and complete registration.';
+                }
             },
 
             async loadPlans() {

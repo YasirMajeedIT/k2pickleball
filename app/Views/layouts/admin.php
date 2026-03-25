@@ -377,6 +377,12 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
             if (ok) {
                 options.headers['Authorization'] = 'Bearer ' + localStorage.getItem('access_token');
                 res = await fetch(url, options);
+            } else {
+                // Session expired — clear tokens and redirect to login
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = (window.APP_BASE || '') + '/login';
+                return res;
             }
         }
         return res;

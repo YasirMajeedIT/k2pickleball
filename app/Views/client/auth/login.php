@@ -162,7 +162,7 @@
                     const res = await fetch('/api/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: this.email, password: this.password })
+                        body: JSON.stringify({ email: this.email, password: this.password, remember: document.getElementById('remember').checked })
                     });
                     const json = await res.json();
                     if (json.status === 'success') {
@@ -206,6 +206,16 @@
                                 localStorage.setItem('refresh_token', data.refresh_token);
                                 this.successMsg = 'Login successful! Redirecting...';
                                 setTimeout(() => { window.location.href = '/admin'; }, 600);
+                            } else if (json.errors && json.errors.requires_registration) {
+                                // Google user not registered yet — redirect to register with pre-fill
+                                const profile = json.errors.google_profile || {};
+                                const params = new URLSearchParams({
+                                    google_email: profile.email || '',
+                                    google_first: profile.first_name || '',
+                                    google_last: profile.last_name || '',
+                                });
+                                this.errorMsg = 'No account found. Redirecting to registration...';
+                                setTimeout(() => { window.location.href = '/register?' + params.toString(); }, 1500);
                             } else {
                                 this.errorMsg = json.message || 'Google login failed. Please try again.';
                             }

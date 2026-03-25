@@ -98,43 +98,21 @@ final class GoogleAuthController extends Controller
                 return $this->error('Account is not active. Please contact support.', 403);
             }
         } else {
-            // New user — auto-create, auto-verified via Google
-            $uuidBytes = random_bytes(16);
-            $uuidBytes[6] = chr(ord($uuidBytes[6]) & 0x0f | 0x40);
-            $uuidBytes[8] = chr(ord($uuidBytes[8]) & 0x3f | 0x80);
-            $uuid = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($uuidBytes), 4));
-
-            $userId = $this->db->insert('users', [
-                'uuid'              => $uuid,
-                'organization_id'   => $requestOrgId > 0 ? $requestOrgId : null,
-                'email'             => $email,
-                'first_name'        => $firstName,
-                'last_name'         => $lastName,
-                'google_id'         => $googleId,
-                'avatar_url'        => $avatar,
-                'password_hash'     => '',                           // No password for OAuth users
-                'status'            => 'active',
-                'email_verified_at' => date('Y-m-d H:i:s'),         // Auto-verified via Google
-                'created_at'        => date('Y-m-d H:i:s'),
-                'updated_at'        => date('Y-m-d H:i:s'),
-            ]);
-
-            $user = $this->db->fetch("SELECT * FROM `users` WHERE `id` = ? LIMIT 1", [$userId]);
-
-            // Auto-assign 'player' role when signing up via a tenant page
-            if ($requestOrgId > 0) {
-                $playerRole = $this->db->fetch(
-                    "SELECT `id` FROM `roles` WHERE `slug` = 'player' AND (`organization_id` = ? OR `organization_id` IS NULL) LIMIT 1",
-                    [$requestOrgId]
-                );
-                if ($playerRole) {
-                    $this->db->insert('user_roles', [
-                        'user_id'         => $userId,
-                        'role_id'         => $playerRole['id'],
-                        'organization_id' => $requestOrgId,
-                    ]);
-                }
-            }
+            // New user — do NOT auto-create. Google login is only for existing registered users.
+            // Return the Google profile so the frontend can pre-fill the registration form.
+            return $this->error(
+                'No account found with this email. Please register first to create your organization, then you can sign in with Google.',
+                404,
+                [
+                    'requires_registration' => true,
+                    'google_profile' => [
+                        'email'      => $email,
+                        'first_name' => $firstName,
+                        'last_name'  => $lastName,
+                        'avatar_url' => $avatar,
+                    ],
+                ]
+            );
         }
 
         // Issue our JWT pair

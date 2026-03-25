@@ -38,11 +38,14 @@ final class AuthController extends Controller
             'password' => 'required|string|min:1',
         ]);
 
+        $remember = (bool) ($request->input('remember', false));
+
         $result = $this->auth->login(
             Sanitizer::email($data['email']),
             $data['password'],
             $request->ip(),
-            $request->header('User-Agent')
+            $request->header('User-Agent'),
+            $remember
         );
 
         return $this->success($result, 'Login successful');

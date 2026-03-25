@@ -28,7 +28,7 @@ final class AuthService
     /**
      * Authenticate a user and return token pair.
      */
-    public function login(string $email, string $password, ?string $ip = null, ?string $userAgent = null): array
+    public function login(string $email, string $password, ?string $ip = null, ?string $userAgent = null, bool $remember = false): array
     {
         $user = $this->db->fetch(
             "SELECT * FROM `users` WHERE `email` = ? LIMIT 1",
@@ -88,7 +88,7 @@ final class AuthService
             $orgId,
             $roleSlugs
         );
-        $refreshToken = $this->jwt->generateRefreshToken((int) $user['id'], $ip, $userAgent);
+        $refreshToken = $this->jwt->generateRefreshToken((int) $user['id'], $ip, $userAgent, $remember);
 
         return [
             'access_token' => $accessToken,

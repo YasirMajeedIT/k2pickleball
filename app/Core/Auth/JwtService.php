@@ -58,11 +58,13 @@ final class JwtService
     /**
      * Generate a refresh token and store its hash in the database.
      */
-    public function generateRefreshToken(int $userId, ?string $ip = null, ?string $userAgent = null): string
+    public function generateRefreshToken(int $userId, ?string $ip = null, ?string $userAgent = null, bool $remember = false): string
     {
         $token = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $token);
-        $expiresAt = date('Y-m-d H:i:s', time() + $this->refreshTtl);
+        // "Keep me signed in" = 90 days, normal = default TTL (30 days)
+        $ttl = $remember ? 7776000 : $this->refreshTtl;
+        $expiresAt = date('Y-m-d H:i:s', time() + $ttl);
 
         $this->db->insert('refresh_tokens', [
             'user_id' => $userId,
