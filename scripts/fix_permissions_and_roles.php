@@ -234,6 +234,32 @@ try {
 echo "\n";
 
 // ──────────────────────────────────────────────
+// 7. Ensure facilities table has image_url, tagline, tax_rate columns
+// ──────────────────────────────────────────────
+echo "7. Ensuring facilities table has image_url, tagline, tax_rate columns...\n";
+
+$facilityColumns = [
+    'tagline'   => "ADD COLUMN `tagline` VARCHAR(255) DEFAULT NULL AFTER `name`",
+    'tax_rate'  => "ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 0.00 AFTER `status`",
+    'image_url' => "ADD COLUMN `image_url` VARCHAR(500) DEFAULT NULL AFTER `tax_rate`",
+];
+
+foreach ($facilityColumns as $col => $ddl) {
+    $check = $pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'facilities' AND COLUMN_NAME = '$col'")->fetchColumn();
+    if ((int)$check === 0) {
+        try {
+            $pdo->exec("ALTER TABLE `facilities` $ddl");
+            echo "   + Added column: $col\n";
+        } catch (\Throwable $e) {
+            echo "   ! Error adding $col: " . $e->getMessage() . "\n";
+        }
+    } else {
+        echo "   = Column exists: $col\n";
+    }
+}
+echo "\n";
+
+// ──────────────────────────────────────────────
 // Summary
 // ──────────────────────────────────────────────
 $totalPerms = $pdo->query("SELECT COUNT(*) FROM permissions")->fetchColumn();

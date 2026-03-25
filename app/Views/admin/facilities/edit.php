@@ -59,7 +59,7 @@ function facilityEditForm() {
             name: '', tagline: '', slug: '', address_line1: '', address_line2: '',
             city: '', state: '', zip: '', country: '', phone: '', email: '',
             timezone: '', status: '', tax_rate: '0.00',
-            facility_image: '', _file_facility_image: null, _preview_facility_image: '',
+            facility_image: '', _file_facility_image: null, _preview_facility_image: '', _existing_image_url: '',
             amenities: [], _custom_amenities: [],
             operating_hours: '',
             hours: {
@@ -128,6 +128,7 @@ function facilityEditForm() {
                         tax_rate: d.tax_rate || '0.00',
                         facility_image: '', _file_facility_image: null,
                         _preview_facility_image: d.image_url || '',
+                        _existing_image_url: d.image_url || '',
                         amenities: amenities,
                         _custom_amenities: customAmenities,
                         hours: hours,
@@ -181,6 +182,9 @@ function facilityEditForm() {
                 }
                 if (imageUrl) {
                     body.image_url = imageUrl;
+                } else if (this.form._preview_facility_image && this.form._existing_image_url) {
+                    // Preserve existing image if not cleared
+                    body.image_url = this.form._existing_image_url;
                 }
 
                 const res = await authFetch(APP_BASE + '/api/facilities/' + id, {
