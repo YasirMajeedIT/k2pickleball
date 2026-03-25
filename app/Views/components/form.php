@@ -291,6 +291,18 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                             </template>
                         </div>
 
+                    <?php elseif ($type === 'flatpickr'): ?>
+                        <div class="relative">
+                            <input type="text"
+                                x-ref="<?= $name ?>"
+                                x-model="form.<?= $name ?>"
+                                placeholder="<?= htmlspecialchars($placeholder ?: 'Select date', ENT_QUOTES) ?>"
+                                readonly
+                                class="w-full rounded-xl border border-surface-200 bg-white px-4 py-3 pr-10 text-sm shadow-soft focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-surface-700 dark:bg-surface-800 dark:text-white placeholder:text-surface-400 transition-all cursor-pointer"
+                                <?= $required ? 'required' : '' ?>>
+                            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </div>
+
                     <?php else: ?>
                         <input type="<?= htmlspecialchars($type, ENT_QUOTES) ?>"
                             x-model="form.<?= $name ?>"
