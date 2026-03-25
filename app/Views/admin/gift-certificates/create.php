@@ -24,8 +24,8 @@ $fields = [
     ['name' => 'recipient_email', 'label' => 'Recipient Email', 'type' => 'email', 'cols' => 'half'],
     ['name' => 'recipient_phone', 'label' => 'Recipient Phone', 'type' => 'tel', 'cols' => 'half'],
     ['name' => 'gift_message', 'label' => 'Gift Message', 'type' => 'textarea'],
-    ['name' => 'start_using_after', 'label' => 'Valid From', 'type' => 'flatpickr', 'cols' => 'half'],
-    ['name' => 'expired_at', 'label' => 'Expires At', 'type' => 'flatpickr', 'cols' => 'half'],
+    ['name' => 'start_using_after', 'label' => 'Valid From', 'type' => 'date', 'cols' => 'half'],
+    ['name' => 'expired_at', 'label' => 'Expires At', 'type' => 'date', 'cols' => 'half'],
     ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea'],
 ];
 
@@ -45,22 +45,6 @@ function giftCertForm() {
         submitting: false,
         async init() {
             await this.loadFacilities();
-            this.$nextTick(() => this.initDatePickers());
-        },
-        initDatePickers() {
-            const self = this;
-            ['start_using_after', 'expired_at'].forEach(refName => {
-                const el = self.$refs[refName];
-                if (!el) return;
-                if (el._flatpickr) el._flatpickr.destroy();
-                flatpickr(el, {
-                    dateFormat: 'Y-m-d',
-                    allowInput: false,
-                    onChange(_, dateStr) {
-                        self.form[refName] = dateStr;
-                    },
-                });
-            });
         },
         async loadFacilities() {
             try {

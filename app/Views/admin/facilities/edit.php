@@ -177,10 +177,6 @@ function facilityEditForm() {
                     const uploadJson = await uploadRes.json();
                     if (uploadRes.ok && uploadJson.data && uploadJson.data.path) {
                         imageUrl = APP_BASE + '/storage/' + uploadJson.data.path;
-                    } else {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Image upload failed. Please try again.', type: 'error' } }));
-                        this.saving = false;
-                        return;
                     }
                 }
                 if (imageUrl) {

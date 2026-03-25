@@ -15,8 +15,8 @@ ob_start();
     <!-- Header bar -->
     <div class="mb-6 flex items-center justify-between">
         <div class="flex items-center gap-4">
-            <template x-if="facility.image_url">
-                <img :src="facility.image_url" alt="Logo" class="h-14 w-14 rounded-xl object-cover border border-surface-200 dark:border-surface-700 shadow-sm">
+            <template x-if="facility.logo_url">
+                <img :src="facility.logo_url" alt="Logo" class="h-14 w-14 rounded-xl object-cover border border-surface-200 dark:border-surface-700 shadow-sm">
             </template>
             <div>
                 <h2 class="text-xl font-bold text-surface-900 dark:text-white" x-text="facility.name || 'Facility Details'"></h2>

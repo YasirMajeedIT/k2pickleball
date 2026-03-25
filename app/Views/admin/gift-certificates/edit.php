@@ -20,8 +20,8 @@ $fields = [
     ['name' => 'recipient_email', 'label' => 'Recipient Email', 'type' => 'email', 'cols' => 'half'],
     ['name' => 'recipient_phone', 'label' => 'Recipient Phone', 'type' => 'tel', 'cols' => 'half'],
     ['name' => 'gift_message', 'label' => 'Gift Message', 'type' => 'textarea'],
-    ['name' => 'start_using_after', 'label' => 'Valid From', 'type' => 'flatpickr', 'cols' => 'half'],
-    ['name' => 'expired_at', 'label' => 'Expires At', 'type' => 'flatpickr', 'cols' => 'half'],
+    ['name' => 'start_using_after', 'label' => 'Valid From', 'type' => 'date', 'cols' => 'half'],
+    ['name' => 'expired_at', 'label' => 'Expires At', 'type' => 'date', 'cols' => 'half'],
     ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea'],
 ];
 
@@ -50,28 +50,11 @@ function giftCertForm() {
                             this.form[k] = d[k];
                         }
                     });
-                    // Format dates for flatpickr
+                    // Format dates for input fields
                     if (d.start_using_after) this.form.start_using_after = d.start_using_after.substring(0, 10);
                     if (d.expired_at) this.form.expired_at = d.expired_at.substring(0, 10);
                 }
             } catch (e) { console.error('Failed to load gift certificate', e); }
-            this.$nextTick(() => this.initDatePickers());
-        },
-        initDatePickers() {
-            const self = this;
-            ['start_using_after', 'expired_at'].forEach(refName => {
-                const el = self.$refs[refName];
-                if (!el) return;
-                if (el._flatpickr) el._flatpickr.destroy();
-                const fp = flatpickr(el, {
-                    dateFormat: 'Y-m-d',
-                    allowInput: false,
-                    onChange(_, dateStr) {
-                        self.form[refName] = dateStr;
-                    },
-                });
-                if (self.form[refName]) fp.setDate(self.form[refName], false);
-            });
         },
         async submitForm() {
             this.submitting = true; this.errors = {};

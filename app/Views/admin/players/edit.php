@@ -7,7 +7,6 @@ $apiUrl = ($baseUrl ?? '') . '/api/players/' . ($id ?? '');
 $method = 'PUT';
 $backUrl = ($baseUrl ?? '') . '/admin/players';
 $fields = [
-    ['name' => 'profile_photo', 'label' => 'Profile Photo', 'type' => 'file', 'accept' => 'image/*'],
     ['name' => 'first_name', 'label' => 'First Name', 'required' => true, 'cols' => 'half'],
     ['name' => 'last_name', 'label' => 'Last Name', 'required' => true, 'cols' => 'half'],
     ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'cols' => 'half'],
@@ -54,9 +53,7 @@ function playerForm() {
             emergency_contact_name: '', emergency_contact_phone: '',
             medical_notes: '', notes: '',
             is_waiver: false, is_teen: false, is_email_marketing: true, is_sms_marketing: true,
-            _file_profile_photo: null, _preview_profile_photo: '',
         },
-        _originalAvatarUrl: null,
         errors: {},
         submitting: false,
         async init() {
@@ -74,10 +71,6 @@ function playerForm() {
                             }
                         }
                     });
-                    if (d.avatar_url) {
-                        this.form._preview_profile_photo = APP_BASE + d.avatar_url;
-                        this._originalAvatarUrl = d.avatar_url;
-                    }
                 }
             } catch (e) { console.error(e); }
         },
@@ -91,13 +84,6 @@ function playerForm() {
                 });
                 const json = await res.json();
                 if (res.ok) {
-                    if (this.form._file_profile_photo) {
-                        const fd = new FormData();
-                        fd.append('avatar', this.form._file_profile_photo);
-                        await authFetch('<?= $apiUrl ?>/avatar', { method: 'POST', body: fd });
-                    } else if (this._originalAvatarUrl && !this.form._preview_profile_photo) {
-                        await authFetch('<?= $apiUrl ?>/avatar', { method: 'DELETE' });
-                    }
                     window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Player updated', type: 'success' } }));
                     setTimeout(() => window.location.href = '<?= $backUrl ?>', 500);
                 } else { this.errors = json.errors || {}; window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Validation failed', type: 'error' } })); }

@@ -115,28 +115,29 @@ function facilityForm() {
                 }
                 body.settings = JSON.stringify(settings);
 
-                // Upload image first if provided, then include image_url in the create request
-                if (this.form._file_facility_image) {
-                    const fd = new FormData();
-                    fd.append('file', this.form._file_facility_image);
-                    fd.append('context', 'facility');
-                    const uploadRes = await authFetch(APP_BASE + '/api/files', { method: 'POST', body: fd });
-                    const uploadJson = await uploadRes.json();
-                    if (uploadRes.ok && uploadJson.data && uploadJson.data.path) {
-                        body.image_url = APP_BASE + '/storage/' + uploadJson.data.path;
-                    } else {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Image upload failed. Please try again.', type: 'error' } }));
-                        this.saving = false;
-                        return;
-                    }
-                }
-
                 const res = await authFetch('<?= $apiUrl ?>', {
                     method: '<?= $method ?>',
                     body: JSON.stringify(body)
                 });
                 const json = await res.json();
                 if (res.ok) {
+                    // Upload image if provided
+                    let imageUrl = null;
+                    if (this.form._file_facility_image && json.data && json.data.id) {
+                        const fd = new FormData();
+                        fd.append('file', this.form._file_facility_image);
+                        fd.append('context', 'facility');
+                        const uploadRes = await authFetch(APP_BASE + '/api/files', { method: 'POST', body: fd });
+                        const uploadJson = await uploadRes.json();
+                        if (uploadRes.ok && uploadJson.data && uploadJson.data.path) {
+                            imageUrl = APP_BASE + '/storage/' + uploadJson.data.path;
+                            // Update facility with image_url
+                            await authFetch(APP_BASE + '/api/facilities/' + json.data.id, {
+                                method: 'PUT',
+                                body: JSON.stringify({ ...body, image_url: imageUrl })
+                            });
+                        }
+                    }
                     window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Facility created successfully', type: 'success' } }));
                     setTimeout(() => window.location.href = '<?= $backUrl ?>', 500);
                 } else {

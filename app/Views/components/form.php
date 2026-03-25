@@ -96,6 +96,31 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                             <span class="text-sm font-medium text-surface-600 dark:text-surface-400 group-hover:text-surface-800 dark:group-hover:text-surface-200 transition-colors"><?= htmlspecialchars($helpText ?: $label, ENT_QUOTES) ?></span>
                         </label>
 
+                    <?php elseif ($type === 'feature-list'): ?>
+                        <div class="space-y-2">
+                            <template x-for="(item, idx) in (form.<?= $name ?> || [])" :key="idx">
+                                <div class="flex items-center gap-2 group">
+                                    <svg class="w-4 h-4 text-primary-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
+                                    <span class="flex-1 text-sm text-surface-700 dark:text-surface-300" x-text="item"></span>
+                                    <button type="button" @click="form.<?= $name ?>.splice(idx, 1)"
+                                        class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all" title="Remove">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </template>
+                            <div x-show="!form.<?= $name ?> || form.<?= $name ?>.length === 0" class="text-sm text-surface-400 italic py-1">No features added yet.</div>
+                            <div class="flex items-center gap-2 mt-2" x-data="{ newFeature: '' }">
+                                <input type="text" x-model="newFeature" placeholder="<?= htmlspecialchars($placeholder ?: 'Type a feature and press Enter', ENT_QUOTES) ?>"
+                                    @keydown.enter.prevent="if (newFeature.trim()) { if (!form.<?= $name ?>) form.<?= $name ?> = []; form.<?= $name ?>.push(newFeature.trim()); newFeature = ''; }"
+                                    class="flex-1 rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm shadow-soft focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-surface-700 dark:bg-surface-800 dark:text-white placeholder:text-surface-400 transition-all">
+                                <button type="button" @click="if (newFeature.trim()) { if (!form.<?= $name ?>) form.<?= $name ?> = []; form.<?= $name ?>.push(newFeature.trim()); newFeature = ''; }"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+
                     <?php elseif ($type === 'json'): ?>
                         <textarea x-model="form.<?= $name ?>"
                             rows="<?= $field['rows'] ?? 5 ?>"
@@ -289,18 +314,6 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                                     </label>
                                 </div>
                             </template>
-                        </div>
-
-                    <?php elseif ($type === 'flatpickr'): ?>
-                        <div class="relative">
-                            <input type="text"
-                                x-ref="<?= $name ?>"
-                                x-model="form.<?= $name ?>"
-                                placeholder="<?= htmlspecialchars($placeholder ?: 'Select date', ENT_QUOTES) ?>"
-                                readonly
-                                class="w-full rounded-xl border border-surface-200 bg-white px-4 py-3 pr-10 text-sm shadow-soft focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-surface-700 dark:bg-surface-800 dark:text-white placeholder:text-surface-400 transition-all cursor-pointer"
-                                <?= $required ? 'required' : '' ?>>
-                            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         </div>
 
                     <?php else: ?>
