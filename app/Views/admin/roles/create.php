@@ -41,7 +41,6 @@ include __DIR__ . '/../../components/form.php';
 
 <script>
 function roleForm() {
-    const token = localStorage.getItem('access_token');
     return {
         form: { name: '', slug: '', description: '' },
         errors: {},
@@ -52,9 +51,8 @@ function roleForm() {
                 const permsEl = document.querySelector('[x-data="permissionsSelector()"]');
                 const permIds = permsEl ? Alpine.$data(permsEl).selectedPermissions : [];
                 const body = { ...this.form, permissions: permIds };
-                const res = await fetch('<?= $apiUrl ?>', {
+                const res = await authFetch('<?= $apiUrl ?>', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const json = await res.json();
@@ -69,14 +67,13 @@ function roleForm() {
 }
 
 function permissionsSelector() {
-    const token = localStorage.getItem('access_token');
     return {
         allPermissions: [],
         selectedPermissions: [],
         groupedPermissions: {},
         async init() {
             try {
-                const res = await fetch(APP_BASE + '/api/permissions', { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+                const res = await authFetch(APP_BASE + '/api/permissions');
                 const json = await res.json();
                 if (json.data) {
                     this.allPermissions = json.data;

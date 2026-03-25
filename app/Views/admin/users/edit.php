@@ -107,9 +107,8 @@ function userEditForm() {
             try {
                 const body = { ...this.form };
                 if (!body.password) delete body.password;
-                const res = await fetch(APP_BASE + '/api/users/' + id, {
+                const res = await authFetch(APP_BASE + '/api/users/' + id, {
                     method: 'PUT',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const json = await res.json();

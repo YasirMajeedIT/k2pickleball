@@ -40,54 +40,19 @@ try {
 
     // ─── Permissions ─────────────────────────────────────────
     echo "📋 Seeding permissions...\n";
-    $permissions = [
-        // Organizations
-        ['name' => 'View Organizations', 'slug' => 'organizations.view', 'module' => 'organizations', 'description' => 'View organization details'],
-        ['name' => 'Create Organizations', 'slug' => 'organizations.create', 'module' => 'organizations', 'description' => 'Create new organizations'],
-        ['name' => 'Update Organizations', 'slug' => 'organizations.update', 'module' => 'organizations', 'description' => 'Update organization details'],
-        ['name' => 'Delete Organizations', 'slug' => 'organizations.delete', 'module' => 'organizations', 'description' => 'Delete organizations'],
-        // Facilities
-        ['name' => 'View Facilities', 'slug' => 'facilities.view', 'module' => 'facilities', 'description' => 'View facility details'],
-        ['name' => 'Create Facilities', 'slug' => 'facilities.create', 'module' => 'facilities', 'description' => 'Create new facilities'],
-        ['name' => 'Update Facilities', 'slug' => 'facilities.update', 'module' => 'facilities', 'description' => 'Update facility details'],
-        ['name' => 'Delete Facilities', 'slug' => 'facilities.delete', 'module' => 'facilities', 'description' => 'Delete facilities'],
-        // Courts
-        ['name' => 'View Courts', 'slug' => 'courts.view', 'module' => 'courts', 'description' => 'View court details'],
-        ['name' => 'Create Courts', 'slug' => 'courts.create', 'module' => 'courts', 'description' => 'Create new courts'],
-        ['name' => 'Update Courts', 'slug' => 'courts.update', 'module' => 'courts', 'description' => 'Update court details'],
-        ['name' => 'Delete Courts', 'slug' => 'courts.delete', 'module' => 'courts', 'description' => 'Delete courts'],
-        // Users
-        ['name' => 'View Users', 'slug' => 'users.view', 'module' => 'users', 'description' => 'View user profiles'],
-        ['name' => 'Create Users', 'slug' => 'users.create', 'module' => 'users', 'description' => 'Create new users'],
-        ['name' => 'Update Users', 'slug' => 'users.update', 'module' => 'users', 'description' => 'Update user profiles'],
-        ['name' => 'Delete Users', 'slug' => 'users.delete', 'module' => 'users', 'description' => 'Delete users'],
-        // Roles
-        ['name' => 'View Roles', 'slug' => 'roles.view', 'module' => 'roles', 'description' => 'View roles and permissions'],
-        ['name' => 'Create Roles', 'slug' => 'roles.create', 'module' => 'roles', 'description' => 'Create new roles'],
-        ['name' => 'Update Roles', 'slug' => 'roles.update', 'module' => 'roles', 'description' => 'Update roles'],
-        ['name' => 'Delete Roles', 'slug' => 'roles.delete', 'module' => 'roles', 'description' => 'Delete roles'],
-        // Subscriptions
-        ['name' => 'View Subscriptions', 'slug' => 'subscriptions.view', 'module' => 'subscriptions', 'description' => 'View subscription details'],
-        ['name' => 'Manage Subscriptions', 'slug' => 'subscriptions.manage', 'module' => 'subscriptions', 'description' => 'Subscribe, cancel, upgrade plans'],
-        // Payments
-        ['name' => 'View Payments', 'slug' => 'payments.view', 'module' => 'payments', 'description' => 'View payment history'],
-        ['name' => 'Process Payments', 'slug' => 'payments.process', 'module' => 'payments', 'description' => 'Charge and refund payments'],
-        ['name' => 'Manage Payment Methods', 'slug' => 'payments.methods', 'module' => 'payments', 'description' => 'Add/remove payment methods'],
-        // Files
-        ['name' => 'View Files', 'slug' => 'files.view', 'module' => 'files', 'description' => 'View uploaded files'],
-        ['name' => 'Upload Files', 'slug' => 'files.upload', 'module' => 'files', 'description' => 'Upload new files'],
-        ['name' => 'Delete Files', 'slug' => 'files.delete', 'module' => 'files', 'description' => 'Delete files'],
-        // Settings
-        ['name' => 'View Settings', 'slug' => 'settings.view', 'module' => 'settings', 'description' => 'View organization settings'],
-        ['name' => 'Update Settings', 'slug' => 'settings.update', 'module' => 'settings', 'description' => 'Modify settings'],
-        // Audit Logs
-        ['name' => 'View Audit Logs', 'slug' => 'audit-logs.view', 'module' => 'audit-logs', 'description' => 'View audit trail'],
-        // API Tokens
-        ['name' => 'Manage API Tokens', 'slug' => 'api-tokens.manage', 'module' => 'api-tokens', 'description' => 'Generate and revoke API tokens'],
-        // Notifications
-        ['name' => 'View Notifications', 'slug' => 'notifications.view', 'module' => 'notifications', 'description' => 'View notifications'],
-        ['name' => 'Manage Notifications', 'slug' => 'notifications.manage', 'module' => 'notifications', 'description' => 'Send and manage notifications'],
-    ];
+
+    // Load all permissions from config/permissions.php (single source of truth)
+    $permConfig = require dirname(__DIR__) . '/config/permissions.php';
+
+    $permissions = [];
+    foreach ($permConfig['permissions'] as $slug => $meta) {
+        $permissions[] = [
+            'name' => ucwords(str_replace(['.', '_'], [' — ', ' '], $slug)),
+            'slug' => $slug,
+            'module' => $meta['module'],
+            'description' => $meta['description'],
+        ];
+    }
 
     $stmt = $pdo->prepare("INSERT IGNORE INTO permissions (name, slug, module, description, created_at) VALUES (:name, :slug, :module, :description, NOW())");
     $permCount = 0;
@@ -99,57 +64,19 @@ try {
 
     // ─── Roles ───────────────────────────────────────────────
     echo "👤 Seeding roles...\n";
-    $roles = [
-        [
-            'name' => 'Super Admin',
-            'slug' => 'super-admin',
-            'description' => 'Platform super administrator with full access',
+
+    // Build roles from config/permissions.php (single source of truth)
+    $roles = [];
+    foreach ($permConfig['roles'] as $slug => $meta) {
+        $hyphenSlug = str_replace('_', '-', $slug);
+        $roles[] = [
+            'name' => $meta['name'],
+            'slug' => $hyphenSlug,
+            'description' => $meta['description'],
             'is_system' => 1,
-            'permissions' => '*', // All permissions
-        ],
-        [
-            'name' => 'Organization Owner',
-            'slug' => 'org-owner',
-            'description' => 'Organization owner with full org access',
-            'is_system' => 1,
-            'permissions' => '*',
-        ],
-        [
-            'name' => 'Organization Admin',
-            'slug' => 'org-admin',
-            'description' => 'Organization administrator',
-            'is_system' => 1,
-            'permissions' => ['organizations.view', 'organizations.update', 'facilities.view', 'facilities.create', 'facilities.update', 'facilities.delete', 'courts.view', 'courts.create', 'courts.update', 'courts.delete', 'users.view', 'users.create', 'users.update', 'roles.view', 'subscriptions.view', 'payments.view', 'payments.process', 'payments.methods', 'files.view', 'files.upload', 'files.delete', 'settings.view', 'settings.update', 'audit-logs.view', 'api-tokens.manage', 'notifications.view', 'notifications.manage'],
-        ],
-        [
-            'name' => 'Facility Manager',
-            'slug' => 'facility-manager',
-            'description' => 'Manages facility operations',
-            'is_system' => 1,
-            'permissions' => ['facilities.view', 'facilities.update', 'courts.view', 'courts.create', 'courts.update', 'users.view', 'files.view', 'files.upload', 'notifications.view'],
-        ],
-        [
-            'name' => 'Staff',
-            'slug' => 'staff',
-            'description' => 'Staff member with limited access',
-            'is_system' => 1,
-            'permissions' => ['facilities.view', 'courts.view', 'users.view', 'notifications.view', 'files.view'],
-        ],
-        [
-            'name' => 'Player',
-            'slug' => 'player',
-            'description' => 'Registered player',
-            'is_system' => 1,
-            'permissions' => ['facilities.view', 'courts.view', 'notifications.view'],
-        ],
-        [
-            'name' => 'Guest',
-            'slug' => 'guest',
-            'description' => 'Guest with read-only access',
-            'is_system' => 1,
-            'permissions' => ['facilities.view', 'courts.view'],
-        ],
-    ];
+            'permissions' => $permConfig['role_permissions'][$slug] ?? [],
+        ];
+    }
 
     // Get all permission IDs
     $allPerms = $pdo->query("SELECT id, slug FROM permissions")->fetchAll();
@@ -169,7 +96,25 @@ try {
         $roleId = $pdo->query("SELECT id FROM roles WHERE slug = " . $pdo->quote($role['slug']))->fetchColumn();
         if (!$roleId) continue;
 
-        $permsToAssign = $role['permissions'] === '*' ? array_keys($permMap) : $role['permissions'];
+        $permsToAssign = [];
+        if ($role['permissions'] === ['*']) {
+            // Super admin — all permissions
+            $permsToAssign = array_keys($permMap);
+        } else {
+            foreach ($role['permissions'] as $pattern) {
+                if (str_ends_with($pattern, '.*')) {
+                    // Wildcard: match all permissions for this module
+                    $module = substr($pattern, 0, -2);
+                    foreach ($permMap as $pSlug => $pId) {
+                        if (str_starts_with($pSlug, $module . '.')) {
+                            $permsToAssign[] = $pSlug;
+                        }
+                    }
+                } else {
+                    $permsToAssign[] = $pattern;
+                }
+            }
+        }
         foreach ($permsToAssign as $permSlug) {
             if (isset($permMap[$permSlug])) {
                 $rpStmt->execute(['role_id' => $roleId, 'permission_id' => $permMap[$permSlug]]);
@@ -204,7 +149,23 @@ try {
         $adminId = $pdo->lastInsertId();
         echo "  ✅ Super admin created: {$adminEmail} / {$adminPass}\n";
     } else {
+        $adminId = $exists;
         echo "  ⏭️  Super admin already exists: {$adminEmail}\n";
+    }
+
+    // Always ensure admin has super-admin role in user_roles
+    $superAdminRoleId = $pdo->query("SELECT id FROM roles WHERE slug = 'super-admin'")->fetchColumn();
+    if ($superAdminRoleId && $adminId) {
+        $hasRole = $pdo->prepare("SELECT id FROM user_roles WHERE user_id = ? AND role_id = ?");
+        $hasRole->execute([$adminId, $superAdminRoleId]);
+        if (!$hasRole->fetch()) {
+            $adminOrgId = $pdo->query("SELECT organization_id FROM users WHERE id = " . (int)$adminId)->fetchColumn();
+            $pdo->prepare("INSERT INTO user_roles (user_id, role_id, organization_id, created_at) VALUES (?, ?, ?, NOW())")
+                ->execute([$adminId, $superAdminRoleId, $adminOrgId ?: null]);
+            echo "  ✅ Assigned super-admin role to admin user\n";
+        } else {
+            echo "  ⏭️  Admin already has super-admin role\n";
+        }
     }
     echo "\n";
 

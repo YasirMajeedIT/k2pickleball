@@ -40,7 +40,6 @@ include __DIR__ . '/../../components/form.php';
 
 <script>
 function roleEditForm() {
-    const token = localStorage.getItem('access_token');
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const id = pathParts[pathParts.indexOf('roles') + 1];
 
@@ -50,7 +49,7 @@ function roleEditForm() {
         submitting: false,
         async init() {
             try {
-                const res = await fetch(APP_BASE + '/api/roles/' + id, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+                const res = await authFetch(APP_BASE + '/api/roles/' + id);
                 const json = await res.json();
                 if (json.data) {
                     const d = json.data;
@@ -64,9 +63,8 @@ function roleEditForm() {
                 const permsEl = document.querySelector('[x-data="permissionsEditor()"]');
                 const permIds = permsEl ? Alpine.$data(permsEl).selectedPermissions : [];
                 const body = { ...this.form, permissions: permIds };
-                const res = await fetch(APP_BASE + '/api/roles/' + id, {
+                const res = await authFetch(APP_BASE + '/api/roles/' + id, {
                     method: 'PUT',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const json = await res.json();
@@ -81,7 +79,6 @@ function roleEditForm() {
 }
 
 function permissionsEditor() {
-    const token = localStorage.getItem('access_token');
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const id = pathParts[pathParts.indexOf('roles') + 1];
 
@@ -92,8 +89,8 @@ function permissionsEditor() {
         async init() {
             try {
                 const [permsRes, roleRes] = await Promise.all([
-                    fetch(APP_BASE + '/api/permissions', { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }),
-                    fetch(APP_BASE + '/api/roles/' + id, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } })
+                    authFetch(APP_BASE + '/api/permissions'),
+                    authFetch(APP_BASE + '/api/roles/' + id)
                 ]);
                 const permsJson = await permsRes.json();
                 if (permsJson.data) {

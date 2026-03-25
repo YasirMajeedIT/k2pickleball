@@ -76,7 +76,6 @@ ob_start();
 
 <script>
 function apiTokenForm() {
-    const token = localStorage.getItem('access_token');
     return {
         form: { name: '', abilities: ['*'], expires_at: '' },
         availableAbilities: ['read', 'write', 'delete', 'facilities.read', 'facilities.write', 'courts.read', 'courts.write', 'users.read', 'users.write', 'payments.read', 'payments.write'],
@@ -89,9 +88,8 @@ function apiTokenForm() {
             try {
                 const body = { ...this.form };
                 if (!body.expires_at) delete body.expires_at;
-                const res = await fetch(APP_BASE + '/api/api-tokens', {
+                const res = await authFetch(APP_BASE + '/api/api-tokens', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const json = await res.json();

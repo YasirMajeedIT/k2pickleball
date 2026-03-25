@@ -33,7 +33,6 @@ include __DIR__ . '/../../components/form.php';
 ?>
 <script>
 function courtForm() {
-    const token = localStorage.getItem('access_token');
     return {
         form: { facility_id: '', name: '', sport_type: 'pickleball', surface_type: 'concrete', is_indoor: '0', is_lighted: '0', court_number: '', hourly_rate: '', max_players: '4', status: 'active', description: '' },
         errors: {},
@@ -41,9 +40,7 @@ function courtForm() {
         async init() {
             // Load facilities for select dropdown
             try {
-                const res = await fetch(APP_BASE + '/api/facilities', {
-                    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-                });
+                const res = await authFetch(APP_BASE + '/api/facilities');
                 const json = await res.json();
                 if (json.data) {
                     const select = this.$el.querySelector('select[x-model="form.facility_id"]');
@@ -67,9 +64,8 @@ function courtForm() {
                 if (body.max_players) body.max_players = parseInt(body.max_players);
                 body.is_indoor = parseInt(body.is_indoor);
                 body.is_lighted = parseInt(body.is_lighted);
-                const res = await fetch('<?= $apiUrl ?>', {
+                const res = await authFetch('<?= $apiUrl ?>', {
                     method: '<?= $method ?>',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const json = await res.json();

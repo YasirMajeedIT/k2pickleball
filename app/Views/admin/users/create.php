@@ -82,9 +82,8 @@ function userForm() {
         async submitForm() {
             this.submitting = true; this.errors = {};
             try {
-                const res = await fetch('<?= $apiUrl ?>', {
+                const res = await authFetch('<?= $apiUrl ?>', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(this.form)
                 });
                 const json = await res.json();

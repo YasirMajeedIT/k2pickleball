@@ -140,9 +140,6 @@ ob_start();
 
 <script>
 function settingsManager() {
-    const token = localStorage.getItem('access_token');
-    const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' };
-
     return {
         groups: ['general', 'branding', 'notifications', 'billing', 'integrations', 'advanced'],
         activeGroup: 'general',
@@ -157,7 +154,7 @@ function settingsManager() {
         async loadSettings() {
             this.loading = true;
             try {
-                const res = await fetch(APP_BASE + '/api/settings/' + this.activeGroup, { headers });
+                const res = await authFetch(APP_BASE + '/api/settings/' + this.activeGroup);
                 const json = await res.json();
                 this.settings = json.data ? Object.entries(json.data).map(([key, value]) => ({
                     key, value: typeof value === 'object' ? JSON.stringify(value) : String(value), type: typeof value
@@ -183,8 +180,8 @@ function settingsManager() {
             try {
                 const payload = {};
                 payload[key] = this.editValue;
-                await fetch(APP_BASE + '/api/settings/' + this.activeGroup, {
-                    method: 'PUT', headers,
+                await authFetch(APP_BASE + '/api/settings/' + this.activeGroup, {
+                    method: 'PUT',
                     body: JSON.stringify(payload)
                 });
                 this.editingKey = null;
@@ -199,8 +196,8 @@ function settingsManager() {
             try {
                 const payload = {};
                 payload[this.newSetting.key] = this.newSetting.value;
-                await fetch(APP_BASE + '/api/settings/' + this.activeGroup, {
-                    method: 'PUT', headers,
+                await authFetch(APP_BASE + '/api/settings/' + this.activeGroup, {
+                    method: 'PUT',
                     body: JSON.stringify(payload)
                 });
                 this.showAddModal = false;
@@ -215,7 +212,7 @@ function settingsManager() {
         async deleteSetting(key) {
             if (!confirm('Delete setting "' + key + '"?')) return;
             try {
-                await fetch(APP_BASE + '/api/settings/' + this.activeGroup + '/' + key, { method: 'DELETE', headers });
+                await authFetch(APP_BASE + '/api/settings/' + this.activeGroup + '/' + key, { method: 'DELETE' });
                 this.loadSettings();
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Setting deleted', type: 'success' } }));
             } catch (e) {

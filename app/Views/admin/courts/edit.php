@@ -33,7 +33,6 @@ include __DIR__ . '/../../components/form.php';
 ?>
 <script>
 function courtEditForm() {
-    const token = localStorage.getItem('access_token');
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const id = pathParts[pathParts.indexOf('courts') + 1];
 
@@ -44,14 +43,14 @@ function courtEditForm() {
         async init() {
             try {
                 // Load facilities
-                const facRes = await fetch(APP_BASE + '/api/facilities', { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+                const facRes = await authFetch(APP_BASE + '/api/facilities');
                 const facJson = await facRes.json();
                 if (facJson.data) {
                     const select = this.$el.querySelector('select[x-model="form.facility_id"]');
                     if (select) facJson.data.forEach(f => { const o = document.createElement('option'); o.value = f.id; o.textContent = f.name; select.appendChild(o); });
                 }
                 // Load court data
-                const res = await fetch(APP_BASE + '/api/courts/' + id, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+                const res = await authFetch(APP_BASE + '/api/courts/' + id);
                 const json = await res.json();
                 if (json.data) {
                     const d = json.data;
@@ -75,9 +74,8 @@ function courtEditForm() {
                 if (body.max_players) body.max_players = parseInt(body.max_players);
                 body.is_indoor = parseInt(body.is_indoor);
                 body.is_lighted = parseInt(body.is_lighted);
-                const res = await fetch(APP_BASE + '/api/courts/' + id, {
+                const res = await authFetch(APP_BASE + '/api/courts/' + id, {
                     method: 'PUT',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const json = await res.json();

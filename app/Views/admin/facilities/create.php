@@ -49,6 +49,7 @@ function facilityForm() {
     const dayLabels = {mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};
 
     return {
+        _slugManuallyEdited: false,
         form: {
             name: '', tagline: '', slug: '', address_line1: '', address_line2: '',
             city: '', state: '', zip: '', country: 'US', phone: '', email: '',
@@ -71,6 +72,28 @@ function facilityForm() {
         },
         errors: {},
         submitting: false,
+        init() {
+            this.$watch('form.name', (val) => {
+                if (!this._slugManuallyEdited) {
+                    this.form.slug = val.toLowerCase().trim()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/[\s]+/g, '-')
+                        .replace(/-+/g, '-')
+                        .replace(/^-|-$/g, '');
+                }
+            });
+            this.$watch('form.slug', (val, oldVal) => {
+                // Mark as manually edited if user types in slug field directly (not from watcher)
+                if (val !== oldVal && this.form.name) {
+                    const autoSlug = this.form.name.toLowerCase().trim()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/[\s]+/g, '-')
+                        .replace(/-+/g, '-')
+                        .replace(/^-|-$/g, '');
+                    if (val !== autoSlug) this._slugManuallyEdited = true;
+                }
+            });
+        },
         timeOptions() {
             const opts = [];
             for (let h = 0; h < 24; h++) {
