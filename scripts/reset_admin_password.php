@@ -31,19 +31,13 @@ $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 ]);
 
-// Find the super admin (platform_role = 'super_admin' or the first user with lowest id)
-$stmt = $pdo->query("SELECT id, email, first_name, platform_role FROM users WHERE platform_role = 'super_admin' ORDER BY id ASC LIMIT 5");
+// Find the first admin user (lowest id = typically the super admin created at install)
+$stmt = $pdo->query("SELECT id, email, first_name, status FROM users ORDER BY id ASC LIMIT 5");
 $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-if (empty($admins)) {
-    echo "No super_admin found. Showing first 5 users:\n";
-    $stmt = $pdo->query("SELECT id, email, first_name, platform_role FROM users ORDER BY id ASC LIMIT 5");
-    $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
 
 echo "Found accounts:\n";
 foreach ($admins as $a) {
-    echo "  ID={$a['id']}  email={$a['email']}  name={$a['first_name']}  role={$a['platform_role']}\n";
+    echo "  ID={$a['id']}  email={$a['email']}  name={$a['first_name']}  status={$a['status']}\n";
 }
 
 $targetId = $admins[0]['id'];
