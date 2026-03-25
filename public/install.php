@@ -147,12 +147,16 @@ JWT_ALGO=HS256
 JWT_ACCESS_TTL=1800
 JWT_REFRESH_TTL=2592000
 
+# Google OAuth (get from https://console.cloud.google.com/)
+GOOGLE_CLIENT_ID={$data['google_client_id']}
+GOOGLE_CLIENT_SECRET={$data['google_client_secret']}
+
 # Square Payments
-SQUARE_ENVIRONMENT=sandbox
-SQUARE_ACCESS_TOKEN=
-SQUARE_APPLICATION_ID=
-SQUARE_LOCATION_ID=
-SQUARE_WEBHOOK_SIGNATURE_KEY=
+SQUARE_ENVIRONMENT={$data['square_environment']}
+SQUARE_ACCESS_TOKEN={$data['square_access_token']}
+SQUARE_APPLICATION_ID={$data['square_app_id']}
+SQUARE_LOCATION_ID={$data['square_location_id']}
+SQUARE_WEBHOOK_SIGNATURE_KEY={$data['square_webhook_key']}
 
 # Redis (optional)
 REDIS_HOST=127.0.0.1
@@ -183,6 +187,9 @@ RATE_LIMIT_WINDOW=60
 # Logging
 LOG_LEVEL=error
 LOG_PATH=storage/logs
+
+# Slack Notifications
+SLACK_WEBHOOK_URL={$data['slack_webhook_url']}
 
 # Domain Configuration
 PLATFORM_DOMAIN={$data['platform_domain']}
@@ -518,6 +525,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'mail_user'       => trim($_POST['mail_user'] ?? ''),
             'mail_pass'       => $_POST['mail_pass'] ?? '',
             'mail_from'       => trim($_POST['mail_from'] ?? 'noreply@k2pickleball.com'),
+            // Google OAuth
+            'google_client_id'     => trim($_POST['google_client_id'] ?? ''),
+            'google_client_secret' => trim($_POST['google_client_secret'] ?? ''),
+            // Square Payments
+            'square_environment'   => trim($_POST['square_environment'] ?? 'sandbox'),
+            'square_access_token'  => trim($_POST['square_access_token'] ?? ''),
+            'square_app_id'        => trim($_POST['square_app_id'] ?? ''),
+            'square_location_id'   => trim($_POST['square_location_id'] ?? ''),
+            'square_webhook_key'   => trim($_POST['square_webhook_key'] ?? ''),
+            // Slack
+            'slack_webhook_url'    => trim($_POST['slack_webhook_url'] ?? ''),
         ];
         
         // Validate required
@@ -846,10 +864,73 @@ $allMet = allRequirementsMet($checks);
                 </div>
             </div>
             
-            <!-- Mail (Optional) -->
+            <!-- Google OAuth (Optional) -->
             <div class="glass rounded-2xl p-6 step-card">
                 <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-600/40 text-gray-400 text-sm font-bold">5</span>
+                    Google OAuth <span class="text-xs text-gray-500 ml-2">(Optional — for Google Sign-In)</span>
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm text-gray-400 mb-1">Google Client ID</label>
+                        <input type="text" name="google_client_id" value="<?= htmlspecialchars($_POST['google_client_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="xxxx.apps.googleusercontent.com">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm text-gray-400 mb-1">Google Client Secret</label>
+                        <input type="password" name="google_client_secret" value="<?= htmlspecialchars($_POST['google_client_secret'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="GOCSPX-...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Square Payments (Optional) -->
+            <div class="glass rounded-2xl p-6 step-card">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-600/40 text-gray-400 text-sm font-bold">6</span>
+                    Square Payments <span class="text-xs text-gray-500 ml-2">(Optional — configure later in .env)</span>
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Environment</label>
+                        <select name="square_environment" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm">
+                            <option value="sandbox" <?= ($_POST['square_environment'] ?? 'sandbox') === 'sandbox' ? 'selected' : '' ?>>Sandbox</option>
+                            <option value="production" <?= ($_POST['square_environment'] ?? '') === 'production' ? 'selected' : '' ?>>Production</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Location ID</label>
+                        <input type="text" name="square_location_id" value="<?= htmlspecialchars($_POST['square_location_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="L...">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm text-gray-400 mb-1">Access Token</label>
+                        <input type="password" name="square_access_token" value="<?= htmlspecialchars($_POST['square_access_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="EAAAl...">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Application ID</label>
+                        <input type="text" name="square_app_id" value="<?= htmlspecialchars($_POST['square_app_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="sandbox-sq0idb-...">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Webhook Signature Key</label>
+                        <input type="text" name="square_webhook_key" value="<?= htmlspecialchars($_POST['square_webhook_key'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="Optional">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slack (Optional) -->
+            <div class="glass rounded-2xl p-6 step-card">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-600/40 text-gray-400 text-sm font-bold">7</span>
+                    Slack Notifications <span class="text-xs text-gray-500 ml-2">(Optional)</span>
+                </h2>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Slack Webhook URL</label>
+                    <input type="url" name="slack_webhook_url" value="<?= htmlspecialchars($_POST['slack_webhook_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="https://hooks.slack.com/services/...">
+                </div>
+            </div>
+
+            <!-- Mail (Optional) -->
+            <div class="glass rounded-2xl p-6 step-card">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-600/40 text-gray-400 text-sm font-bold">8</span>
                     Mail Settings <span class="text-xs text-gray-500 ml-2">(Optional — configure later in .env)</span>
                 </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
