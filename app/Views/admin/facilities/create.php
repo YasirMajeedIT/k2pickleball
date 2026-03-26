@@ -42,10 +42,10 @@ $fields = [
 ];
 
 ob_start();
-include __DIR__ . '/../../components/form.php';
+// Social Media & Messaging section — rendered INSIDE the same Alpine component via $afterForm
 ?>
 <!-- Social Media & Messaging Section -->
-<div class="mt-6 rounded-2xl border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 shadow-soft overflow-hidden" x-data="facilityForm()">
+<div class="mt-6 rounded-2xl border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 shadow-soft overflow-hidden">
     <!-- Social Media -->
     <div class="px-6 py-4 border-b border-surface-100 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/30">
         <h3 class="text-sm font-semibold text-surface-700 dark:text-surface-300 flex items-center gap-2">
@@ -110,6 +110,12 @@ include __DIR__ . '/../../components/form.php';
         </div>
     </div>
 </div>
+<?php
+$afterForm = ob_get_clean();
+
+ob_start();
+include __DIR__ . '/../../components/form.php';
+?>
 <script>
 function facilityForm() {
     const dayLabels = {mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};

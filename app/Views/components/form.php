@@ -357,4 +357,5 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
             </button>
         </div>
     </form>
+    <?php if (!empty($afterForm)) echo $afterForm; ?>
 </div>
