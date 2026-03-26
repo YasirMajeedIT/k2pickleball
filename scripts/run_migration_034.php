@@ -7,24 +7,23 @@ declare(strict_types=1);
  * Creates: booking_invoices, booking_invoice_items, booking_invoice_payments
  */
 
-$envFile = __DIR__ . '/../.env';
-if (file_exists($envFile)) {
-    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        if (str_starts_with(trim($line), '#') || !str_contains($line, '=')) continue;
-        [$k, $v] = explode('=', $line, 2);
-        $_ENV[trim($k)] = trim($v);
-    }
+$env = [];
+foreach (file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+    $line = trim($line);
+    if ($line === '' || $line[0] === '#') continue;
+    if (strpos($line, '=') === false) continue;
+    [$k, $v] = explode('=', $line, 2);
+    $env[trim($k)] = trim($v, " \t\r\n\"'");
 }
 
-$host   = $_ENV['DB_HOST']     ?? 'localhost';
-$dbName = $_ENV['DB_DATABASE'] ?? 'k2pickleball';
-$user   = $_ENV['DB_USERNAME'] ?? 'root';
-$pass   = $_ENV['DB_PASSWORD'] ?? '';
+// Support both naming conventions (DB_NAME/DB_USER/DB_PASS and DB_DATABASE/DB_USERNAME/DB_PASSWORD)
+$host   = $env['DB_HOST']     ?? 'localhost';
+$dbName = $env['DB_NAME']     ?? ($env['DB_DATABASE'] ?? 'k2pickleball');
+$user   = $env['DB_USER']     ?? ($env['DB_USERNAME'] ?? 'root');
+$pass   = $env['DB_PASS']     ?? ($env['DB_PASSWORD'] ?? '');
 
-$conn = new mysqli($host, $user, $pass, $dbName);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error . "\n");
-}
+$dsn = 'mysql:host=' . $host . ';dbname=' . $dbName . ';charset=utf8mb4';
+$pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 echo "Connected to: $dbName\n";
 
 $sql = file_get_contents(__DIR__ . '/../database/migrations/034_create_booking_invoices.sql');
@@ -37,16 +36,15 @@ $cleanSql   = implode("\n", $cleanLines);
 $statements = array_filter(array_map('trim', explode(';', $cleanSql)), fn($s) => $s !== '');
 
 foreach ($statements as $stmt) {
-    if ($conn->query($stmt) === true) {
-        // Detect table name from CREATE TABLE statement
+    try {
+        $pdo->exec($stmt);
         if (preg_match('/CREATE TABLE IF NOT EXISTS `([^`]+)`/i', $stmt, $m)) {
             echo "Created table: {$m[1]}\n";
         }
-    } else {
-        echo "Error: " . $conn->error . "\n";
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage() . "\n";
         echo "Statement: " . substr($stmt, 0, 120) . "...\n";
     }
 }
 
-$conn->close();
 echo "Done.\n";
