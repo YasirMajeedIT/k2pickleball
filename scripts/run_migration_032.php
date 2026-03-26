@@ -16,7 +16,13 @@ $pdo = new PDO($dsn, $env['DB_USER'], $env['DB_PASS'], [PDO::ATTR_ERRMODE => PDO
 echo "Connected to: {$env['DB_NAME']}\n\n";
 
 $sql = file_get_contents(__DIR__ . '/../database/migrations/032_create_membership_plans.sql');
-$statements = array_filter(array_map('trim', explode(';', $sql)), fn($s) => $s !== '' && !str_starts_with($s, '--'));
+
+// Strip comment lines before splitting so CREATE TABLE blocks starting with -- aren't filtered
+$lines = explode("\n", $sql);
+$cleanLines = array_filter($lines, fn($l) => !str_starts_with(trim($l), '--'));
+$cleanSql = implode("\n", $cleanLines);
+
+$statements = array_filter(array_map('trim', explode(';', $cleanSql)), fn($s) => $s !== '');
 
 foreach ($statements as $stmt) {
     try {
