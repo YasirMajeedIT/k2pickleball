@@ -5,6 +5,7 @@
 !/storage/cache/.gitkeep
 /storage/uploads/*
 !/storage/uploads/.gitkeep
+/storage/.installed
 .env
 *.log
 .DS_Store

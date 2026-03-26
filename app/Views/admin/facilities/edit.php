@@ -195,7 +195,10 @@ function facilityEditForm() {
                     if (uploadRes.ok && uploadJson.data && uploadJson.data.path) {
                         imageUrl = APP_BASE + '/storage/' + uploadJson.data.path;
                     } else {
-                        console.error('Image upload failed:', uploadJson);
+                        const uploadMsg = uploadJson?.message || 'Image upload failed. Check storage permissions.';
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: uploadMsg, type: 'error' } }));
+                        this.submitting = false;
+                        return;
                     }
                 }
                 if (imageUrl) {
