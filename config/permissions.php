@@ -189,6 +189,13 @@ return [
         'memberships.update' => ['module' => 'memberships', 'description' => 'Update membership plans'],
         'memberships.delete' => ['module' => 'memberships', 'description' => 'Delete membership plans'],
 
+        // Invoices
+        'invoices.view'   => ['module' => 'invoices', 'description' => 'View invoices'],
+        'invoices.create' => ['module' => 'invoices', 'description' => 'Create invoices'],
+        'invoices.update' => ['module' => 'invoices', 'description' => 'Update invoices'],
+        'invoices.delete' => ['module' => 'invoices', 'description' => 'Delete invoices'],
+        'invoices.pay'    => ['module' => 'invoices', 'description' => 'Record payments and send invoices'],
+
         // Extensions
         'extensions.view' => ['module' => 'extensions', 'description' => 'View available extensions'],
         'extensions.install' => ['module' => 'extensions', 'description' => 'Install and uninstall extensions'],
@@ -215,6 +222,8 @@ return [
             'discounts.*', 'credit_codes.*', 'gift_certificates.*',
             // Memberships
             'memberships.*',
+            // Invoices
+            'invoices.*',
             // Extensions
             'extensions.*',
         ],
@@ -236,6 +245,8 @@ return [
             'discounts.*', 'credit_codes.*', 'gift_certificates.*',
             // Memberships
             'memberships.*',
+            // Invoices
+            'invoices.*',
             // Extensions (view only)
             'extensions.view', 'extensions.configure',
         ],
@@ -256,6 +267,8 @@ return [
             'discounts.view', 'credit_codes.view', 'gift_certificates.view',
             // Memberships (view)
             'memberships.view',
+            // Invoices (view)
+            'invoices.view',
         ],
 
         'coach' => [

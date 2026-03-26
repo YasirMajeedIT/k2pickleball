@@ -121,6 +121,12 @@ class AdminController extends Controller
         'membership-plans/{id}'          => 'admin/membership-plans/show.php',
         'membership-plans/{id}/edit'     => 'admin/membership-plans/edit.php',
 
+        // Invoices
+        'invoices'                       => 'admin/invoices/index.php',
+        'invoices/create'                => 'admin/invoices/create.php',
+        'invoices/{id}'                  => 'admin/invoices/show.php',
+        'invoices/{id}/edit'             => 'admin/invoices/edit.php',
+
         // My Account
         'account'                   => 'admin/account/index.php',
         'my-subscription'           => 'admin/my-subscription/index.php',

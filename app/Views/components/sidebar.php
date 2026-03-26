@@ -26,6 +26,7 @@ $schedulingItems = [
     ['label' => 'Resources', 'icon' => 'resources', 'url' => ($baseUrl ?? '') . '/admin/resources', 'match' => '/admin/resources'],
     ['label' => 'Players', 'icon' => 'players', 'url' => ($baseUrl ?? '') . '/admin/players', 'match' => '/admin/players'],
     ['label' => 'Membership Plans', 'icon' => 'membership', 'url' => ($baseUrl ?? '') . '/admin/membership-plans', 'match' => '/admin/membership-plans'],
+    ['label' => 'Invoices', 'icon' => 'invoices', 'url' => ($baseUrl ?? '') . '/admin/invoices', 'match' => '/admin/invoices'],
 ];
 
 $packagesItems = [
