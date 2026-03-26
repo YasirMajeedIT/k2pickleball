@@ -115,6 +115,12 @@ class AdminController extends Controller
         // Waivers
         'waivers'                        => 'admin/waivers/index.php',
 
+        // Membership Plans
+        'membership-plans'               => 'admin/membership-plans/index.php',
+        'membership-plans/create'        => 'admin/membership-plans/create.php',
+        'membership-plans/{id}'          => 'admin/membership-plans/show.php',
+        'membership-plans/{id}/edit'     => 'admin/membership-plans/edit.php',
+
         // My Account
         'account'                   => 'admin/account/index.php',
         'my-subscription'           => 'admin/my-subscription/index.php',

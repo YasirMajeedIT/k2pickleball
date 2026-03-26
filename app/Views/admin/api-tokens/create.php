@@ -95,6 +95,7 @@ function apiTokenForm() {
             'gift-certificates.read', 'gift-certificates.write',
             'discounts.read', 'discounts.write',
             'waivers.read', 'waivers.write',
+            'memberships.read', 'memberships.write',
             'files.read', 'files.write',
             'settings.read', 'settings.write',
             'audit-logs.read',

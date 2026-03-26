@@ -183,6 +183,12 @@ return [
         'gift_certificates.update' => ['module' => 'gift_certificates', 'description' => 'Update gift certificates'],
         'gift_certificates.delete' => ['module' => 'gift_certificates', 'description' => 'Delete gift certificates'],
 
+        // Memberships
+        'memberships.view' => ['module' => 'memberships', 'description' => 'View membership plans'],
+        'memberships.create' => ['module' => 'memberships', 'description' => 'Create membership plans'],
+        'memberships.update' => ['module' => 'memberships', 'description' => 'Update membership plans'],
+        'memberships.delete' => ['module' => 'memberships', 'description' => 'Delete membership plans'],
+
         // Extensions
         'extensions.view' => ['module' => 'extensions', 'description' => 'View available extensions'],
         'extensions.install' => ['module' => 'extensions', 'description' => 'Install and uninstall extensions'],
@@ -207,6 +213,8 @@ return [
             'categories.*', 'labels.*', 'waivers.*',
             // Promotions & payments
             'discounts.*', 'credit_codes.*', 'gift_certificates.*',
+            // Memberships
+            'memberships.*',
             // Extensions
             'extensions.*',
         ],
@@ -226,6 +234,8 @@ return [
             'categories.*', 'labels.*', 'waivers.*',
             // Promotions
             'discounts.*', 'credit_codes.*', 'gift_certificates.*',
+            // Memberships
+            'memberships.*',
             // Extensions (view only)
             'extensions.view', 'extensions.configure',
         ],
@@ -244,6 +254,8 @@ return [
             // Content (view)
             'categories.view', 'labels.view', 'waivers.view',
             'discounts.view', 'credit_codes.view', 'gift_certificates.view',
+            // Memberships (view)
+            'memberships.view',
         ],
 
         'coach' => [

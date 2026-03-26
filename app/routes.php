@@ -98,6 +98,7 @@ return function (Router $router): void {
         'Admin',
         'Platform',
         'Extensions',
+        'Memberships',
         'Consultations',
         'ContactSubmissions',
         'SiteSettings',
