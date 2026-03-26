@@ -46,12 +46,14 @@ class AdminController extends Controller
 
         // Subscriptions
         'subscriptions'             => 'admin/subscriptions/index.php',
+        'subscriptions/{id}'        => 'admin/subscriptions/show.php',
 
         // Payments
         'payments'                  => 'admin/payments/index.php',
 
         // Notifications
         'notifications'             => 'admin/notifications/index.php',
+        'notifications/{id}'        => 'admin/notifications/show.php',
 
         // Files
         'files'                     => 'admin/files/index.php',
@@ -63,6 +65,7 @@ class AdminController extends Controller
 
         // Audit Logs
         'audit-logs'                => 'admin/audit-logs/index.php',
+        'audit-logs/{id}'           => 'admin/audit-logs/show.php',
 
         // Settings
         'settings'                  => 'admin/settings/index.php',
