@@ -316,6 +316,59 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                             </template>
                         </div>
 
+                    <?php elseif ($type === 'custom' && $name === 'social_links'): ?>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-1.5">Instagram URL</label>
+                                <input type="url" x-model="form.instagram_url" placeholder="https://instagram.com/yourfacility"
+                                       class="w-full rounded-xl border border-surface-200 bg-white dark:bg-surface-800 dark:border-surface-700 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all">
+                                <p class="text-xs text-surface-400 mt-1">Leave blank if not applicable</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-1.5">Facebook URL</label>
+                                <input type="url" x-model="form.facebook_url" placeholder="https://facebook.com/yourfacility"
+                                       class="w-full rounded-xl border border-surface-200 bg-white dark:bg-surface-800 dark:border-surface-700 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all">
+                                <p class="text-xs text-surface-400 mt-1">Leave blank if not applicable</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-1.5">YouTube URL</label>
+                                <input type="url" x-model="form.youtube_url" placeholder="https://youtube.com/@yourfacility"
+                                       class="w-full rounded-xl border border-surface-200 bg-white dark:bg-surface-800 dark:border-surface-700 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all">
+                                <p class="text-xs text-surface-400 mt-1">Leave blank if not applicable</p>
+                            </div>
+                        </div>
+
+                    <?php elseif ($type === 'custom' && $name === 'twilio_settings'): ?>
+                        <p class="text-xs text-surface-400 -mt-1 mb-3">Configure Twilio to send SMS notifications to players. Obtain credentials from <a href="https://console.twilio.com" target="_blank" class="text-primary-500 hover:underline">console.twilio.com</a>.</p>
+                        <label class="inline-flex items-center gap-3 cursor-pointer mb-4">
+                            <div class="relative">
+                                <input type="checkbox" x-model="form.twilio_enabled" class="peer sr-only">
+                                <div class="h-5 w-9 rounded-full bg-surface-200 peer-checked:bg-primary-500 dark:bg-surface-700 transition-colors"></div>
+                                <div class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transform peer-checked:translate-x-4 transition-transform"></div>
+                            </div>
+                            <span class="text-sm font-medium text-surface-600 dark:text-surface-400">Enable Twilio SMS for this facility</span>
+                        </label>
+                        <div x-show="form.twilio_enabled" x-transition class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-1.5">Account SID <span class="text-red-500">*</span></label>
+                                <input type="text" x-model="form.twilio_sid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                       class="w-full rounded-xl border border-surface-200 bg-white dark:bg-surface-800 dark:border-surface-700 dark:text-white px-3.5 py-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all">
+                                <p class="text-xs text-surface-400 mt-1">Found in your Twilio Console under &#34;Account Info&#34;</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-1.5">Auth Token <span class="text-red-500">*</span></label>
+                                <input type="password" x-model="form.twilio_auth_token" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                                       class="w-full rounded-xl border border-surface-200 bg-white dark:bg-surface-800 dark:border-surface-700 dark:text-white px-3.5 py-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all">
+                                <p class="text-xs text-surface-400 mt-1">Your Twilio auth token — keep this secret</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-1.5">From Phone Number <span class="text-red-500">*</span></label>
+                                <input type="tel" x-model="form.twilio_from_number" placeholder="+15551234567"
+                                       class="w-full sm:w-72 rounded-xl border border-surface-200 bg-white dark:bg-surface-800 dark:border-surface-700 dark:text-white px-3.5 py-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all">
+                                <p class="text-xs text-surface-400 mt-1">Twilio-provisioned number in E.164 format (e.g. +15551234567)</p>
+                            </div>
+                        </div>
+
                     <?php else: ?>
                         <input type="<?= htmlspecialchars($type, ENT_QUOTES) ?>"
                             x-model="form.<?= $name ?>"
@@ -357,5 +410,4 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
             </button>
         </div>
     </form>
-    <?php if (!empty($afterForm)) echo $afterForm; ?>
 </div>
