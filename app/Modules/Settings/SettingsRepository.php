@@ -50,6 +50,17 @@ final class SettingsRepository
     }
 
     /**
+     * Get all settings in a group with full metadata (key, value, type, description).
+     */
+    public function getGroupDetailed(int $orgId, string $group): array
+    {
+        return $this->db->fetchAll(
+            "SELECT `key_name` as `key`, `value`, `type`, `description` FROM `settings` WHERE `organization_id` = ? AND `group_name` = ? ORDER BY `key_name`",
+            [$orgId, $group]
+        );
+    }
+
+    /**
      * Get all settings for an organization.
      */
     public function getAll(int $orgId): array

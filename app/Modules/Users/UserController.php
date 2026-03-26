@@ -12,15 +12,18 @@ use App\Core\Security\Validator;
 use App\Core\Database\Connection;
 use App\Core\Exceptions\NotFoundException;
 use App\Core\Services\Config;
+use App\Modules\AuditLogs\AuditLogRepository;
 
 final class UserController extends Controller
 {
     private UserRepository $repo;
+    private AuditLogRepository $auditLog;
 
     public function __construct(Connection $db)
     {
         parent::__construct();
         $this->repo = new UserRepository($db);
+        $this->auditLog = new AuditLogRepository($db);
     }
 
     public function index(Request $request): Response
@@ -126,6 +129,18 @@ final class UserController extends Controller
 
         $user = $this->repo->findWithRoles($id);
 
+        $this->auditLog->log(
+            $request->organizationId(),
+            $request->userId(),
+            'created',
+            'user',
+            $id,
+            null,
+            $user,
+            $request->ip(),
+            $request->header('User-Agent')
+        );
+
         return $this->created($user, 'User created');
     }
 
@@ -198,6 +213,18 @@ final class UserController extends Controller
 
         $user = $this->repo->findWithRoles($id);
 
+        $this->auditLog->log(
+            $request->organizationId(),
+            $request->userId(),
+            'updated',
+            'user',
+            $id,
+            null,
+            $user,
+            $request->ip(),
+            $request->header('User-Agent')
+        );
+
         return $this->success($user, 'User updated');
     }
 
@@ -207,6 +234,18 @@ final class UserController extends Controller
         if (!$user) {
             throw new NotFoundException('User not found');
         }
+
+        $this->auditLog->log(
+            $request->organizationId(),
+            $request->userId(),
+            'deleted',
+            'user',
+            $id,
+            $user,
+            null,
+            $request->ip(),
+            $request->header('User-Agent')
+        );
 
         $this->repo->delete($id);
         return $this->success(null, 'User deleted');

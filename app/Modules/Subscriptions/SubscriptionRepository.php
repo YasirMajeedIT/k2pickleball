@@ -20,10 +20,23 @@ final class SubscriptionRepository extends Repository
 
     public function findByOrganization(int $orgId, int $page = 1, int $perPage = 20): array
     {
-        return $this->query()
-            ->where('organization_id', $orgId)
-            ->orderBy('created_at', 'DESC')
-            ->paginate($page, $perPage);
+        $offset = ($page - 1) * $perPage;
+
+        $total = $this->db->fetch(
+            "SELECT COUNT(*) as cnt FROM subscriptions WHERE organization_id = ?",
+            [$orgId]
+        );
+
+        $data = $this->db->fetchAll(
+            "SELECT s.*, p.name as plan_name
+             FROM subscriptions s
+             LEFT JOIN plans p ON s.plan_id = p.id
+             WHERE s.organization_id = ?
+             ORDER BY s.created_at DESC LIMIT ? OFFSET ?",
+            [$orgId, $perPage, $offset]
+        );
+
+        return ['data' => $data, 'total' => (int) ($total['cnt'] ?? 0)];
     }
 
     /**

@@ -41,13 +41,14 @@ ob_start();
                         <th class="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500">Key</th>
                         <th class="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500">Value</th>
                         <th class="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500">Type</th>
+                        <th class="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-surface-500 hidden lg:table-cell">Description</th>
                         <th class="px-6 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-surface-500">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-100 dark:divide-surface-700/50">
                     <template x-if="loading">
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center">
+                            <td colspan="5" class="px-6 py-12 text-center">
                                 <div class="inline-flex items-center gap-2 text-surface-500">
                                     <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                                     Loading...
@@ -57,7 +58,7 @@ ob_start();
                     </template>
                     <template x-if="!loading && settings.length === 0">
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center">
+                            <td colspan="5" class="px-6 py-12 text-center">
                                 <svg class="mx-auto h-10 w-10 text-surface-300 dark:text-surface-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                 <p class="text-sm font-medium text-surface-500">No settings in this group</p>
                             </td>
@@ -92,6 +93,7 @@ ob_start();
                             <td class="px-6 py-4">
                                 <span class="inline-block rounded-lg bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 px-2.5 py-0.5 text-xs font-medium text-surface-600 dark:text-surface-300" x-text="setting.type || 'string'"></span>
                             </td>
+                            <td class="px-6 py-4 hidden lg:table-cell text-xs text-surface-500 dark:text-surface-400" x-text="setting.description || ''"></td>
                             <td class="px-6 py-4 text-right space-x-2">
                                 <button @click="startEdit(setting)" class="text-amber-500 hover:text-amber-600 text-sm font-semibold" x-show="editingKey !== setting.key">Edit</button>
                                 <button @click="deleteSetting(setting.key)" class="text-red-500 hover:text-red-600 text-sm font-semibold">Delete</button>
@@ -154,11 +156,9 @@ function settingsManager() {
         async loadSettings() {
             this.loading = true;
             try {
-                const res = await authFetch(APP_BASE + '/api/settings/' + this.activeGroup);
+                const res = await authFetch(APP_BASE + '/api/settings/' + this.activeGroup + '?detailed=1');
                 const json = await res.json();
-                this.settings = json.data ? Object.entries(json.data).map(([key, value]) => ({
-                    key, value: typeof value === 'object' ? JSON.stringify(value) : String(value), type: typeof value
-                })) : (Array.isArray(json.data) ? json.data : []);
+                this.settings = Array.isArray(json.data) ? json.data : [];
             } catch (e) { this.settings = []; }
             this.loading = false;
         },

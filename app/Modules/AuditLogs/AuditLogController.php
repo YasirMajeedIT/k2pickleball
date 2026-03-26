@@ -9,6 +9,7 @@ use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Database\Connection;
 use App\Core\Security\Sanitizer;
+use App\Core\Exceptions\NotFoundException;
 
 final class AuditLogController extends Controller
 {
@@ -44,6 +45,15 @@ final class AuditLogController extends Controller
 
         $result = $this->repo->findByOrganization($orgId, $filters, $page, $perPage);
         return $this->paginated($result['data'], $result['total'], $page, $perPage);
+    }
+
+    public function show(Request $request, int $id): Response
+    {
+        $log = $this->repo->findById($id);
+        if (!$log) {
+            throw new NotFoundException('Audit log entry not found');
+        }
+        return $this->success($log);
     }
 
     public function entity(Request $request, string $entityType, int $entityId): Response

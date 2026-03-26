@@ -170,10 +170,37 @@ var <?= $rendersVarName ?> = {
             </div>
         </div>
     </div>
-</div>
 
-<script>
-function dataTable(id, apiUrl, renders, deleteApiUrl, deletePermission) {
+    <!-- Delete Confirmation Modal -->
+    <div x-show="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center" style="display:none;">
+        <div x-show="confirmModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+             @click="confirmModal = false" class="fixed inset-0 bg-surface-950/60 backdrop-blur-sm"></div>
+        <div x-show="confirmModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+             class="relative w-full max-w-sm rounded-2xl bg-white dark:bg-surface-800 p-6 shadow-xl border border-surface-200 dark:border-surface-700 text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10 mb-4">
+                <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-surface-900 dark:text-white mb-1">Delete Record</h3>
+            <p class="text-sm text-surface-500 mb-1">Are you sure you want to delete</p>
+            <p class="text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3" x-text="'\"' + confirmLabel + '\"'"></p>
+            <p class="text-xs text-red-500 font-medium mb-5">This action cannot be undone.</p>
+            <div class="flex items-center justify-center gap-3">
+                <button @click="confirmModal = false"
+                        class="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-5 py-2.5 text-sm font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
+                    Cancel
+                </button>
+                <button @click="confirmDelete()"
+                        class="rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-5 py-2.5 text-sm font-semibold text-white hover:from-red-700 hover:to-red-800 shadow-soft transition-all">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
     renders = renders || {};
     deleteApiUrl = deleteApiUrl || null;
     deletePermission = deletePermission || null;
@@ -189,6 +216,9 @@ function dataTable(id, apiUrl, renders, deleteApiUrl, deletePermission) {
         totalRecords: 0,
         totalPages: 0,
         canDelete: false,
+        confirmModal: false,
+        confirmId: null,
+        confirmLabel: '',
         async init() {
             // Determine delete permission after me() resolves
             if (deleteApiUrl) {
@@ -211,7 +241,13 @@ function dataTable(id, apiUrl, renders, deleteApiUrl, deletePermission) {
         prevPage() { if (this.currentPage > 1) { this.currentPage--; this.fetchData(); } },
         nextPage() { if (this.currentPage < this.totalPages) { this.currentPage++; this.fetchData(); } },
         async deleteRow(id, label) {
-            if (!confirm('Delete "' + label + '"?\n\nThis action cannot be undone.')) return;
+            this.confirmId = id;
+            this.confirmLabel = label;
+            this.confirmModal = true;
+        },
+        async confirmDelete() {
+            const id = this.confirmId;
+            this.confirmModal = false;
             const url = deleteApiUrl.replace('{id}', id);
             try {
                 const res = await authFetch(url, { method: 'DELETE' });

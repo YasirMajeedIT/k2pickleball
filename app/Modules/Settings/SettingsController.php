@@ -38,6 +38,13 @@ final class SettingsController extends Controller
     {
         $orgId = $request->organizationId();
         $group = Sanitizer::slug($group);
+
+        // ?detailed=1 returns full metadata (key, value, type, description)
+        if ($request->input('detailed')) {
+            $settings = $this->repo->getGroupDetailed($orgId, $group);
+            return $this->success($settings);
+        }
+
         $settings = $this->repo->getGroup($orgId, $group);
         return $this->success($settings);
     }

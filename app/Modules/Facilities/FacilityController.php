@@ -11,15 +11,18 @@ use App\Core\Security\Sanitizer;
 use App\Core\Security\Validator;
 use App\Core\Database\Connection;
 use App\Core\Exceptions\NotFoundException;
+use App\Modules\AuditLogs\AuditLogRepository;
 
 final class FacilityController extends Controller
 {
     private FacilityRepository $repo;
+    private AuditLogRepository $auditLog;
 
     public function __construct(Connection $db)
     {
         parent::__construct();
         $this->repo = new FacilityRepository($db);
+        $this->auditLog = new AuditLogRepository($db);
     }
 
     public function index(Request $request): Response
@@ -104,6 +107,12 @@ final class FacilityController extends Controller
         $id = $this->repo->create($data);
         $facility = $this->repo->findById($id);
 
+        $this->auditLog->log(
+            $request->organizationId(), $request->userId(), 'created',
+            'facility', $id, null, ['name' => $data['name']],
+            $request->ip(), $request->header('User-Agent')
+        );
+
         return $this->created($facility, 'Facility created');
     }
 
@@ -164,6 +173,12 @@ final class FacilityController extends Controller
         $this->repo->update($id, $data);
         $facility = $this->repo->findById($id);
 
+        $this->auditLog->log(
+            $request->organizationId(), $request->userId(), 'updated',
+            'facility', $id, null, ['name' => $data['name']],
+            $request->ip(), $request->header('User-Agent')
+        );
+
         return $this->success($facility, 'Facility updated');
     }
 
@@ -173,6 +188,12 @@ final class FacilityController extends Controller
         if (!$facility) {
             throw new NotFoundException('Facility not found');
         }
+
+        $this->auditLog->log(
+            $request->organizationId(), $request->userId(), 'deleted',
+            'facility', $id, ['name' => $facility['name']], null,
+            $request->ip(), $request->header('User-Agent')
+        );
 
         $this->repo->delete($id);
         return $this->success(null, 'Facility deleted');

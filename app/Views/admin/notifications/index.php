@@ -21,10 +21,11 @@ $columns = [
 ];
 $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/notifications/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
-    ['label' => 'Delete', 'url' => ($baseUrl ?? '') . '/admin/notifications/{id}/delete', 'class' => 'text-red-500 hover:text-red-700'],
 ];
 $createUrl = null;
 $createLabel = null;
+$deleteAction = ($baseUrl ?? '') . '/api/notifications/{id}';
+$deletePermission = 'notifications.view';
 
 ob_start();
 include __DIR__ . '/../../components/data-table.php';

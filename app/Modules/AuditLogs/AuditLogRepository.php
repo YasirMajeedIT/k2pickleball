@@ -40,6 +40,17 @@ final class AuditLogRepository
         ]);
     }
 
+    public function findById(int $id): ?array
+    {
+        return $this->db->fetch(
+            "SELECT `al`.*, `u`.`first_name`, `u`.`last_name`, `u`.`email`
+             FROM `activity_logs` `al`
+             LEFT JOIN `users` `u` ON `u`.`id` = `al`.`user_id`
+             WHERE `al`.`id` = ?",
+            [$id]
+        ) ?: null;
+    }
+
     public function findByOrganization(int $orgId, array $filters = [], int $page = 1, int $perPage = 50): array
     {
         $where = ["`al`.`organization_id` = ?"];

@@ -20,11 +20,14 @@ return function (Router $router): void {
     $router->get('/admin/users', [AdminController::class, 'handleRequest']);
     $router->get('/admin/roles', [AdminController::class, 'handleRequest']);
     $router->get('/admin/subscriptions', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/subscriptions/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/payments', [AdminController::class, 'handleRequest']);
     $router->get('/admin/notifications', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/notifications/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/files', [AdminController::class, 'handleRequest']);
     $router->get('/admin/api-tokens', [AdminController::class, 'handleRequest']);
     $router->get('/admin/audit-logs', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/audit-logs/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/settings', [AdminController::class, 'handleRequest']);
 
     // Extensions

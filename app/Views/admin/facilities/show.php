@@ -276,6 +276,66 @@ ob_start();
                 </div>
             </div>
 
+            <!-- Social Links Card -->
+            <div x-show="facility.instagram_url || facility.facebook_url || facility.youtube_url"
+                 class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-soft overflow-hidden">
+                <div class="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 px-6 py-4 bg-surface-50/50 dark:bg-surface-800/30">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 shadow-sm">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-surface-800 dark:text-surface-100">Social Links</h3>
+                </div>
+                <div class="divide-y divide-surface-100 dark:divide-surface-800">
+                    <div x-show="facility.instagram_url" class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Instagram</dt>
+                        <dd class="mt-1 text-sm"><a :href="facility.instagram_url" target="_blank" class="text-primary-600 hover:underline break-all" x-text="facility.instagram_url"></a></dd>
+                    </div>
+                    <div x-show="facility.facebook_url" class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Facebook</dt>
+                        <dd class="mt-1 text-sm"><a :href="facility.facebook_url" target="_blank" class="text-primary-600 hover:underline break-all" x-text="facility.facebook_url"></a></dd>
+                    </div>
+                    <div x-show="facility.youtube_url" class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">YouTube</dt>
+                        <dd class="mt-1 text-sm"><a :href="facility.youtube_url" target="_blank" class="text-primary-600 hover:underline break-all" x-text="facility.youtube_url"></a></dd>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Twilio Settings Card -->
+            <div class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-soft overflow-hidden">
+                <div class="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 px-6 py-4 bg-surface-50/50 dark:bg-surface-800/30">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 shadow-sm">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-surface-800 dark:text-surface-100">Twilio / SMS</h3>
+                </div>
+                <div class="divide-y divide-surface-100 dark:divide-surface-800">
+                    <div class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Twilio Enabled</dt>
+                        <dd class="mt-1">
+                            <span x-show="facility.twilio_enabled == 1" class="inline-flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-400">
+                                <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span> Enabled
+                            </span>
+                            <span x-show="!facility.twilio_enabled || facility.twilio_enabled == 0" class="inline-flex items-center gap-1.5 rounded-full bg-surface-100 dark:bg-surface-700 px-3 py-1 text-xs font-semibold text-surface-600 dark:text-surface-400">
+                                <span class="h-1.5 w-1.5 rounded-full bg-surface-400"></span> Disabled
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">From Number</dt>
+                        <dd class="mt-1 text-sm text-surface-700 dark:text-surface-300" x-text="facility.twilio_from_number || '—'"></dd>
+                    </div>
+                    <div class="px-6 py-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">SID</dt>
+                        <dd class="mt-1 text-sm text-surface-500 font-mono" x-text="facility.twilio_sid ? '••••' + facility.twilio_sid.slice(-4) : '—'"></dd>
+                    </div>
+                </div>
+            </div>
+
             <!-- Amenities Card -->
             <div x-show="amenities.length > 0"
                  class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-soft overflow-hidden">
