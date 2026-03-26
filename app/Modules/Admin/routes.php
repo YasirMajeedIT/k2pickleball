@@ -75,6 +75,12 @@ return function (Router $router): void {
     // Waivers
     $router->get('/admin/waivers', [AdminController::class, 'handleRequest']);
 
+    // Membership Plans
+    $router->get('/admin/membership-plans', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/membership-plans/create', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/membership-plans/{id}', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/membership-plans/{id}/edit', [AdminController::class, 'handleRequest']);
+
     // My Account pages
     $router->get('/admin/account', [AdminController::class, 'handleRequest']);
     $router->get('/admin/my-subscription', [AdminController::class, 'handleRequest']);
