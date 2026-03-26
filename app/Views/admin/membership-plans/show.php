@@ -89,6 +89,16 @@ ob_start();
                             <dd class="mt-1 text-sm" x-text="plan.is_taxable == 1 ? 'Yes' : 'No'"></dd>
                         </div>
                     </div>
+                    <div x-show="plan.renewal_type && plan.renewal_type !== 'none'" class="grid grid-cols-3 gap-0">
+                        <div class="px-6 py-4">
+                            <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Renewal Price</dt>
+                            <dd class="mt-1 text-sm text-surface-700 dark:text-surface-300" x-text="plan.renewal_price ? '$' + parseFloat(plan.renewal_price).toFixed(2) : 'Same as plan price'"></dd>
+                        </div>
+                        <div class="px-6 py-4 border-l border-surface-100 dark:border-surface-800 col-span-2">
+                            <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Renewal Policy</dt>
+                            <dd class="mt-1 text-sm text-surface-700 dark:text-surface-300" x-text="plan.renewal_price_policy === 'locked_price' ? 'Locked — Existing members keep original signup price' : 'Current — Members charged latest plan price on renewal'"></dd>
+                        </div>
+                    </div>
                     <div class="grid grid-cols-3 gap-0">
                         <div class="px-6 py-4">
                             <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Duration</dt>
@@ -124,9 +134,22 @@ ob_start();
                     </template>
                     <div class="space-y-2">
                         <template x-for="c in plan.included_categories || []" :key="'inc-cat-'+c.category_id">
-                            <div class="flex items-center justify-between rounded-lg bg-green-50 dark:bg-green-500/5 px-4 py-2.5 border border-green-100 dark:border-green-800/30">
-                                <span class="text-sm font-medium text-green-800 dark:text-green-300" x-text="c.category_name || 'Category #' + c.category_id"></span>
-                                <span class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-500/10 rounded-full px-2 py-0.5">Included</span>
+                            <div class="rounded-lg bg-green-50 dark:bg-green-500/5 px-4 py-2.5 border border-green-100 dark:border-green-800/30">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-green-800 dark:text-green-300" x-text="c.category_name || 'Category #' + c.category_id"></span>
+                                    <span class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-500/10 rounded-full px-2 py-0.5">Included</span>
+                                </div>
+                                <div class="mt-1.5 flex flex-wrap gap-3 text-xs text-green-700 dark:text-green-400">
+                                    <template x-if="c.price">
+                                        <span class="bg-green-100 dark:bg-green-500/10 rounded px-1.5 py-0.5" x-text="'Price: $' + parseFloat(c.price).toFixed(2)"></span>
+                                    </template>
+                                    <template x-if="c.usage_limit">
+                                        <span class="bg-green-100 dark:bg-green-500/10 rounded px-1.5 py-0.5" x-text="'Limit: ' + c.usage_limit + (c.usage_period && c.usage_period !== 'unlimited' ? ' / ' + c.usage_period : '')"></span>
+                                    </template>
+                                    <template x-if="!c.price && !c.usage_limit">
+                                        <span class="text-green-600/60 dark:text-green-500/40">No restrictions</span>
+                                    </template>
+                                </div>
                             </div>
                         </template>
                         <template x-for="c in plan.discounted_categories || []" :key="'disc-cat-'+c.category_id">
@@ -153,9 +176,25 @@ ob_start();
                     </template>
                     <div class="space-y-2">
                         <template x-for="s in plan.included_session_types || []" :key="'inc-st-'+s.session_type_id">
-                            <div class="flex items-center justify-between rounded-lg bg-green-50 dark:bg-green-500/5 px-4 py-2.5 border border-green-100 dark:border-green-800/30">
-                                <span class="text-sm font-medium text-green-800 dark:text-green-300" x-text="s.session_type_name || 'Session Type #' + s.session_type_id"></span>
-                                <span class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-500/10 rounded-full px-2 py-0.5">Included</span>
+                            <div class="rounded-lg bg-green-50 dark:bg-green-500/5 px-4 py-2.5 border border-green-100 dark:border-green-800/30">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-green-800 dark:text-green-300" x-text="s.session_type_name || 'Session Type #' + s.session_type_id"></span>
+                                    <span class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-500/10 rounded-full px-2 py-0.5">Included</span>
+                                </div>
+                                <div class="mt-1.5 flex flex-wrap gap-3 text-xs text-green-700 dark:text-green-400">
+                                    <template x-if="s.price">
+                                        <span class="bg-green-100 dark:bg-green-500/10 rounded px-1.5 py-0.5" x-text="'Member Price: $' + parseFloat(s.price).toFixed(2)"></span>
+                                    </template>
+                                    <template x-if="s.standard_price && !s.price">
+                                        <span class="bg-green-100 dark:bg-green-500/10 rounded px-1.5 py-0.5" x-text="'Standard: $' + parseFloat(s.standard_price).toFixed(2)"></span>
+                                    </template>
+                                    <template x-if="s.usage_limit">
+                                        <span class="bg-green-100 dark:bg-green-500/10 rounded px-1.5 py-0.5" x-text="'Limit: ' + s.usage_limit + (s.usage_period && s.usage_period !== 'unlimited' ? ' / ' + s.usage_period : '')"></span>
+                                    </template>
+                                    <template x-if="!s.price && !s.usage_limit">
+                                        <span class="text-green-600/60 dark:text-green-500/40">No restrictions</span>
+                                    </template>
+                                </div>
                             </div>
                         </template>
                         <template x-for="s in plan.discounted_session_types || []" :key="'disc-st-'+s.session_type_id">
