@@ -201,6 +201,8 @@ var <?= $rendersVarName ?> = {
         </div>
     </div>
 </div>
+<script>
+function dataTable(tableId, apiUrl, renders, deleteApiUrl, deletePermission) {
     renders = renders || {};
     deleteApiUrl = deleteApiUrl || null;
     deletePermission = deletePermission || null;
