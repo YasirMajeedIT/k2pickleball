@@ -19,6 +19,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/facilities/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/facilities/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/facilities/{id}';
+$deletePermission = 'facilities.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/facilities/create';
 $createLabel = 'Add Facility';
 

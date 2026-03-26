@@ -15,6 +15,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/resources/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/resources/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/resources/{id}';
+$deletePermission = 'resources.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/resources/create';
 $createLabel = 'Add Resource';
 

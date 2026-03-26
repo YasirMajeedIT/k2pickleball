@@ -245,9 +245,22 @@ $currentPath = $_SERVER['REQUEST_URI'] ?? '/admin';
         if (!window._mePromise) {
             window._mePromise = authFetch(APP_BASE + '/api/auth/me')
                 .then(r => r.json())
+                .then(json => {
+                    // Expose permissions globally for delete button checks
+                    const perms = (json.data || json).permissions || [];
+                    window.K2_PERMS = Array.isArray(perms) ? perms : [];
+                    return json;
+                })
                 .catch(() => ({}));
         }
         return window._mePromise;
+    }
+
+    // Check if current user has a specific permission
+    // Super-admin has ['*'] which matches anything
+    function k2Can(permission) {
+        const perms = window.K2_PERMS || [];
+        return perms.includes('*') || perms.includes(permission);
     }
 
     function trialBanner() {

@@ -29,6 +29,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/credit-codes/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/credit-codes/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/credit-codes/{id}';
+$deletePermission = 'credit_codes.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/credit-codes/create';
 $createLabel = 'Add Credit Code';
 

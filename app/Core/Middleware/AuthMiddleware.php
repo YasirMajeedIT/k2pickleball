@@ -64,6 +64,8 @@ final class AuthMiddleware implements MiddlewareInterface
         '/facilities',
         '/book-court',
         '/dashboard',
+        // Uploaded files served via PHP (storage outside docroot)
+        '/storage/',
     ];
 
     public function __construct(JwtService $jwt, Connection $db)

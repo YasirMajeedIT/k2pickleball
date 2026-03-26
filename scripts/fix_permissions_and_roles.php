@@ -186,20 +186,33 @@ if ($adminUser) {
     if ($saRoleRow) {
         $orgId = $adminUser['organization_id'];
         
-        // Check if already assigned
-        $check = $pdo->prepare("SELECT id FROM user_roles WHERE user_id = ? AND role_id = ?");
-        $check->execute([$adminUser['id'], $saRoleRow['id']]);
-        
-        if (!$check->fetch()) {
-            $pdo->prepare("INSERT INTO user_roles (user_id, role_id, organization_id, created_at) VALUES (?, ?, ?, NOW())")
-                ->execute([$adminUser['id'], $saRoleRow['id'], $orgId]);
-            echo "   + Assigned super-admin role to user: {$adminUser['email']} (ID: {$adminUser['id']})\n";
-        } else {
-            echo "   = User {$adminUser['email']} already has super-admin role\n";
+        // If user has no org, find the first available org
+        if (!$orgId) {
+            $firstOrg = $pdo->query("SELECT id FROM organizations ORDER BY id ASC LIMIT 1")->fetch();
+            if ($firstOrg) {
+                $orgId = $firstOrg['id'];
+                // Also update the user record so they belong to this org
+                $pdo->prepare("UPDATE users SET organization_id = ? WHERE id = ?")->execute([$orgId, $adminUser['id']]);
+                echo "   + Linked admin user to organization ID: $orgId\n";
+            }
         }
         
-        // Also assign org-admin if they belong to an org
-        if ($orgId) {
+        if (!$orgId) {
+            echo "   ! No organizations found — cannot assign role without org_id. Create an org first.\n";
+        } else {
+            // Check if already assigned
+            $check = $pdo->prepare("SELECT id FROM user_roles WHERE user_id = ? AND role_id = ?");
+            $check->execute([$adminUser['id'], $saRoleRow['id']]);
+        
+            if (!$check->fetch()) {
+                $pdo->prepare("INSERT INTO user_roles (user_id, role_id, organization_id, created_at) VALUES (?, ?, ?, NOW())")
+                    ->execute([$adminUser['id'], $saRoleRow['id'], $orgId]);
+                echo "   + Assigned super-admin role to user: {$adminUser['email']} (ID: {$adminUser['id']})\n";
+            } else {
+                echo "   = User {$adminUser['email']} already has super-admin role\n";
+            }
+        
+            // Also assign org-admin if they belong to an org
             $oaRole = $pdo->prepare("SELECT id FROM roles WHERE slug IN ('org-admin', 'org_admin', 'org-owner') AND (organization_id IS NULL) LIMIT 1");
             $oaRole->execute();
             $oaRoleRow = $oaRole->fetch();
@@ -239,9 +252,16 @@ echo "\n";
 echo "7. Ensuring facilities table has image_url, tagline, tax_rate columns...\n";
 
 $facilityColumns = [
-    'tagline'   => "ADD COLUMN `tagline` VARCHAR(255) DEFAULT NULL AFTER `name`",
-    'tax_rate'  => "ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 0.00 AFTER `status`",
-    'image_url' => "ADD COLUMN `image_url` VARCHAR(500) DEFAULT NULL AFTER `tax_rate`",
+    'tagline'          => "ADD COLUMN `tagline` VARCHAR(255) DEFAULT NULL AFTER `name`",
+    'tax_rate'         => "ADD COLUMN `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 0.00 AFTER `status`",
+    'image_url'        => "ADD COLUMN `image_url` VARCHAR(500) DEFAULT NULL AFTER `tax_rate`",
+    'instagram_url'    => "ADD COLUMN `instagram_url` VARCHAR(500) DEFAULT NULL AFTER `image_url`",
+    'facebook_url'     => "ADD COLUMN `facebook_url` VARCHAR(500) DEFAULT NULL AFTER `instagram_url`",
+    'youtube_url'      => "ADD COLUMN `youtube_url` VARCHAR(500) DEFAULT NULL AFTER `facebook_url`",
+    'twilio_sid'       => "ADD COLUMN `twilio_sid` VARCHAR(255) DEFAULT NULL AFTER `youtube_url`",
+    'twilio_auth_token'=> "ADD COLUMN `twilio_auth_token` VARCHAR(255) DEFAULT NULL AFTER `twilio_sid`",
+    'twilio_from_number'=> "ADD COLUMN `twilio_from_number` VARCHAR(20) DEFAULT NULL AFTER `twilio_auth_token`",
+    'twilio_enabled'   => "ADD COLUMN `twilio_enabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `twilio_from_number`",
 ];
 
 foreach ($facilityColumns as $col => $ddl) {

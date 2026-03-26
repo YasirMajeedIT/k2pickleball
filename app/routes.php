@@ -9,6 +9,29 @@ use App\Core\Http\Router;
  * Loads all module route files.
  */
 return function (Router $router): void {
+    // Serve uploaded storage files (storage dir is outside public docroot)
+    $router->get('/storage/{path:.+}', function (\App\Core\Http\Request $request, string $path) {
+        $storageBase = K2_ROOT . '/storage/';
+        $realBase = realpath($storageBase);
+        if ($realBase === false) {
+            return \App\Core\Http\Response::notFound('Storage directory not found');
+        }
+        // Security: prevent path traversal
+        $requestedPath = $storageBase . ltrim($path, '/');
+        $realPath = realpath($requestedPath);
+        if ($realPath === false || !str_starts_with($realPath, $realBase) || !is_file($realPath)) {
+            return \App\Core\Http\Response::notFound('File not found');
+        }
+        $mime = mime_content_type($realPath) ?: 'application/octet-stream';
+        $size = filesize($realPath);
+        $content = file_get_contents($realPath);
+        return new \App\Core\Http\Response($content, 200, [
+            'Content-Type'   => $mime,
+            'Content-Length' => (string) $size,
+            'Cache-Control'  => 'public, max-age=86400',
+        ]);
+    });
+
     // Health check
     $router->get('/api/health', function () {
         return \App\Core\Http\Response::json([

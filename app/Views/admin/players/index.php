@@ -26,6 +26,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/players/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/players/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/players/{id}';
+$deletePermission = 'players.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/players/create';
 $createLabel = 'Add Player';
 

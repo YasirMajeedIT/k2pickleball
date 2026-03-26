@@ -20,6 +20,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/courts/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/courts/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/courts/{id}';
+$deletePermission = 'courts.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/courts/create';
 $createLabel = 'Add Court';
 

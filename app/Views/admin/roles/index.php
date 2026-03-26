@@ -18,6 +18,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/roles/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/roles/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/roles/{id}';
+$deletePermission = 'roles.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/roles/create';
 $createLabel = 'Add Role';
 

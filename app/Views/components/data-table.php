@@ -19,11 +19,15 @@ $createUrl = $createUrl ?? null;
 $createLabel = $createLabel ?? 'Create New';
 $searchable = $searchable ?? true;
 $apiUrl = $apiUrl ?? '';
+$deleteAction = $deleteAction ?? null;   // API URL template with {id}, e.g. '/api/facilities/{id}'
+$deletePermission = $deletePermission ?? null; // permission slug, e.g. 'facilities.delete'
 ?>
 
 <?php
 $hasRenders = array_filter($columns, fn($c) => isset($c['render']));
 $rendersVarName = '__dtRenders_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $tableId);
+$deleteActionJs = $deleteAction ? "'" . addslashes($deleteAction) . "'" : 'null';
+$deletePermJs   = $deletePermission ? "'" . addslashes($deletePermission) . "'" : 'null';
 if ($hasRenders): ?>
 <script>
 var <?= $rendersVarName ?> = {
@@ -33,7 +37,7 @@ var <?= $rendersVarName ?> = {
 };
 </script>
 <?php endif; ?>
-<div x-data="dataTable('<?= htmlspecialchars($tableId) ?>', '<?= htmlspecialchars($apiUrl) ?>', typeof <?= $rendersVarName ?> !== 'undefined' ? <?= $rendersVarName ?> : {})" x-init="fetchData()">
+<div x-data="dataTable('<?= htmlspecialchars($tableId) ?>', '<?= htmlspecialchars($apiUrl) ?>', typeof <?= $rendersVarName ?> !== 'undefined' ? <?= $rendersVarName ?> : {}, <?= $deleteActionJs ?>, <?= $deletePermJs ?>)" x-init="init()">
     <!-- Table Header -->
     <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <?php if ($searchable): ?>
@@ -115,6 +119,14 @@ var <?= $rendersVarName ?> = {
                                         <?= htmlspecialchars($action['label']) ?>
                                     </a>
                                     <?php endforeach; ?>
+                                    <?php if ($deleteAction): ?>
+                                    <button x-show="canDelete"
+                                            @click="deleteRow(row.id, row.name || row.title || ('#' + row.id))"
+                                            class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Delete
+                                    </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                             <?php endif; ?>
@@ -161,8 +173,10 @@ var <?= $rendersVarName ?> = {
 </div>
 
 <script>
-function dataTable(id, apiUrl, renders) {
+function dataTable(id, apiUrl, renders, deleteApiUrl, deletePermission) {
     renders = renders || {};
+    deleteApiUrl = deleteApiUrl || null;
+    deletePermission = deletePermission || null;
     return {
         rows: [],
         renders: renders,
@@ -174,6 +188,17 @@ function dataTable(id, apiUrl, renders) {
         perPage: 20,
         totalRecords: 0,
         totalPages: 0,
+        canDelete: false,
+        async init() {
+            // Determine delete permission after me() resolves
+            if (deleteApiUrl) {
+                try {
+                    await getMe();
+                    this.canDelete = deletePermission ? k2Can(deletePermission) : k2Can('*');
+                } catch(_) { this.canDelete = false; }
+            }
+            this.fetchData();
+        },
         toggleSort(field) {
             if (this.sortField === field) {
                 this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
@@ -185,6 +210,22 @@ function dataTable(id, apiUrl, renders) {
         },
         prevPage() { if (this.currentPage > 1) { this.currentPage--; this.fetchData(); } },
         nextPage() { if (this.currentPage < this.totalPages) { this.currentPage++; this.fetchData(); } },
+        async deleteRow(id, label) {
+            if (!confirm('Delete "' + label + '"?\n\nThis action cannot be undone.')) return;
+            const url = deleteApiUrl.replace('{id}', id);
+            try {
+                const res = await authFetch(url, { method: 'DELETE' });
+                if (res.ok) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Deleted successfully', type: 'success' } }));
+                    this.fetchData();
+                } else {
+                    const json = await res.json().catch(() => ({}));
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Delete failed', type: 'error' } }));
+                }
+            } catch(e) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } }));
+            }
+        },
         async fetchData() {
             this.loading = true;
             const params = new URLSearchParams({

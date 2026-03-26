@@ -22,6 +22,8 @@ $actions = [
 ];
 $createUrl = ($baseUrl ?? '') . '/admin/categories/create';
 $createLabel = 'Add Category';
+$deleteAction = ($baseUrl ?? '') . '/api/categories/{id}';
+$deletePermission = 'categories.delete';
 
 ob_start();
 include __DIR__ . '/../../components/data-table.php';

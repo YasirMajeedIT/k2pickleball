@@ -25,6 +25,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/gift-certificates/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/gift-certificates/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/gift-certificates/{id}';
+$deletePermission = 'gift_certificates.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/gift-certificates/create';
 $createLabel = 'Add Gift Certificate';
 

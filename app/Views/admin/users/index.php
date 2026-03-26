@@ -28,6 +28,8 @@ $actions = [
     ['label' => 'View', 'url' => ($baseUrl ?? '') . '/admin/users/{id}', 'class' => 'text-primary-500 hover:text-primary-700'],
     ['label' => 'Edit', 'url' => ($baseUrl ?? '') . '/admin/users/{id}/edit', 'class' => 'text-amber-500 hover:text-amber-700'],
 ];
+$deleteAction = ($baseUrl ?? '') . '/api/users/{id}';
+$deletePermission = 'users.delete';
 $createUrl = ($baseUrl ?? '') . '/admin/users/create';
 $createLabel = 'Add User';
 

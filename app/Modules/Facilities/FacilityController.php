@@ -66,6 +66,13 @@ final class FacilityController extends Controller
             'timezone'        => 'nullable|string|max:100',
             'tax_rate'        => 'nullable|numeric',
             'image_url'       => 'nullable|string|max:500',
+            'instagram_url'   => 'nullable|url|max:500',
+            'facebook_url'    => 'nullable|url|max:500',
+            'youtube_url'     => 'nullable|url|max:500',
+            'twilio_sid'      => 'nullable|string|max:255',
+            'twilio_auth_token' => 'nullable|string|max:255',
+            'twilio_from_number' => 'nullable|string|max:20',
+            'twilio_enabled'  => 'nullable',
             'settings'        => 'nullable',
             'status'          => 'nullable|in:active,inactive,maintenance',
         ]);
@@ -76,6 +83,7 @@ final class FacilityController extends Controller
         $data['zip']             = $data['zip_code'] ?? null;
         unset($data['zip_code']);
         $data['tax_rate']        = isset($data['tax_rate']) ? round((float) $data['tax_rate'], 2) : 0.00;
+        $data['twilio_enabled']  = !empty($data['twilio_enabled']) ? 1 : 0;
 
         // Ensure settings is stored as JSON string
         if (isset($data['settings'])) {
@@ -124,6 +132,13 @@ final class FacilityController extends Controller
             'timezone'        => 'nullable|string|max:100',
             'tax_rate'        => 'nullable|numeric',
             'image_url'       => 'nullable|string|max:500',
+            'instagram_url'   => 'nullable|url|max:500',
+            'facebook_url'    => 'nullable|url|max:500',
+            'youtube_url'     => 'nullable|url|max:500',
+            'twilio_sid'      => 'nullable|string|max:255',
+            'twilio_auth_token' => 'nullable|string|max:255',
+            'twilio_from_number' => 'nullable|string|max:20',
+            'twilio_enabled'  => 'nullable',
             'settings'        => 'nullable',
             'status'          => 'nullable|in:active,inactive,maintenance',
         ]);
@@ -134,6 +149,7 @@ final class FacilityController extends Controller
         $data['zip']  = $data['zip_code'] ?? null;
         unset($data['zip_code']);
         $data['tax_rate'] = isset($data['tax_rate']) ? round((float) $data['tax_rate'], 2) : 0.00;
+        $data['twilio_enabled'] = !empty($data['twilio_enabled']) ? 1 : 0;
 
         // Ensure settings is stored as JSON string
         if (isset($data['settings'])) {
