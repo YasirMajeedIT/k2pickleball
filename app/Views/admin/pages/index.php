@@ -101,7 +101,7 @@ function pagesIndex() {
         async load() {
             this.loading = true;
             try {
-                const res = await fetch('/api/custom-pages', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || '') }});
+                const res = await fetch('/api/custom-pages', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '') }});
                 const json = await res.json();
                 this.pages = json.data || [];
             } catch(e) { this.pages = []; }
@@ -112,7 +112,7 @@ function pagesIndex() {
             try {
                 await fetch('/api/custom-pages/' + page.id, {
                     method: 'DELETE',
-                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || '') }
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '') }
                 });
                 this.pages = this.pages.filter(p => p.id !== page.id);
                 this.showToast('Page deleted');

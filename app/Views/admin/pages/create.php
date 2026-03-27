@@ -125,7 +125,7 @@ function pageEditor() {
             try {
                 const res = await fetch('/api/custom-pages', {
                     method: 'POST',
-                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') },
+                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') },
                     body: JSON.stringify(this.form)
                 });
                 const json = await res.json();

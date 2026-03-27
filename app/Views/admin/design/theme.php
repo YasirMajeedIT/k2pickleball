@@ -331,7 +331,7 @@ function themeEditor() {
             this.loading = true;
             this.previewUrl = window.location.protocol + '//' + window.location.host.replace(/^admin\./, '');
 
-            const token = localStorage.getItem('admin_token') || '';
+            const token = localStorage.getItem('access_token') || '';
             const headers = { 'Authorization': 'Bearer ' + token };
 
             try {
@@ -358,7 +358,7 @@ function themeEditor() {
 
         async save() {
             this.saving = true;
-            const token = localStorage.getItem('admin_token') || '';
+            const token = localStorage.getItem('access_token') || '';
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token,

@@ -84,7 +84,7 @@ function pageShow() {
         page: {}, pageId: id, loading: true,
         async load() {
             try {
-                const res = await fetch('/api/custom-pages/' + this.pageId, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }});
+                const res = await fetch('/api/custom-pages/' + this.pageId, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }});
                 const json = await res.json();
                 this.page = json.data || {};
             } catch(e) {}

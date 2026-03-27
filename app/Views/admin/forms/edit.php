@@ -220,7 +220,7 @@ function formEdit() {
         toast: { show:false, type:'success', message:'' },
         async load() {
             try {
-                const res = await fetch('/api/custom-forms/' + formId, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }});
+                const res = await fetch('/api/custom-forms/' + formId, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }});
                 const json = await res.json();
                 if (json.data) {
                     const d = json.data;
@@ -257,7 +257,7 @@ function formEdit() {
             try {
                 const res = await fetch('/api/custom-forms/' + formId, {
                     method: 'PUT',
-                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') },
+                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') },
                     body: JSON.stringify(payload)
                 });
                 const json = await res.json();

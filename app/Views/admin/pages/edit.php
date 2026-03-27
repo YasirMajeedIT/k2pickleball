@@ -115,7 +115,7 @@ function pageEdit() {
         async load() {
             const id = window.location.pathname.split('/').filter(Boolean).find((_, i, a) => a[i-1] === 'pages');
             try {
-                const res = await fetch('/api/custom-pages/' + id, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }});
+                const res = await fetch('/api/custom-pages/' + id, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }});
                 const json = await res.json();
                 if (json.data) {
                     const d = json.data;
@@ -130,7 +130,7 @@ function pageEdit() {
             try {
                 const res = await fetch('/api/custom-pages/' + id, {
                     method: 'PUT',
-                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') },
+                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') },
                     body: JSON.stringify(this.form)
                 });
                 const json = await res.json();

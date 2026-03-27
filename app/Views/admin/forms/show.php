@@ -145,8 +145,8 @@ function formShow() {
         async load() {
             try {
                 const [fRes, sRes] = await Promise.all([
-                    fetch('/api/custom-forms/' + this.formId, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }}),
-                    fetch('/api/custom-forms/' + this.formId + '/submissions', { headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }})
+                    fetch('/api/custom-forms/' + this.formId, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }}),
+                    fetch('/api/custom-forms/' + this.formId + '/submissions', { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }})
                 ]);
                 const fJson = await fRes.json();
                 const sJson = await sRes.json();
@@ -158,7 +158,7 @@ function formShow() {
         async loadSubmissions() {
             try {
                 const url = '/api/custom-forms/' + this.formId + '/submissions' + (this.statusFilter ? '?status=' + this.statusFilter : '');
-                const res = await fetch(url, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }});
+                const res = await fetch(url, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }});
                 const json = await res.json();
                 this.submissions = (json.data || []).map(s=>({...s, _showDetail:false, _detail:null}));
             } catch(e) {}
@@ -167,7 +167,7 @@ function formShow() {
             if (sub._showDetail) { sub._showDetail = false; return; }
             if (!sub._detail) {
                 try {
-                    const res = await fetch('/api/custom-forms/' + this.formId + '/submissions/' + sub.id, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }});
+                    const res = await fetch('/api/custom-forms/' + this.formId + '/submissions/' + sub.id, { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }});
                     const json = await res.json();
                     sub._detail = json.data?.submission_data || json.data?.data || [];
                 } catch(e) { sub._detail = []; }
@@ -178,7 +178,7 @@ function formShow() {
             try {
                 await fetch('/api/custom-forms/' + this.formId + '/submissions/' + sub.id + '/status', {
                     method: 'PATCH',
-                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') },
+                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') },
                     body: JSON.stringify({status:'reviewed'})
                 });
                 sub.status = 'reviewed';
@@ -190,7 +190,7 @@ function formShow() {
             try {
                 await fetch('/api/custom-forms/' + this.formId + '/submissions/' + sub.id, {
                     method: 'DELETE',
-                    headers: { 'Authorization':'Bearer '+(localStorage.getItem('admin_token')||'') }
+                    headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }
                 });
                 this.submissions = this.submissions.filter(s => s.id !== sub.id);
                 this.showToast('Submission deleted');
