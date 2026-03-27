@@ -15,7 +15,7 @@ final class CustomFormRepository extends Repository
     public function findAllForOrg(int $orgId): array
     {
         $forms = $this->db->fetchAll(
-            "SELECT f.*, u.`name` AS created_by_name,
+            "SELECT f.*, CONCAT(u.`first_name`, ' ', u.`last_name`) AS created_by_name,
                     (SELECT COUNT(*) FROM `custom_form_submissions` s WHERE s.`form_id` = f.`id`) AS submission_count,
                     (SELECT COUNT(*) FROM `custom_form_submissions` s WHERE s.`form_id` = f.`id` AND s.`status` = 'new') AS new_submission_count
              FROM `{$this->table}` f
@@ -27,7 +27,7 @@ final class CustomFormRepository extends Repository
         return $forms;
     }
 
-    public function findById(int $orgId, int $id): ?array
+    public function findByIdForOrg(int $orgId, int $id): ?array
     {
         return $this->db->fetch(
             "SELECT * FROM `{$this->table}` WHERE `id` = ? AND `organization_id` = ?",

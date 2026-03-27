@@ -41,7 +41,7 @@ final class CustomFormController extends Controller
     public function show(Request $request, int $id): Response
     {
         $orgId = $request->organizationId();
-        $form = $this->repo->findById($orgId, $id);
+        $form = $this->repo->findByIdForOrg($orgId, $id);
         if (!$form) return $this->error('Form not found', 404);
 
         $form['fields'] = $this->repo->getFields($id);
@@ -99,7 +99,7 @@ final class CustomFormController extends Controller
                 $this->repo->syncFields($id, $this->sanitizeFields($fields));
             }
 
-            $form = $this->repo->findById((int) ($orgId ?? 0), $id);
+            $form = $this->repo->findByIdForOrg((int) ($orgId ?? 0), $id);
             $form['fields'] = $this->repo->getFields($id);
             return $this->success($form, 'Form created', 201);
         } catch (\Throwable $e) {
@@ -113,7 +113,7 @@ final class CustomFormController extends Controller
     public function update(Request $request, int $id): Response
     {
         $orgId = $request->organizationId();
-        $form = $this->repo->findById($orgId, $id);
+        $form = $this->repo->findByIdForOrg($orgId, $id);
         if (!$form) return $this->error('Form not found', 404);
 
         $data = $request->all();
@@ -147,7 +147,7 @@ final class CustomFormController extends Controller
             $this->repo->syncFields($id, $this->sanitizeFields($data['fields']));
         }
 
-        $updated = $this->repo->findById($orgId, $id);
+        $updated = $this->repo->findByIdForOrg($orgId, $id);
         $updated['fields'] = $this->repo->getFields($id);
         return $this->success($updated, 'Form updated');
     }
@@ -156,7 +156,7 @@ final class CustomFormController extends Controller
     public function destroy(Request $request, int $id): Response
     {
         $orgId = $request->organizationId();
-        $form = $this->repo->findById($orgId, $id);
+        $form = $this->repo->findByIdForOrg($orgId, $id);
         if (!$form) return $this->error('Form not found', 404);
 
         $this->repo->deleteForm($orgId, $id);
@@ -169,7 +169,7 @@ final class CustomFormController extends Controller
     public function submissions(Request $request, int $id): Response
     {
         $orgId = $request->organizationId();
-        $form = $this->repo->findById($orgId, $id);
+        $form = $this->repo->findByIdForOrg($orgId, $id);
         if (!$form) return $this->error('Form not found', 404);
 
         $status = $request->input('status');
@@ -188,7 +188,7 @@ final class CustomFormController extends Controller
     public function submissionDetail(Request $request, int $id, int $subId): Response
     {
         $orgId = $request->organizationId();
-        $form = $this->repo->findById($orgId, $id);
+        $form = $this->repo->findByIdForOrg($orgId, $id);
         if (!$form) return $this->error('Form not found', 404);
 
         $data = $this->repo->getSubmissionData($subId);

@@ -245,6 +245,7 @@ function formEdit() {
             [this.fields[idx], this.fields[t]] = [this.fields[t], this.fields[idx]];
         },
         async save() {
+            if (this.saving) return;
             if (this.fields.length === 0) { this.showToast('Add at least one field', 'error'); return; }
             this.saving = true;
             const payload = { ...this.form };

@@ -77,38 +77,38 @@ final class RateLimitMiddleware implements MiddlewareInterface
             return $limit;
         }
 
-        $now = date('Y-m-d H:i:s');
-
-        // Clean expired entries
-        $db->query(
-            "DELETE FROM `rate_limits` WHERE `reset_at` < ?",
-            [$now]
-        );
-
-        // Check current hits
-        $record = $db->fetch(
-            "SELECT `hits`, `reset_at` FROM `rate_limits` WHERE `key_name` = ?",
-            [$key]
-        );
-
-        if ($record === null) {
-            // First request — create a new record
+        try {
+            $now = date('Y-m-d H:i:s');
             $resetAt = date('Y-m-d H:i:s', time() + $window);
-            $db->insert('rate_limits', [
-                'key_name' => $key,
-                'hits' => 1,
-                'reset_at' => $resetAt,
-            ]);
-            return $limit - 1;
+
+            // Clean expired entries
+            $db->query(
+                "DELETE FROM `rate_limits` WHERE `reset_at` < ?",
+                [$now]
+            );
+
+            // Atomic upsert — avoids race condition with concurrent requests
+            $db->query(
+                "INSERT INTO `rate_limits` (`key_name`, `hits`, `reset_at`)
+                 VALUES (?, 1, ?)
+                 ON DUPLICATE KEY UPDATE
+                    `hits` = IF(`reset_at` < ?, 1, `hits` + 1),
+                    `reset_at` = IF(`reset_at` < ?, ?, `reset_at`)",
+                [$key, $resetAt, $now, $now, $resetAt]
+            );
+
+            // Read back current hits
+            $record = $db->fetch(
+                "SELECT `hits` FROM `rate_limits` WHERE `key_name` = ?",
+                [$key]
+            );
+
+            $hits = (int) ($record['hits'] ?? 1);
+            return $limit - $hits;
+        } catch (\Throwable $e) {
+            // Rate limiting should never crash the request — log and allow through
+            error_log('[RateLimit] ' . $e->getMessage());
+            return $limit;
         }
-
-        // Increment hits
-        $newHits = (int) $record['hits'] + 1;
-        $db->query(
-            "UPDATE `rate_limits` SET `hits` = ? WHERE `key_name` = ?",
-            [$newHits, $key]
-        );
-
-        return $limit - $newHits;
     }
 }
