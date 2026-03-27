@@ -245,10 +245,16 @@ function formBuilder() {
             if (this.saving) return;
             if (this.fields.length === 0) { this.showToast('Add at least one field', 'error'); return; }
             this.saving = true;
-            const payload = { ...this.form };
+            const payload = {
+                ...this.form,
+                requires_auth: this.form.requires_auth ? 1 : 0,
+                show_in_nav:   this.form.show_in_nav   ? 1 : 0,
+                closes_at: this.form.closes_at ? this.form.closes_at.replace('T', ' ') + ':00' : null,
+                max_submissions: (this.form.max_submissions !== '' && this.form.max_submissions !== null) ? (parseInt(this.form.max_submissions) || null) : null,
+            };
             payload.fields = this.fields.map((f, i) => ({
                 label: f.label, name: f.name, type: f.type, placeholder: f.placeholder,
-                help_text: f.help_text, is_required: f.is_required,
+                help_text: f.help_text, is_required: f.is_required ? 1 : 0,
                 options: ['select','radio','checkbox'].includes(f.type) ? f._optionsText.split('\n').map(o=>o.trim()).filter(Boolean) : [],
                 width: f.width, sort_order: i
             }));
