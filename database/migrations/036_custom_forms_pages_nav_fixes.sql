@@ -116,8 +116,4 @@ WHERE bc.`system_key` = 'book-court';
 -- Hide Facilities from nav (still accessible via direct URL and footer)
 UPDATE `navigation_items` SET `is_visible` = 0 WHERE `system_key` = 'facilities';
 
--- ═══════════════════════════════════════════════════════════════
--- 4. Record migration
--- ═══════════════════════════════════════════════════════════════
-INSERT INTO `migrations` (`migration_name`, `applied_at`)
-VALUES ('036_custom_forms_pages_nav_fixes', NOW());
+-- Migration 036 complete.
