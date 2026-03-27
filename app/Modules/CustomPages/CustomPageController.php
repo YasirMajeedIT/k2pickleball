@@ -43,12 +43,14 @@ final class CustomPageController extends Controller
     public function store(Request $request): Response
     {
         $orgId = $request->organizationId();
-        $data = Validator::validate($request->all(), [
+        $input = $request->all();
+
+        Validator::validate($input, [
             'title' => 'required|string|max:255',
         ]);
 
-        $title = Sanitizer::string($data['title']);
-        $slug = Sanitizer::slug($data['slug'] ?? $title);
+        $title = Sanitizer::string($input['title']);
+        $slug = Sanitizer::slug($input['slug'] ?? $title);
 
         // Ensure unique slug
         $existing = $this->repo->findBySlug($orgId, $slug);
@@ -57,18 +59,18 @@ final class CustomPageController extends Controller
         }
 
         // Sanitize HTML content — allow safe HTML tags
-        $content = $data['content'] ?? '';
+        $content = $input['content'] ?? '';
         $content = $this->sanitizeHtml($content);
 
         $id = $this->repo->createPage($orgId, [
             'title'           => $title,
             'slug'            => $slug,
             'content'         => $content,
-            'meta_description'=> Sanitizer::string($data['meta_description'] ?? ''),
-            'status'          => $data['status'] ?? 'draft',
-            'show_in_nav'     => $data['show_in_nav'] ?? 0,
-            'show_in_footer'  => $data['show_in_footer'] ?? 0,
-            'sort_order'      => $data['sort_order'] ?? 0,
+            'meta_description'=> Sanitizer::string($input['meta_description'] ?? ''),
+            'status'          => $input['status'] ?? 'draft',
+            'show_in_nav'     => $input['show_in_nav'] ?? 0,
+            'show_in_footer'  => $input['show_in_footer'] ?? 0,
+            'sort_order'      => $input['sort_order'] ?? 0,
             'created_by'      => $request->userId(),
         ]);
 

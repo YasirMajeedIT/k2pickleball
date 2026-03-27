@@ -261,7 +261,7 @@ function formEdit() {
                     body: JSON.stringify(payload)
                 });
                 const json = await res.json();
-                if (!res.ok) throw new Error(json.error || 'Save failed');
+                if (!res.ok) throw new Error(json.message || 'Save failed');
                 this.showToast('Form saved');
             } catch(e) { this.showToast(e.message, 'error'); }
             this.saving = false;

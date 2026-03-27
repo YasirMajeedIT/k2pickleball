@@ -54,12 +54,14 @@ final class CustomFormController extends Controller
     public function store(Request $request): Response
     {
         $orgId = $request->organizationId();
-        $data = Validator::validate($request->all(), [
+        $input = $request->all();
+
+        Validator::validate($input, [
             'title' => 'required|string|max:255',
         ]);
 
-        $title = Sanitizer::string($data['title']);
-        $slug = Sanitizer::slug($data['slug'] ?? $title);
+        $title = Sanitizer::string($input['title']);
+        $slug = Sanitizer::slug($input['slug'] ?? $title);
 
         // Ensure unique slug
         $existing = $this->repo->findBySlug($orgId, $slug);
@@ -67,22 +69,26 @@ final class CustomFormController extends Controller
             $slug .= '-' . time();
         }
 
+        $closesAt = !empty($input['closes_at']) ? $input['closes_at'] : null;
+        $maxSub   = isset($input['max_submissions']) && $input['max_submissions'] !== '' && $input['max_submissions'] !== null
+                    ? (int) $input['max_submissions'] : null;
+
         $id = $this->repo->createForm($orgId, [
             'title'           => $title,
             'slug'            => $slug,
-            'description'     => Sanitizer::string($data['description'] ?? ''),
-            'status'          => $data['status'] ?? 'draft',
-            'success_message' => Sanitizer::string($data['success_message'] ?? ''),
-            'redirect_url'    => $data['redirect_url'] ?? null,
-            'requires_auth'   => $data['requires_auth'] ?? 0,
-            'max_submissions' => $data['max_submissions'] ?? null,
-            'closes_at'       => $data['closes_at'] ?? null,
-            'show_in_nav'     => $data['show_in_nav'] ?? 0,
+            'description'     => Sanitizer::string($input['description'] ?? ''),
+            'status'          => $input['status'] ?? 'draft',
+            'success_message' => Sanitizer::string($input['success_message'] ?? ''),
+            'redirect_url'    => $input['redirect_url'] ?? null,
+            'requires_auth'   => $input['requires_auth'] ?? 0,
+            'max_submissions' => $maxSub,
+            'closes_at'       => $closesAt,
+            'show_in_nav'     => $input['show_in_nav'] ?? 0,
             'created_by'      => $request->userId(),
         ]);
 
         // Sync fields if provided
-        $fields = $data['fields'] ?? [];
+        $fields = $input['fields'] ?? [];
         if (!empty($fields)) {
             $this->repo->syncFields($id, $this->sanitizeFields($fields));
         }
@@ -106,6 +112,14 @@ final class CustomFormController extends Controller
         if (isset($data['slug']))  $data['slug']  = Sanitizer::slug($data['slug']);
         if (isset($data['description'])) $data['description'] = Sanitizer::string($data['description']);
         if (isset($data['success_message'])) $data['success_message'] = Sanitizer::string($data['success_message']);
+
+        // Normalize empty strings to null for typed DB columns
+        if (array_key_exists('closes_at', $data) && ($data['closes_at'] === '' || $data['closes_at'] === null)) {
+            $data['closes_at'] = null;
+        }
+        if (array_key_exists('max_submissions', $data) && ($data['max_submissions'] === '' || $data['max_submissions'] === null)) {
+            $data['max_submissions'] = null;
+        }
 
         // Unique slug check
         if (isset($data['slug']) && $data['slug'] !== $form['slug']) {
