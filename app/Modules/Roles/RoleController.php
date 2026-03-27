@@ -75,25 +75,39 @@ final class RoleController extends Controller
             throw new NotFoundException('Role not found');
         }
 
-        if (!empty($role['is_system'])) {
-            return $this->error('System roles cannot be modified', 403);
+        $isSystem = !empty($role['is_system']);
+
+        if ($isSystem && !$request->isSuperAdmin()) {
+            return $this->error('Only super admins can modify system roles', 403);
         }
 
-        $data = Validator::validate($request->all(), [
-            'name' => 'required|string|max:100',
-            'description' => 'nullable|string|max:500',
-            'permissions' => 'nullable|array',
-        ]);
+        if ($isSystem) {
+            // System roles: only allow updating permissions
+            $data = Validator::validate($request->all(), [
+                'permissions' => 'nullable|array',
+            ]);
+            $permissionIds = $data['permissions'] ?? [];
 
-        $data['name'] = Sanitizer::string($data['name']);
+            if (!empty($permissionIds)) {
+                $this->repo->syncPermissions($id, $permissionIds);
+            }
+        } else {
+            $data = Validator::validate($request->all(), [
+                'name' => 'required|string|max:100',
+                'description' => 'nullable|string|max:500',
+                'permissions' => 'nullable|array',
+            ]);
 
-        $permissionIds = $data['permissions'] ?? [];
-        unset($data['permissions']);
+            $data['name'] = Sanitizer::string($data['name']);
 
-        $this->repo->update($id, $data);
+            $permissionIds = $data['permissions'] ?? [];
+            unset($data['permissions']);
 
-        if (!empty($permissionIds)) {
-            $this->repo->syncPermissions($id, $permissionIds);
+            $this->repo->update($id, $data);
+
+            if (!empty($permissionIds)) {
+                $this->repo->syncPermissions($id, $permissionIds);
+            }
         }
 
         $role = $this->repo->findWithPermissions($id);

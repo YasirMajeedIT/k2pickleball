@@ -47,6 +47,7 @@ function roleEditForm() {
         form: { name: '', slug: '', description: '' },
         errors: {},
         submitting: false,
+        isSystem: false,
         async init() {
             try {
                 const res = await authFetch(APP_BASE + '/api/roles/' + id);
@@ -54,6 +55,17 @@ function roleEditForm() {
                 if (json.data) {
                     const d = json.data;
                     this.form = { name: d.name || '', slug: d.slug || '', description: d.description || '' };
+                    this.isSystem = !!d.is_system;
+                    if (this.isSystem) {
+                        this.$nextTick(() => {
+                            this.$el.querySelectorAll('input, textarea').forEach(el => {
+                                if (['name', 'slug', 'description'].includes(el.getAttribute('x-model')?.replace('form.', ''))) {
+                                    el.disabled = true;
+                                    el.classList.add('opacity-50', 'cursor-not-allowed');
+                                }
+                            });
+                        });
+                    }
                 }
             } catch (e) { console.error(e); }
         },
