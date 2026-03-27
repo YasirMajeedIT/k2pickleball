@@ -95,35 +95,57 @@ final class NavigationRepository extends Repository
 
     /**
      * Seed default navigation items for a new organization.
+     * Book A Court is placed under Schedule as a child item.
+     * Facilities is hidden by default (still accessible via direct URL/footer).
      */
     public function seedDefaults(int $orgId, ?int $courtCategoryId = null): void
     {
         $now = date('Y-m-d H:i:s');
-        $defaults = [
+
+        // Top-level items (no parent)
+        $topLevel = [
             ['label' => 'Home',       'url' => '/',           'type' => 'link',     'system_key' => 'home',        'sort_order' => 10],
             ['label' => 'Schedule',    'url' => '/schedule',   'type' => 'dropdown', 'system_key' => 'schedule',    'sort_order' => 20],
-            ['label' => 'Book a Court','url' => '/book-court', 'type' => 'link',     'system_key' => 'book-court',  'sort_order' => 30, 'category_id' => $courtCategoryId],
-            ['label' => 'Facilities',  'url' => '/facilities', 'type' => 'link',     'system_key' => 'facilities',  'sort_order' => 40],
-            ['label' => 'Memberships', 'url' => '/memberships','type' => 'link',     'system_key' => 'memberships', 'sort_order' => 50, 'visibility_rule' => 'has_memberships'],
-            ['label' => 'About',       'url' => '/about',      'type' => 'link',     'system_key' => 'about',       'sort_order' => 60],
-            ['label' => 'Contact',     'url' => '/contact',    'type' => 'link',     'system_key' => 'contact',     'sort_order' => 70],
+            ['label' => 'Facilities',  'url' => '/facilities', 'type' => 'link',     'system_key' => 'facilities',  'sort_order' => 30, 'is_visible' => 0],
+            ['label' => 'Memberships', 'url' => '/memberships','type' => 'link',     'system_key' => 'memberships', 'sort_order' => 40, 'visibility_rule' => 'has_memberships'],
+            ['label' => 'About',       'url' => '/about',      'type' => 'link',     'system_key' => 'about',       'sort_order' => 50],
+            ['label' => 'Contact',     'url' => '/contact',    'type' => 'link',     'system_key' => 'contact',     'sort_order' => 60],
         ];
 
-        foreach ($defaults as $item) {
-            $this->db->insert($this->table, [
+        $scheduleId = null;
+        foreach ($topLevel as $item) {
+            $id = $this->db->insert($this->table, [
                 'organization_id' => $orgId,
                 'label'           => $item['label'],
                 'url'             => $item['url'],
                 'type'            => $item['type'],
                 'is_system'       => 1,
                 'system_key'      => $item['system_key'],
+                'is_visible'      => $item['is_visible'] ?? 1,
                 'sort_order'      => $item['sort_order'],
-                'category_id'     => $item['category_id'] ?? null,
                 'visibility_rule' => $item['visibility_rule'] ?? null,
                 'created_at'      => $now,
                 'updated_at'      => $now,
             ]);
+            if ($item['system_key'] === 'schedule') {
+                $scheduleId = $id;
+            }
         }
+
+        // Book A Court — child of Schedule dropdown
+        $this->db->insert($this->table, [
+            'organization_id' => $orgId,
+            'parent_id'       => $scheduleId,
+            'label'           => 'Book a Court',
+            'url'             => '/book-court',
+            'type'            => 'link',
+            'is_system'       => 1,
+            'system_key'      => 'book-court',
+            'category_id'     => $courtCategoryId,
+            'sort_order'      => 5,
+            'created_at'      => $now,
+            'updated_at'      => $now,
+        ]);
     }
 
     /**

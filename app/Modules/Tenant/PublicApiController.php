@@ -685,10 +685,10 @@ class PublicApiController extends Controller
             [$orgId]
         )['cnt'] ?? 0) > 0;
 
-        // Load categories for "Schedule" dropdown children
+        // Load categories for "Schedule" dropdown children (all active categories including court)
         $categories = $this->db->fetchAll(
             "SELECT `id`, `name`, `slug`, `color` FROM `categories`
-             WHERE `organization_id` = ? AND `is_active` = 1 AND (`is_system` = 0 OR `system_slug` != 'book-a-court')
+             WHERE `organization_id` = ? AND `is_active` = 1
              ORDER BY `sort_order` ASC, `name` ASC",
             [$orgId]
         );
@@ -730,6 +730,40 @@ class PublicApiController extends Controller
             }
         }
         unset($node);
+
+        // Append custom pages flagged for nav
+        $navPages = $this->db->fetchAll(
+            "SELECT `id`, `title`, `slug` FROM `custom_pages`
+             WHERE `organization_id` = ? AND `status` = 'published' AND `show_in_nav` = 1
+             ORDER BY `sort_order` ASC, `title` ASC",
+            [$orgId]
+        );
+        foreach ($navPages as $p) {
+            $tree[] = [
+                'id' => 'page-' . $p['id'],
+                'label' => $p['title'],
+                'url' => '/p/' . $p['slug'],
+                'type' => 'page',
+                'children' => [],
+            ];
+        }
+
+        // Append custom forms flagged for nav
+        $navForms = $this->db->fetchAll(
+            "SELECT `id`, `title`, `slug` FROM `custom_forms`
+             WHERE `organization_id` = ? AND `status` = 'active' AND `show_in_nav` = 1
+             ORDER BY `title` ASC",
+            [$orgId]
+        );
+        foreach ($navForms as $f) {
+            $tree[] = [
+                'id' => 'form-' . $f['id'],
+                'label' => $f['title'],
+                'url' => '/forms/' . $f['slug'],
+                'type' => 'form',
+                'children' => [],
+            ];
+        }
 
         return $this->success([
             'items' => $tree,

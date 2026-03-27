@@ -44,6 +44,11 @@ $designItems = [
     ['label' => 'Theme & Branding', 'icon' => 'palette', 'url' => ($baseUrl ?? '') . '/admin/design/theme', 'match' => '/admin/design/theme'],
 ];
 
+$contentItems = [
+    ['label' => 'Pages', 'icon' => 'page', 'url' => ($baseUrl ?? '') . '/admin/pages', 'match' => '/admin/pages'],
+    ['label' => 'Forms', 'icon' => 'form', 'url' => ($baseUrl ?? '') . '/admin/forms', 'match' => '/admin/forms'],
+];
+
 $myAccountItems = [
     ['label' => 'My Account', 'icon' => 'account', 'url' => ($baseUrl ?? '') . '/admin/account', 'match' => '/admin/account'],
 ];
@@ -76,6 +81,8 @@ $icons = [
     'membership' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z"/>',
     'nav_menu'   => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25"/>',
     'palette'    => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z"/>',
+    'page'       => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>',
+    'form'       => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/>',
 
 ];
 
@@ -195,6 +202,31 @@ $currentPath = $currentPath ?? '/admin';
             <p class="mb-3 ml-3 mt-6 text-[11px] font-semibold uppercase tracking-[0.15em] text-surface-400 dark:text-surface-500">Design</p>
             <ul class="flex flex-col gap-0.5">
                 <?php foreach ($designItems as $item): ?>
+                <?php
+                    $isActive = str_starts_with($currentPath, $item['match']);
+                    $activeClass = $isActive
+                        ? 'bg-primary-50 text-primary-600 border-primary-200 shadow-sm dark:bg-primary-500/10 dark:text-primary-400 dark:border-primary-500/30'
+                        : 'text-surface-600 border-transparent hover:bg-surface-100 hover:text-surface-800 dark:text-surface-400 dark:hover:bg-white/[0.04] dark:hover:text-surface-200';
+                ?>
+                <li>
+                    <a href="<?= htmlspecialchars($item['url']) ?>"
+                       class="<?= $activeClass ?> group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium border transition-all duration-200">
+                        <svg class="w-[18px] h-[18px] flex-shrink-0 <?= $isActive ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 group-hover:text-surface-600 dark:group-hover:text-surface-300' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <?= $icons[$item['icon']] ?? '' ?>
+                        </svg>
+                        <span><?= htmlspecialchars($item['label']) ?></span>
+                        <?php if ($isActive): ?>
+                        <span class="ml-auto h-1.5 w-1.5 rounded-full bg-primary-500 dark:bg-primary-400"></span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+
+            <!-- Content Section -->
+            <p class="mb-3 ml-3 mt-6 text-[11px] font-semibold uppercase tracking-[0.15em] text-surface-400 dark:text-surface-500">Content</p>
+            <ul class="flex flex-col gap-0.5">
+                <?php foreach ($contentItems as $item): ?>
                 <?php
                     $isActive = str_starts_with($currentPath, $item['match']);
                     $activeClass = $isActive

@@ -153,6 +153,40 @@ class TenantController extends Controller
         ]);
     }
 
+    /**
+     * Handle /p/{slug} — custom page.
+     */
+    public function customPage(Request $request, string $slug): Response
+    {
+        $org = $this->loadOrganization($request);
+        if (!$org) {
+            return Response::html($this->renderNotFound(), 404);
+        }
+
+        return $this->renderView('tenant/custom-page.php', [
+            'org' => $org,
+            'branding' => $org['branding'] ?? [],
+            'pageSlug' => $slug,
+        ]);
+    }
+
+    /**
+     * Handle /forms/{slug} — custom form.
+     */
+    public function customForm(Request $request, string $slug): Response
+    {
+        $org = $this->loadOrganization($request);
+        if (!$org) {
+            return Response::html($this->renderNotFound(), 404);
+        }
+
+        return $this->renderView('tenant/custom-form.php', [
+            'org' => $org,
+            'branding' => $org['branding'] ?? [],
+            'formSlug' => $slug,
+        ]);
+    }
+
     /* ── private helpers ── */
 
     private function loadOrganization(Request $request): ?array

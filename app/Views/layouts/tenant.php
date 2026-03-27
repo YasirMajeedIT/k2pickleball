@@ -395,6 +395,16 @@ $facilities = $org['facilities'] ?? [];
                     </ul>
                 </div>
 
+                <!-- Footer Pages (dynamic from custom pages) -->
+                <div x-data="footerPages()" x-init="load()" x-show="pages.length > 0" x-cloak>
+                    <h4 class="text-xs font-semibold text-gold-500 uppercase tracking-wider mb-4">More</h4>
+                    <ul class="space-y-3">
+                        <template x-for="p in pages" :key="p.id">
+                            <li><a :href="'/p/' + p.slug" class="text-sm text-slate-400 hover:text-gold-400 transition-colors" x-text="p.title"></a></li>
+                        </template>
+                    </ul>
+                </div>
+
                 <!-- Account Links -->
                 <div>
                     <h4 class="text-xs font-semibold text-gold-500 uppercase tracking-wider mb-4">Account</h4>
@@ -548,6 +558,19 @@ $facilities = $org['facilities'] ?? [];
                 this.toast = { show: true, type, title, message };
                 setTimeout(() => { this.toast.show = false; }, 4000);
             },
+        };
+    }
+
+    function footerPages() {
+        return {
+            pages: [],
+            async load() {
+                try {
+                    const res = await fetch(baseApi + '/api/public/pages');
+                    const json = await res.json();
+                    this.pages = (json.data?.footer || []);
+                } catch(e) {}
+            }
         };
     }
     </script>

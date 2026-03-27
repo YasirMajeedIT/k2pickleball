@@ -131,6 +131,16 @@ class AdminController extends Controller
         'design/navigation'         => 'admin/design/navigation.php',
         'design/theme'              => 'admin/design/theme.php',
 
+        // Content (Pages & Forms)
+        'pages'                     => 'admin/pages/index.php',
+        'pages/create'              => 'admin/pages/create.php',
+        'pages/{id}'                => 'admin/pages/show.php',
+        'pages/{id}/edit'           => 'admin/pages/edit.php',
+        'forms'                     => 'admin/forms/index.php',
+        'forms/create'              => 'admin/forms/create.php',
+        'forms/{id}'                => 'admin/forms/show.php',
+        'forms/{id}/edit'           => 'admin/forms/edit.php',
+
         // My Account
         'account'                   => 'admin/account/index.php',
         'my-subscription'           => 'admin/my-subscription/index.php',

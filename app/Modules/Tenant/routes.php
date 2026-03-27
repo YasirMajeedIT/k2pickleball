@@ -53,6 +53,10 @@ return function (Router $router): void {
     $router->get('/book-court',         [TenantController::class, 'handleRequest']);
     $router->get('/memberships',        [TenantController::class, 'handleRequest']);
 
+    // Custom content
+    $router->get('/p/{slug}',            [TenantController::class, 'customPage']);
+    $router->get('/forms/{slug}',        [TenantController::class, 'customForm']);
+
     // Player auth
     $router->get('/login',              [TenantController::class, 'handleRequest']);
     $router->get('/register',           [TenantController::class, 'handleRequest']);
