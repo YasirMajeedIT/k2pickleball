@@ -45,7 +45,6 @@ $designItems = [
 ];
 
 $contentItems = [
-    ['label' => 'Pages', 'icon' => 'page', 'url' => ($baseUrl ?? '') . '/admin/pages', 'match' => '/admin/pages'],
     ['label' => 'Forms', 'icon' => 'form', 'url' => ($baseUrl ?? '') . '/admin/forms', 'match' => '/admin/forms'],
 ];
 

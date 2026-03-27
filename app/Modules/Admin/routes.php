@@ -91,11 +91,7 @@ return function (Router $router): void {
     $router->get('/admin/design/navigation', [AdminController::class, 'handleRequest']);
     $router->get('/admin/design/theme', [AdminController::class, 'handleRequest']);
 
-    // Content (Pages & Forms)
-    $router->get('/admin/pages', [AdminController::class, 'handleRequest']);
-    $router->get('/admin/pages/create', [AdminController::class, 'handleRequest']);
-    $router->get('/admin/pages/{id}', [AdminController::class, 'handleRequest']);
-    $router->get('/admin/pages/{id}/edit', [AdminController::class, 'handleRequest']);
+    // Content (Forms)
     $router->get('/admin/forms', [AdminController::class, 'handleRequest']);
     $router->get('/admin/forms/create', [AdminController::class, 'handleRequest']);
     $router->get('/admin/forms/{id}', [AdminController::class, 'handleRequest']);

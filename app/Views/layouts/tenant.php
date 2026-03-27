@@ -14,11 +14,6 @@ $logoUrl      = $branding['logo_url'] ?? null;
 $tagline      = htmlspecialchars($branding['tagline'] ?? 'Book. Play. Compete.');
 $heroImage    = $branding['hero_image'] ?? null;
 
-// System category names (admin can rename these)
-$courtCat       = $org['system_categories']['book-a-court'] ?? ['name' => 'Book a Court', 'is_active' => true];
-$courtCatName   = htmlspecialchars($courtCat['name']);
-$courtCatActive = (bool) $courtCat['is_active'];
-
 if (!function_exists('hexToHSL')) {
     function hexToHSL(string $hex): array {
         $hex = ltrim($hex, '#');
@@ -395,16 +390,6 @@ $facilities = $org['facilities'] ?? [];
                     </ul>
                 </div>
 
-                <!-- Footer Pages (dynamic from custom pages) -->
-                <div x-data="footerPages()" x-init="load()" x-show="pages.length > 0" x-cloak>
-                    <h4 class="text-xs font-semibold text-gold-500 uppercase tracking-wider mb-4">More</h4>
-                    <ul class="space-y-3">
-                        <template x-for="p in pages" :key="p.id">
-                            <li><a :href="'/p/' + p.slug" class="text-sm text-slate-400 hover:text-gold-400 transition-colors" x-text="p.title"></a></li>
-                        </template>
-                    </ul>
-                </div>
-
                 <!-- Account Links -->
                 <div>
                     <h4 class="text-xs font-semibold text-gold-500 uppercase tracking-wider mb-4">Account</h4>
@@ -508,7 +493,6 @@ $facilities = $org['facilities'] ?? [];
                     this.navItems = [
                         { id: 'f-home', label: 'Home', url: '/', type: 'link' },
                         { id: 'f-schedule', label: 'Schedule', url: '/schedule', type: 'link', children: [] },
-                        { id: 'f-book', label: 'Book a Court', url: '/book-court', type: 'link' },
                         { id: 'f-facilities', label: 'Facilities', url: '/facilities', type: 'link' },
                         { id: 'f-about', label: 'About', url: '/about', type: 'link' },
                         { id: 'f-contact', label: 'Contact', url: '/contact', type: 'link' },
@@ -561,18 +545,6 @@ $facilities = $org['facilities'] ?? [];
         };
     }
 
-    function footerPages() {
-        return {
-            pages: [],
-            async load() {
-                try {
-                    const res = await fetch(baseApi + '/api/public/pages');
-                    const json = await res.json();
-                    this.pages = (json.data?.footer || []);
-                } catch(e) {}
-            }
-        };
-    }
     </script>
 
     <!-- Scroll Animation Observer -->

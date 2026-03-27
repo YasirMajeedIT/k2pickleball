@@ -224,11 +224,11 @@ function formEdit() {
                 const json = await res.json();
                 if (json.data) {
                     const d = json.data;
-                    this.form = { title:d.title, slug:d.slug, description:d.description||'', status:d.status, success_message:d.success_message||'', redirect_url:d.redirect_url||'', requires_auth:d.requires_auth ? 1 : 0, max_submissions:d.max_submissions||null, closes_at:d.closes_at?d.closes_at.replace(' ','T').substring(0,16):'', show_in_nav:d.show_in_nav ? 1 : 0 };
+                    this.form = { title:d.title, slug:d.slug, description:d.description||'', status:d.status, success_message:d.success_message||'', redirect_url:d.redirect_url||'', requires_auth:Number(d.requires_auth) ? 1 : 0, max_submissions:d.max_submissions||null, closes_at:d.closes_at?d.closes_at.replace(' ','T').substring(0,16):'', show_in_nav:Number(d.show_in_nav) ? 1 : 0 };
                     if (d.fields && Array.isArray(d.fields)) {
                         this.fields = d.fields.map(f => {
                             const opts = (f.options && Array.isArray(f.options)) ? f.options : (f.options ? JSON.parse(f.options) : []);
-                            return { _key: ++_keyCounter, label:f.label, name:f.name, type:f.type, placeholder:f.placeholder||'', help_text:f.help_text||'', is_required:f.is_required ? 1 : 0, options:opts, _optionsText:opts.join('\n'), width:f.width||'full', _nameEdited:true };
+                            return { _key: ++_keyCounter, label:f.label, name:f.name, type:f.type, placeholder:f.placeholder||'', help_text:f.help_text||'', is_required:Number(f.is_required) ? 1 : 0, options:opts, _optionsText:opts.join('\n'), width:f.width||'full', _nameEdited:true };
                         });
                     }
                 }

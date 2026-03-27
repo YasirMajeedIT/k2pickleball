@@ -95,10 +95,9 @@ final class NavigationRepository extends Repository
 
     /**
      * Seed default navigation items for a new organization.
-     * Book A Court is placed under Schedule as a child item.
      * Facilities is hidden by default (still accessible via direct URL/footer).
      */
-    public function seedDefaults(int $orgId, ?int $courtCategoryId = null): void
+    public function seedDefaults(int $orgId): void
     {
         $now = date('Y-m-d H:i:s');
 
@@ -112,9 +111,8 @@ final class NavigationRepository extends Repository
             ['label' => 'Contact',     'url' => '/contact',    'type' => 'link',     'system_key' => 'contact',     'sort_order' => 60],
         ];
 
-        $scheduleId = null;
         foreach ($topLevel as $item) {
-            $id = $this->db->insert($this->table, [
+            $this->db->insert($this->table, [
                 'organization_id' => $orgId,
                 'label'           => $item['label'],
                 'url'             => $item['url'],
@@ -127,25 +125,7 @@ final class NavigationRepository extends Repository
                 'created_at'      => $now,
                 'updated_at'      => $now,
             ]);
-            if ($item['system_key'] === 'schedule') {
-                $scheduleId = $id;
-            }
         }
-
-        // Book A Court — child of Schedule dropdown
-        $this->db->insert($this->table, [
-            'organization_id' => $orgId,
-            'parent_id'       => $scheduleId,
-            'label'           => 'Book a Court',
-            'url'             => '/book-court',
-            'type'            => 'link',
-            'is_system'       => 1,
-            'system_key'      => 'book-court',
-            'category_id'     => $courtCategoryId,
-            'sort_order'      => 5,
-            'created_at'      => $now,
-            'updated_at'      => $now,
-        ]);
     }
 
     /**

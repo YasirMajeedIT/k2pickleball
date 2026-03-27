@@ -731,22 +731,8 @@ class PublicApiController extends Controller
         }
         unset($node);
 
-        // Append custom pages flagged for nav
-        $navPages = $this->db->fetchAll(
-            "SELECT `id`, `title`, `slug` FROM `custom_pages`
-             WHERE `organization_id` = ? AND `status` = 'published' AND `show_in_nav` = 1
-             ORDER BY `sort_order` ASC, `title` ASC",
-            [$orgId]
-        );
-        foreach ($navPages as $p) {
-            $tree[] = [
-                'id' => 'page-' . $p['id'],
-                'label' => $p['title'],
-                'url' => '/p/' . $p['slug'],
-                'type' => 'page',
-                'children' => [],
-            ];
-        }
+        // Collect extra nav items (pages, forms) into a "More" dropdown
+        $moreChildren = [];
 
         // Append custom forms flagged for nav
         $navForms = $this->db->fetchAll(
@@ -756,12 +742,22 @@ class PublicApiController extends Controller
             [$orgId]
         );
         foreach ($navForms as $f) {
-            $tree[] = [
+            $moreChildren[] = [
                 'id' => 'form-' . $f['id'],
                 'label' => $f['title'],
                 'url' => '/forms/' . $f['slug'],
                 'type' => 'form',
-                'children' => [],
+            ];
+        }
+
+        // Only add the "More" dropdown if there are children
+        if (!empty($moreChildren)) {
+            $tree[] = [
+                'id' => 'more-dropdown',
+                'label' => 'More',
+                'url' => '#',
+                'type' => 'dropdown',
+                'children' => $moreChildren,
             ];
         }
 

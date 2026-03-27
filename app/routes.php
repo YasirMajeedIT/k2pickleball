@@ -105,7 +105,6 @@ return function (Router $router): void {
         'ContactSubmissions',
         'SiteSettings',
         'CustomForms',
-        'CustomPages',
     ];
 
     foreach ($modules as $module) {

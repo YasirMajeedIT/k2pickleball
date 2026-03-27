@@ -152,7 +152,9 @@ function navEditor() {
         async load() {
             this.loading = true;
             try {
-                const res = await fetch('/api/navigation');
+                const res = await fetch('/api/navigation', {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '') }
+                });
                 const json = await res.json();
                 this.items = (json.data || []).map(i => ({ ...i }));
                 // Detect preview URL from org subdomain
