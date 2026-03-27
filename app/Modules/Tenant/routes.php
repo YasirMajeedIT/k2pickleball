@@ -31,6 +31,12 @@ return function (Router $router): void {
         $router->get('/classes/{id}',           [PublicApiController::class, 'classDetail']);
         $router->get('/courts/availability',    [PublicApiController::class, 'courtAvailability']);
         $router->post('/courts/book',           [PublicApiController::class, 'bookCourt']);
+
+        // New endpoints (035+)
+        $router->get('/navigation',             [PublicApiController::class, 'navigation']);
+        $router->get('/membership-plans',       [PublicApiController::class, 'membershipPlans']);
+        $router->get('/theme',                  [PublicApiController::class, 'theme']);
+        $router->get('/category/{slug}',        [PublicApiController::class, 'categoryBySlug']);
     });
 
     /* ─── HTML pages ─── */
@@ -39,11 +45,13 @@ return function (Router $router): void {
     $router->get('/sessions',           [TenantController::class, 'handleRequest']);
     $router->get('/schedule',           [TenantController::class, 'handleRequest']);
     $router->get('/schedule/{id}',      [TenantController::class, 'classDetail']);
+    $router->get('/schedule/category/{slug}', [TenantController::class, 'categoryPage']);
     $router->get('/facilities',         [TenantController::class, 'handleRequest']);
     $router->get('/facilities/{slug}',  [TenantController::class, 'facilityDetail']);
     $router->get('/about',              [TenantController::class, 'handleRequest']);
     $router->get('/contact',            [TenantController::class, 'handleRequest']);
     $router->get('/book-court',         [TenantController::class, 'handleRequest']);
+    $router->get('/memberships',        [TenantController::class, 'handleRequest']);
 
     // Player auth
     $router->get('/login',              [TenantController::class, 'handleRequest']);

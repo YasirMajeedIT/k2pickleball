@@ -653,4 +653,233 @@ class PublicApiController extends Controller
             'status'      => 'confirmed',
         ], 201);
     }
+
+    /* ────────────────────────────────────────────
+     * NEW PUBLIC ENDPOINTS (035+)
+     * ──────────────────────────────────────────── */
+
+    /**
+     * GET /api/public/navigation
+     * Returns the visible navigation tree for this organization.
+     * Evaluates visibility rules (has_memberships, auth_only, etc).
+     * Also returns categories that have type=category nav items (for Schedule dropdown children).
+     */
+    public function navigation(Request $request): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        $items = $this->db->fetchAll(
+            "SELECT `id`, `parent_id`, `label`, `url`, `type`, `target`, `icon`,
+                    `category_id`, `is_system`, `system_key`, `is_visible`, `sort_order`,
+                    `visibility_rule`
+             FROM `navigation_items`
+             WHERE `organization_id` = ? AND `is_visible` = 1
+             ORDER BY `sort_order` ASC, `label` ASC",
+            [$orgId]
+        );
+
+        // Check membership visibility
+        $hasMemberships = (int) ($this->db->fetch(
+            "SELECT COUNT(*) as cnt FROM `membership_plans` WHERE `organization_id` = ? AND `is_active` = 1",
+            [$orgId]
+        )['cnt'] ?? 0) > 0;
+
+        // Load categories for "Schedule" dropdown children
+        $categories = $this->db->fetchAll(
+            "SELECT `id`, `name`, `slug`, `color` FROM `categories`
+             WHERE `organization_id` = ? AND `is_active` = 1 AND (`is_system` = 0 OR `system_slug` != 'book-a-court')
+             ORDER BY `sort_order` ASC, `name` ASC",
+            [$orgId]
+        );
+
+        // Filter by visibility rules
+        $filtered = [];
+        foreach ($items as $item) {
+            $rule = $item['visibility_rule'];
+            if ($rule === 'has_memberships' && !$hasMemberships) {
+                continue;
+            }
+            $filtered[] = $item;
+        }
+
+        // Build tree (top-level + children)
+        $tree = [];
+        $childMap = [];
+        foreach ($filtered as $item) {
+            if ($item['parent_id']) {
+                $childMap[$item['parent_id']][] = $item;
+            } else {
+                $tree[] = $item;
+            }
+        }
+        foreach ($tree as &$node) {
+            $node['children'] = $childMap[$node['id']] ?? [];
+            // For schedule dropdown, attach categories as virtual children
+            if ($node['system_key'] === 'schedule' && $node['type'] === 'dropdown') {
+                foreach ($categories as $cat) {
+                    $node['children'][] = [
+                        'id'          => 'cat-' . $cat['id'],
+                        'label'       => $cat['name'],
+                        'url'         => '/schedule/category/' . ($cat['slug'] ?: $cat['id']),
+                        'type'        => 'category',
+                        'category_id' => (int) $cat['id'],
+                        'color'       => $cat['color'],
+                    ];
+                }
+            }
+        }
+        unset($node);
+
+        return $this->success([
+            'items' => $tree,
+            'has_memberships' => $hasMemberships,
+        ]);
+    }
+
+    /**
+     * GET /api/public/membership-plans
+     * Returns active membership plans for the org (optionally filtered by facility_id).
+     */
+    public function membershipPlans(Request $request): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        $facilityId = (int) $request->input('facility_id', 0);
+
+        $sql = "SELECT mp.`id`, mp.`uuid`, mp.`name`, mp.`description`,
+                       mp.`duration_type`, mp.`duration_value`, mp.`price`, mp.`setup_fee`,
+                       mp.`renewal_type`, mp.`color`, mp.`is_taxable`, mp.`max_members`,
+                       f.`name` AS `facility_name`, f.`slug` AS `facility_slug`
+                FROM `membership_plans` mp
+                JOIN `facilities` f ON f.`id` = mp.`facility_id`
+                WHERE mp.`organization_id` = ? AND mp.`is_active` = 1 AND f.`status` = 'active'";
+        $params = [$orgId];
+
+        if ($facilityId > 0) {
+            $sql .= " AND mp.`facility_id` = ?";
+            $params[] = $facilityId;
+        }
+
+        $sql .= " ORDER BY mp.`sort_order` ASC, mp.`price` ASC";
+        $plans = $this->db->fetchAll($sql, $params);
+
+        // Load benefits for each plan
+        foreach ($plans as &$plan) {
+            $plan['category_benefits'] = $this->db->fetchAll(
+                "SELECT mpc.*, c.`name` AS category_name, c.`color` AS category_color
+                 FROM `membership_plan_categories` mpc
+                 JOIN `categories` c ON c.`id` = mpc.`category_id`
+                 WHERE mpc.`membership_plan_id` = ?",
+                [$plan['id']]
+            );
+            $plan['session_type_benefits'] = $this->db->fetchAll(
+                "SELECT mpst.*, st.`title` AS session_type_title
+                 FROM `membership_plan_session_types` mpst
+                 JOIN `session_types` st ON st.`id` = mpst.`session_type_id`
+                 WHERE mpst.`membership_plan_id` = ?",
+                [$plan['id']]
+            );
+            // Active member count
+            $cnt = $this->db->fetch(
+                "SELECT COUNT(*) as cnt FROM `player_memberships`
+                 WHERE `membership_plan_id` = ? AND `status` = 'active'",
+                [$plan['id']]
+            );
+            $plan['active_members'] = (int) ($cnt['cnt'] ?? 0);
+            $plan['spots_left'] = $plan['max_members']
+                ? max(0, (int) $plan['max_members'] - $plan['active_members'])
+                : null;
+        }
+        unset($plan);
+
+        return $this->success($plans);
+    }
+
+    /**
+     * GET /api/public/theme
+     * Returns the organization's theme settings (colors, fonts, layout prefs).
+     */
+    public function theme(Request $request): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        $rows = $this->db->fetchAll(
+            "SELECT `key_name`, `value`, `type` FROM `settings`
+             WHERE `organization_id` = ? AND `group_name` = 'theme'",
+            [$orgId]
+        );
+
+        $theme = [];
+        foreach ($rows as $row) {
+            $val = $row['value'];
+            if ($row['type'] === 'boolean') $val = filter_var($val, FILTER_VALIDATE_BOOLEAN);
+            elseif ($row['type'] === 'integer') $val = (int) $val;
+            elseif ($row['type'] === 'json') $val = json_decode($val, true);
+            $theme[$row['key_name']] = $val;
+        }
+
+        // Provide defaults
+        $defaults = [
+            'primary_color'     => '#d4af37',
+            'accent_color'      => '#4a7ec4',
+            'background_color'  => '#060d1a',
+            'text_color'        => '#f8fafc',
+            'font_display'      => 'Plus Jakarta Sans',
+            'font_body'         => 'Inter',
+            'nav_style'         => 'glass',
+            'footer_style'      => 'standard',
+            'hero_overlay'      => true,
+            'card_style'        => 'glass',
+        ];
+
+        $merged = array_merge($defaults, $theme);
+        return $this->success($merged);
+    }
+
+    /**
+     * GET /api/public/category/{slug}
+     * Returns a single category with its view settings (for dynamic category pages).
+     */
+    public function categoryBySlug(Request $request, string $slug): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        $category = $this->db->fetch(
+            "SELECT c.`id`, c.`name`, c.`slug`, c.`color`, c.`description`, c.`image_url`, c.`is_active`
+             FROM `categories` c
+             WHERE c.`organization_id` = ? AND (c.`slug` = ? OR c.`id` = ?) AND c.`is_active` = 1",
+            [$orgId, $slug, is_numeric($slug) ? (int) $slug : 0]
+        );
+
+        if (!$category) {
+            return $this->error('Category not found', 404);
+        }
+
+        // Load view settings
+        $viewSettings = $this->db->fetch(
+            "SELECT * FROM `category_view_settings` WHERE `category_id` = ?",
+            [$category['id']]
+        );
+
+        $category['view_settings'] = $viewSettings ?: [
+            'default_view'          => 'week',
+            'enabled_views'         => ['week', 'month', 'today', 'list'],
+            'show_filters'          => true,
+            'show_category_filter'  => false,
+            'page_title'            => null,
+            'page_description'      => null,
+            'page_hero_image'       => null,
+        ];
+
+        if (is_string($category['view_settings']['enabled_views'])) {
+            $category['view_settings']['enabled_views'] = json_decode($category['view_settings']['enabled_views'], true) ?: ['week', 'month', 'today', 'list'];
+        }
+
+        return $this->success($category);
+    }
 }
+

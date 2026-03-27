@@ -43,6 +43,7 @@ class TenantController extends Controller
         'about'             => 'tenant/about.php',
         'contact'           => 'tenant/contact.php',
         'book-court'        => 'tenant/book-court.php',
+        'memberships'       => 'tenant/memberships.php',
 
         // Player auth
         'login'             => 'tenant/auth/login.php',
@@ -132,6 +133,23 @@ class TenantController extends Controller
             'org' => $org,
             'branding' => $org['branding'] ?? [],
             'facilitySlug' => $slug,
+        ]);
+    }
+
+    /**
+     * Handle /schedule/category/{slug} — dynamic category schedule page.
+     */
+    public function categoryPage(Request $request, string $slug): Response
+    {
+        $org = $this->loadOrganization($request);
+        if (!$org) {
+            return Response::html($this->renderNotFound(), 404);
+        }
+
+        return $this->renderView('tenant/category-schedule.php', [
+            'org' => $org,
+            'branding' => $org['branding'] ?? [],
+            'categorySlug' => $slug,
         ]);
     }
 

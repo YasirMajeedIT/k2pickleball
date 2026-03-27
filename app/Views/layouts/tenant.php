@@ -182,31 +182,43 @@ $facilities = $org['facilities'] ?? [];
                     </div>
                 </a>
 
-                <!-- Desktop Nav -->
-                <nav class="hidden lg:flex items-center gap-1">
-                    <?php
-                    $navItems = [
-                        ['label' => 'Home', 'url' => '/'],
-                        ['label' => 'Sessions', 'url' => '/sessions'],
-                        ['label' => 'Schedule', 'url' => '/schedule'],
-                    ];
-                    if ($courtCatActive) {
-                        $navItems[] = ['label' => $courtCatName, 'url' => '/book-court'];
-                    }
-                    $navItems = array_merge($navItems, [
-                        ['label' => 'Facilities', 'url' => '/facilities'],
-                        ['label' => 'About', 'url' => '/about'],
-                        ['label' => 'Contact', 'url' => '/contact'],
-                    ]);
-                    $currentPath = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/') ?: '/';
-                    foreach ($navItems as $item):
-                        $isActive = $currentPath === rtrim($item['url'], '/') || ($item['url'] !== '/' && str_starts_with($currentPath, $item['url']));
-                    ?>
-                    <a href="<?= htmlspecialchars($item['url']) ?>"
-                       class="px-3 py-2 rounded-lg text-[13px] font-medium tracking-wide uppercase transition-all duration-300 <?= $isActive ? 'text-gold-500 bg-gold-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5' ?>">
-                        <?= $item['label'] ?>
-                    </a>
-                    <?php endforeach; ?>
+                <!-- Desktop Nav (dynamic from API) -->
+                <nav class="hidden lg:flex items-center gap-1" x-show="navItems.length > 0" x-cloak>
+                    <template x-for="item in navItems" :key="item.id">
+                        <div class="relative" x-data="{ dropOpen: false }">
+                            <!-- Dropdown parent -->
+                            <template x-if="item.type === 'dropdown' && item.children && item.children.length > 0">
+                                <div>
+                                    <button @click="dropOpen = !dropOpen" @click.outside="dropOpen = false"
+                                            class="flex items-center gap-1 px-3 py-2 rounded-lg text-[13px] font-medium tracking-wide uppercase transition-all duration-300"
+                                            :class="currentPath.startsWith(item.url) ? 'text-gold-500 bg-gold-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5'">
+                                        <span x-text="item.label"></span>
+                                        <svg class="w-3.5 h-3.5 transition-transform" :class="dropOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <div x-show="dropOpen" x-cloak x-transition
+                                         class="absolute left-0 top-full mt-2 w-56 bg-navy-900 border border-navy-700 rounded-xl shadow-2xl shadow-navy-950/70 py-2 z-50">
+                                        <a :href="item.url" class="block px-4 py-2.5 text-sm text-slate-300 hover:bg-navy-800 hover:text-white transition-colors font-medium">
+                                            All Schedule
+                                        </a>
+                                        <div class="border-t border-navy-800 my-1"></div>
+                                        <template x-for="child in item.children" :key="child.id">
+                                            <a :href="child.url" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:bg-navy-800 hover:text-white transition-colors">
+                                                <span x-show="child.color" class="w-2 h-2 rounded-full flex-shrink-0" :style="'background:' + child.color"></span>
+                                                <span x-text="child.label"></span>
+                                            </a>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <!-- Regular link -->
+                            <template x-if="item.type !== 'dropdown' || !item.children || item.children.length === 0">
+                                <a :href="item.url" :target="item.target || '_self'"
+                                   class="px-3 py-2 rounded-lg text-[13px] font-medium tracking-wide uppercase transition-all duration-300"
+                                   :class="currentPath === item.url || (item.url !== '/' && currentPath.startsWith(item.url)) ? 'text-gold-500 bg-gold-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                                   x-text="item.label"></a>
+                            </template>
+                        </div>
+                    </template>
                 </nav>
 
                 <!-- Location Switcher + Auth CTA -->
@@ -284,14 +296,26 @@ $facilities = $org['facilities'] ?? [];
             <div x-show="mobileOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2"
                  class="lg:hidden pb-4 border-t border-gold-500/10">
                 <div class="pt-4 space-y-1">
-                    <?php foreach ($navItems as $item):
-                        $isActive = $currentPath === rtrim($item['url'], '/') || ($item['url'] !== '/' && str_starts_with($currentPath, $item['url']));
-                    ?>
-                    <a href="<?= htmlspecialchars($item['url']) ?>"
-                       class="block px-4 py-2.5 rounded-lg text-sm font-medium <?= $isActive ? 'text-gold-500 bg-gold-500/10' : 'text-slate-300 hover:text-white hover:bg-white/5' ?>">
-                        <?= $item['label'] ?>
-                    </a>
-                    <?php endforeach; ?>
+                    <template x-for="item in navItems" :key="item.id">
+                        <div>
+                            <a :href="item.url"
+                               class="block px-4 py-2.5 rounded-lg text-sm font-medium"
+                               :class="currentPath === item.url || (item.url !== '/' && currentPath.startsWith(item.url)) ? 'text-gold-500 bg-gold-500/10' : 'text-slate-300 hover:text-white hover:bg-white/5'"
+                               x-text="item.label"></a>
+                            <!-- Mobile dropdown children -->
+                            <template x-if="item.children && item.children.length > 0">
+                                <div class="pl-6 space-y-1">
+                                    <template x-for="child in item.children" :key="child.id">
+                                        <a :href="child.url"
+                                           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/5">
+                                            <span x-show="child.color" class="w-2 h-2 rounded-full flex-shrink-0" :style="'background:' + child.color"></span>
+                                            <span x-text="child.label"></span>
+                                        </a>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                     <?php if (count($facilities) > 1): ?>
                     <div class="px-4 pt-3 mt-2 border-t border-navy-800">
                         <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Location</p>
@@ -360,17 +384,14 @@ $facilities = $org['facilities'] ?? [];
                     <p class="text-sm text-slate-400 leading-relaxed max-w-sm"><?= htmlspecialchars($tagline) ?></p>
                 </div>
 
-                <!-- Explore Links -->
+                <!-- Explore Links (dynamic) -->
                 <div>
                     <h4 class="text-xs font-semibold text-gold-500 uppercase tracking-wider mb-4">Explore</h4>
-                    <ul class="space-y-3">
-                        <li><a href="/sessions" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Sessions</a></li>
+                    <ul class="space-y-3" id="footer-explore-links">
                         <li><a href="/schedule" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Schedule</a></li>
-                        <?php if ($courtCatActive): ?>
-                        <li><a href="/book-court" class="text-sm text-slate-400 hover:text-gold-400 transition-colors"><?= $courtCatName ?></a></li>
-                        <?php endif; ?>
                         <li><a href="/facilities" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Locations</a></li>
                         <li><a href="/about" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">About Us</a></li>
+                        <li><a href="/contact" class="text-sm text-slate-400 hover:text-gold-400 transition-colors">Contact</a></li>
                     </ul>
                 </div>
 
@@ -449,6 +470,9 @@ $facilities = $org['facilities'] ?? [];
             player: null,
             selectedFacility: null,
             toast: { show: false, type: 'info', title: '', message: '' },
+            navItems: [],
+            hasMemberships: false,
+            currentPath: (window.location.pathname.replace(/\/+$/, '') || '/'),
 
             init() {
                 window.addEventListener('scroll', () => { this.scrolled = window.scrollY > 20; });
@@ -458,6 +482,28 @@ $facilities = $org['facilities'] ?? [];
                 }
                 const token = localStorage.getItem('player_token');
                 if (token) this.loadPlayer();
+                this.loadNavigation();
+            },
+
+            async loadNavigation() {
+                try {
+                    const res = await fetch(baseApi + '/api/public/navigation');
+                    const json = await res.json();
+                    if (json.data) {
+                        this.navItems = json.data.items || [];
+                        this.hasMemberships = json.data.has_memberships || false;
+                    }
+                } catch(e) {
+                    // Fallback: use static nav if API fails
+                    this.navItems = [
+                        { id: 'f-home', label: 'Home', url: '/', type: 'link' },
+                        { id: 'f-schedule', label: 'Schedule', url: '/schedule', type: 'link', children: [] },
+                        { id: 'f-book', label: 'Book a Court', url: '/book-court', type: 'link' },
+                        { id: 'f-facilities', label: 'Facilities', url: '/facilities', type: 'link' },
+                        { id: 'f-about', label: 'About', url: '/about', type: 'link' },
+                        { id: 'f-contact', label: 'Contact', url: '/contact', type: 'link' },
+                    ];
+                }
             },
 
             selectFacility(facility) {
