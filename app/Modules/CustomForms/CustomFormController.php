@@ -28,8 +28,13 @@ final class CustomFormController extends Controller
     /** GET /api/custom-forms */
     public function index(Request $request): Response
     {
-        $orgId = $request->organizationId();
-        return $this->success($this->repo->findAllForOrg($orgId));
+        try {
+            $orgId = $request->organizationId();
+            return $this->success($this->repo->findAllForOrg((int) ($orgId ?? 0)));
+        } catch (\Throwable $e) {
+            error_log('[CustomForm::index] ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            return $this->error(get_class($e) . ': ' . $e->getMessage(), 500);
+        }
     }
 
     /** GET /api/custom-forms/{id} */
@@ -53,49 +58,55 @@ final class CustomFormController extends Controller
     /** POST /api/custom-forms */
     public function store(Request $request): Response
     {
-        $orgId = $request->organizationId();
-        $input = $request->all();
+        try {
+            $orgId = $request->organizationId();
+            $input = $request->all();
 
-        Validator::validate($input, [
-            'title' => 'required|string|max:255',
-        ]);
+            Validator::validate($input, [
+                'title' => 'required|string|max:255',
+            ]);
 
-        $title = Sanitizer::string($input['title']);
-        $slug = Sanitizer::slug($input['slug'] ?? $title);
+            $title = Sanitizer::string($input['title']);
+            $slug = Sanitizer::slug($input['slug'] ?? $title);
 
-        // Ensure unique slug
-        $existing = $this->repo->findBySlug($orgId, $slug);
-        if ($existing) {
-            $slug .= '-' . time();
+            // Ensure unique slug
+            $existing = $this->repo->findBySlug($orgId, $slug);
+            if ($existing) {
+                $slug .= '-' . time();
+            }
+
+            $closesAt = !empty($input['closes_at']) ? $input['closes_at'] : null;
+            $maxSub   = isset($input['max_submissions']) && $input['max_submissions'] !== '' && $input['max_submissions'] !== null
+                        ? (int) $input['max_submissions'] : null;
+
+            $id = $this->repo->createForm((int) ($orgId ?? 0), [
+                'title'           => $title,
+                'slug'            => $slug,
+                'description'     => Sanitizer::string($input['description'] ?? ''),
+                'status'          => $input['status'] ?? 'draft',
+                'success_message' => Sanitizer::string($input['success_message'] ?? ''),
+                'redirect_url'    => $input['redirect_url'] ?? null,
+                'requires_auth'   => $input['requires_auth'] ?? 0,
+                'max_submissions' => $maxSub,
+                'closes_at'       => $closesAt,
+                'show_in_nav'     => $input['show_in_nav'] ?? 0,
+                'created_by'      => $request->userId(),
+            ]);
+
+            // Sync fields if provided
+            $fields = $input['fields'] ?? [];
+            if (!empty($fields)) {
+                $this->repo->syncFields($id, $this->sanitizeFields($fields));
+            }
+
+            $form = $this->repo->findById((int) ($orgId ?? 0), $id);
+            $form['fields'] = $this->repo->getFields($id);
+            return $this->success($form, 'Form created', 201);
+        } catch (\Throwable $e) {
+            // Temporary diagnostic — log and return the real error
+            error_log('[CustomForm::store] ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            return $this->error(get_class($e) . ': ' . $e->getMessage(), 500);
         }
-
-        $closesAt = !empty($input['closes_at']) ? $input['closes_at'] : null;
-        $maxSub   = isset($input['max_submissions']) && $input['max_submissions'] !== '' && $input['max_submissions'] !== null
-                    ? (int) $input['max_submissions'] : null;
-
-        $id = $this->repo->createForm($orgId, [
-            'title'           => $title,
-            'slug'            => $slug,
-            'description'     => Sanitizer::string($input['description'] ?? ''),
-            'status'          => $input['status'] ?? 'draft',
-            'success_message' => Sanitizer::string($input['success_message'] ?? ''),
-            'redirect_url'    => $input['redirect_url'] ?? null,
-            'requires_auth'   => $input['requires_auth'] ?? 0,
-            'max_submissions' => $maxSub,
-            'closes_at'       => $closesAt,
-            'show_in_nav'     => $input['show_in_nav'] ?? 0,
-            'created_by'      => $request->userId(),
-        ]);
-
-        // Sync fields if provided
-        $fields = $input['fields'] ?? [];
-        if (!empty($fields)) {
-            $this->repo->syncFields($id, $this->sanitizeFields($fields));
-        }
-
-        $form = $this->repo->findById($orgId, $id);
-        $form['fields'] = $this->repo->getFields($id);
-        return $this->success($form, 'Form created', 201);
     }
 
     /** PUT /api/custom-forms/{id} */
