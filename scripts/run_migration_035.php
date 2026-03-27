@@ -161,9 +161,9 @@ try {
 
 // 5. Record migration
 try {
-    $pdo->exec("INSERT INTO `schema_migrations` (`version`, `name`, `applied_at`)
-                VALUES (35, '035_dynamic_navigation_themes', NOW())
-                ON DUPLICATE KEY UPDATE `applied_at` = NOW()");
+    $pdo->exec("INSERT INTO `schema_migrations` (`migration`, `batch`, `executed_at`, `status`)
+                VALUES ('035_dynamic_navigation_themes', 35, NOW(), 'success')
+                ON DUPLICATE KEY UPDATE `executed_at` = NOW(), `status` = 'success'");
     echo "[OK] Migration 035 recorded\n";
 } catch (PDOException $e) {
     echo "[WARN] Migration record: " . $e->getMessage() . "\n";
