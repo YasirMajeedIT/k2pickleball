@@ -127,6 +127,10 @@ class AdminController extends Controller
         'invoices/{id}'                  => 'admin/invoices/show.php',
         'invoices/{id}/edit'             => 'admin/invoices/edit.php',
 
+        // Design
+        'design/navigation'         => 'admin/design/navigation.php',
+        'design/theme'              => 'admin/design/theme.php',
+
         // My Account
         'account'                   => 'admin/account/index.php',
         'my-subscription'           => 'admin/my-subscription/index.php',

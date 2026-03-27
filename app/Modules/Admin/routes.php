@@ -87,6 +87,10 @@ return function (Router $router): void {
     $router->get('/admin/invoices/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/invoices/{id}/edit', [AdminController::class, 'handleRequest']);
 
+    // Design
+    $router->get('/admin/design/navigation', [AdminController::class, 'handleRequest']);
+    $router->get('/admin/design/theme', [AdminController::class, 'handleRequest']);
+
     // My Account pages
     $router->get('/admin/account', [AdminController::class, 'handleRequest']);
     $router->get('/admin/my-subscription', [AdminController::class, 'handleRequest']);
