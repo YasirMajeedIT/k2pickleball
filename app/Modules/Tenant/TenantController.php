@@ -96,10 +96,10 @@ class TenantController extends Controller
             return Response::html($this->renderNotFound(), 404);
         }
 
-        return $this->renderView($this->viewMap[$path], [
+        return $this->renderView($this->viewMap[$path], array_merge([
             'org' => $org,
             'branding' => $org['branding'] ?? [],
-        ]);
+        ], $path === 'schedule' ? $this->getSquareConfig() : []));
     }
 
     /**
@@ -247,6 +247,17 @@ class TenantController extends Controller
         }
 
         return $org;
+    }
+
+    private function getSquareConfig(): array
+    {
+        $payCfg = require dirname(__DIR__, 3) . '/config/payments.php';
+        $env = $payCfg['square']['environment'] ?? 'sandbox';
+        return [
+            'squareAppId' => $payCfg['square']['application_id'] ?? '',
+            'squareLocationId' => $payCfg['square']['location_id'] ?? '',
+            'squareJsUrl' => $payCfg[$env]['web_payments_url'] ?? $payCfg['sandbox']['web_payments_url'],
+        ];
     }
 
     private function renderView(string $viewFile, array $params = []): Response

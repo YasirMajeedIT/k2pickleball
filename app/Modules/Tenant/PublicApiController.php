@@ -381,28 +381,85 @@ class PublicApiController extends Controller
         );
 
         // Rolling prices
-        $class['rolling_prices'] = $this->db->fetchAll(
-            "SELECT `weeks`, `total_price`, `per_session_price`, `savings_label`
+        $rawRolling = $this->db->fetchAll(
+            "SELECT `number_of_weeks`, `price`
              FROM `st_rolling_prices`
-             WHERE `session_type_id` = ? ORDER BY `weeks` ASC",
+             WHERE `session_type_id` = ? ORDER BY `number_of_weeks` ASC",
             [$class['session_type_id']]
         );
+        $class['rolling_prices'] = array_map(function ($rp) {
+            $weeks = (int) $rp['number_of_weeks'];
+            $total = (float) $rp['price'];
+            return [
+                'weeks' => $weeks,
+                'total_price' => $total,
+                'per_session_price' => $weeks > 0 ? round($total / $weeks, 2) : $total,
+                'savings_label' => null,
+            ];
+        }, $rawRolling);
 
         // Hot deal
-        $class['hot_deal'] = $this->db->fetch(
-            "SELECT `deal_price`, `original_price`, `label`, `expires_at`
+        $hotDeal = $this->db->fetch(
+            "SELECT `discount_price`, `original_price`, `label`, `expires_at`
              FROM `st_hot_deals`
              WHERE `class_id` = ? AND `is_active` = 1 AND (`expires_at` IS NULL OR `expires_at` > NOW())",
             [$id]
         );
+        if ($hotDeal) {
+            $class['hot_deal'] = [
+                'deal_price' => (float) $hotDeal['discount_price'],
+                'original_price' => (float) $hotDeal['original_price'],
+                'label' => $hotDeal['label'] ?? 'Hot Deal',
+                'expires_at' => $hotDeal['expires_at'],
+            ];
+        } else {
+            $class['hot_deal'] = null;
+        }
 
-        // Early bird
-        $class['early_bird'] = $this->db->fetch(
-            "SELECT `discounted_price`, `original_price`, `cutoff_date`, `label`
+        // Early bird (cutoff_hours from scheduled_at)
+        $earlyBird = $this->db->fetch(
+            "SELECT `discount_price`, `cutoff_hours`
              FROM `st_early_birds`
-             WHERE `class_id` = ? AND `is_active` = 1 AND `cutoff_date` > NOW()",
+             WHERE `class_id` = ? AND `is_active` = 1",
             [$id]
         );
+        if ($earlyBird) {
+            $cutoffTime = date('Y-m-d H:i:s', strtotime($class['start_time']) - ((int) $earlyBird['cutoff_hours'] * 3600));
+            if (date('Y-m-d H:i:s') < $cutoffTime) {
+                $class['early_bird'] = [
+                    'discounted_price' => (float) $earlyBird['discount_price'],
+                    'original_price' => (float) $class['price'],
+                    'cutoff_date' => $cutoffTime,
+                    'label' => 'Early Bird — book ' . (int) $earlyBird['cutoff_hours'] . 'h+ before class',
+                ];
+            } else {
+                $class['early_bird'] = null;
+            }
+        } else {
+            $class['early_bird'] = null;
+        }
+
+        // Coach name
+        if (!empty($class['coach_id'])) {
+            $coach = $this->db->fetch("SELECT `first_name`, `last_name` FROM `users` WHERE `id` = ?", [$class['coach_id']]);
+            $class['coach_name'] = $coach ? trim($coach['first_name'] . ' ' . $coach['last_name']) : null;
+        } else {
+            $class['coach_name'] = null;
+        }
+
+        // Tax info: fetch category.is_taxable + facility.tax_rate
+        $class['is_taxable'] = false;
+        $class['tax_rate'] = 0;
+        if (!empty($class['category_id'])) {
+            $cat = $this->db->fetch("SELECT `is_taxable` FROM `categories` WHERE `id` = ?", [$class['category_id']]);
+            if ($cat && (int) $cat['is_taxable'] === 1) {
+                $class['is_taxable'] = true;
+                if (!empty($class['facility_id'])) {
+                    $fac = $this->db->fetch("SELECT `tax_rate` FROM `facilities` WHERE `id` = ?", [$class['facility_id']]);
+                    $class['tax_rate'] = $fac ? (float) $fac['tax_rate'] : 0;
+                }
+            }
+        }
 
         return $this->success($class);
     }

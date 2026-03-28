@@ -12,6 +12,7 @@ $squareJsUrl = $squareJsUrl ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
 <?php if ($squareAppId): ?>
 <script src="<?= htmlspecialchars($squareJsUrl) ?>"></script>
 <?php endif; ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 <script>
     window.__squareAppId = <?= json_encode($squareAppId) ?>;
     window.__squareLocationId = <?= json_encode($squareLocationId) ?>;
@@ -61,7 +62,7 @@ $squareJsUrl = $squareJsUrl ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
                         <!-- Description -->
                         <div x-show="cls.description" class="glass-card rounded-2xl p-6 gold-border">
                             <h3 class="text-lg font-bold text-white mb-3">About This Session</h3>
-                            <div class="text-sm text-slate-400 leading-relaxed whitespace-pre-line" x-text="cls.description"></div>
+                            <div class="text-sm text-slate-400 leading-relaxed [&_*]:m-0 [&_*]:p-0 [&_*]:text-inherit" x-html="purifyHtml(cls.description)"></div>
                         </div>
 
                         <!-- Courts -->
@@ -114,12 +115,12 @@ $squareJsUrl = $squareJsUrl ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
                                     </label>
                                 </template>
                                 <!-- Rolling Packages -->
-                                <template x-for="pkg in (cls.rolling_prices || [])" :key="pkg.id">
-                                    <label class="flex items-center gap-3 p-3 rounded-lg bg-navy-800/50 border border-navy-700/50 cursor-pointer hover:border-gold-500/30 transition-all" :class="selectedPackage === 'pkg_' + pkg.id ? 'border-gold-500/50 bg-gold-500/5' : ''">
-                                        <input type="radio" x-model="selectedPackage" :value="'pkg_' + pkg.id" class="accent-yellow-500">
+                                <template x-for="pkg in (cls.rolling_prices || [])" :key="pkg.weeks">
+                                    <label class="flex items-center gap-3 p-3 rounded-lg bg-navy-800/50 border border-navy-700/50 cursor-pointer hover:border-gold-500/30 transition-all" :class="selectedPackage === 'rolling_' + pkg.weeks ? 'border-gold-500/50 bg-gold-500/5' : ''">
+                                        <input type="radio" x-model="selectedPackage" :value="'rolling_' + pkg.weeks" class="accent-yellow-500">
                                         <div class="flex-1">
-                                            <span class="text-sm font-bold text-white" x-text="pkg.num_weeks + '-Week Package'"></span>
-                                            <span class="block text-xs text-slate-500 mt-0.5" x-text="'$' + parseFloat(pkg.price_per_session).toFixed(2) + '/session'"></span>
+                                            <span class="text-sm font-bold text-white" x-text="pkg.weeks + '-Week Package'"></span>
+                                            <span class="block text-xs text-slate-500 mt-0.5" x-text="'$' + parseFloat(pkg.per_session_price).toFixed(2) + '/session'"></span>
                                         </div>
                                         <span class="text-lg font-extrabold text-white" x-text="'$' + parseFloat(pkg.total_price).toFixed(2)"></span>
                                     </label>
@@ -143,7 +144,8 @@ $squareJsUrl = $squareJsUrl ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
                             <!-- Effective Price -->
                             <div class="text-center mb-6">
                                 <div class="text-xs text-slate-500 uppercase tracking-wider">Your Price</div>
-                                <div class="text-4xl font-extrabold text-white mt-1" x-text="'$' + effectivePrice().toFixed(2)"></div>
+                                <div class="text-4xl font-extrabold text-white mt-1" x-text="'$' + computedTotal().toFixed(2)"></div>
+                                <div x-show="computedTax() > 0" class="text-xs text-slate-400 mt-1" x-text="'Incl. $' + computedTax().toFixed(2) + ' tax (' + (cls.tax_rate || 0) + '%)'"></div>
                             </div>
 
                             <!-- Booking Form -->
@@ -167,7 +169,7 @@ $squareJsUrl = $squareJsUrl ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
                                     </div>
 
                                     <!-- Square Card Payment -->
-                                    <div x-show="effectivePrice() > 0" class="mt-4">
+                                    <div x-show="computedTotal() > 0" class="mt-4">
                                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Payment</label>
                                         <div id="card-container" class="rounded-xl overflow-hidden border border-navy-700 bg-navy-800 p-1 min-h-[54px]"></div>
                                         <div x-show="cardError" class="mt-1.5 text-xs text-red-400" x-text="cardError"></div>
@@ -278,9 +280,9 @@ function classDetailPage() {
             if (!this.cls) return 0;
             if (this.selectedPackage === 'hot_deal' && this.cls.hot_deal) return parseFloat(this.cls.hot_deal.deal_price);
             if (this.selectedPackage === 'early_bird' && this.cls.early_bird) return parseFloat(this.cls.early_bird.discounted_price);
-            if (this.selectedPackage.startsWith('pkg_')) {
-                const pkgId = parseInt(this.selectedPackage.replace('pkg_', ''));
-                const pkg = (this.cls.rolling_prices || []).find(p => p.id === pkgId);
+            if (this.selectedPackage.startsWith('rolling_')) {
+                const weeks = parseInt(this.selectedPackage.replace('rolling_', ''));
+                const pkg = (this.cls.rolling_prices || []).find(p => p.weeks === weeks);
                 if (pkg) return parseFloat(pkg.total_price);
             }
             return parseFloat(this.cls.price || 0);
@@ -288,6 +290,22 @@ function classDetailPage() {
         isEarlyBirdActive() {
             if (!this.cls?.early_bird?.cutoff_date) return false;
             return new Date() < new Date(this.cls.early_bird.cutoff_date);
+        },
+
+        purifyHtml(html) {
+            if (!html) return '';
+            if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b','strong','i','em','u','br','p','span','ul','ol','li','a'], ALLOWED_ATTR: ['href','target','class'] });
+            const tmp = document.createElement('div'); tmp.textContent = html; return tmp.innerHTML;
+        },
+
+        computedTax() {
+            if (!this.cls?.is_taxable || !this.cls?.tax_rate) return 0;
+            const subtotal = this.effectivePrice();
+            return Math.round(subtotal * (parseFloat(this.cls.tax_rate) / 100) * 100) / 100;
+        },
+
+        computedTotal() {
+            return this.effectivePrice() + this.computedTax();
         },
 
         async validateDiscount() {
@@ -313,11 +331,13 @@ function classDetailPage() {
             if (!this.form.first_name.trim() || !this.form.email.trim()) { this.bookingError = 'First name and email are required.'; return; }
 
             const price = this.effectivePrice();
+            const total = this.computedTotal();
+            const taxAmount = this.computedTax();
             let sourceId = null;
             let paymentMethod = 'free';
 
             // Tokenize card if payment required
-            if (price > 0) {
+            if (total > 0) {
                 if (!this._squareReady || !this._squareCard) {
                     this.bookingError = 'Payment form not ready. Please refresh and try again.';
                     return;
@@ -353,10 +373,15 @@ function classDetailPage() {
                     package: this.selectedPackage, discount_code: this.form.discount_code || undefined,
                     payment_method: paymentMethod,
                     source_id: sourceId,
-                    amount_paid: price,
+                    amount_paid: total,
                     quote_amount: this.selectedBasePrice(),
                     discount_amount: this.discountValid ? this.discountAmt : 0,
+                    tax_amount: taxAmount,
+                    tax_rate: this.cls?.tax_rate || 0,
                 };
+                if (this.selectedPackage.startsWith('rolling_')) {
+                    body.rolling_package_weeks = parseInt(this.selectedPackage.replace('rolling_', ''));
+                }
                 const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
                 const json = await res.json();
                 if (res.ok && json.status === 'success') {

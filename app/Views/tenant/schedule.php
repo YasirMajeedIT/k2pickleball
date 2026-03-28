@@ -5,7 +5,19 @@
  * Features: Settings-driven display, inline booking modal, multi-payment support.
  * Reads config from /api/public/schedule-settings to determine visible fields/views.
  */
+$squareAppId = $squareAppId ?? '';
+$squareLocationId = $squareLocationId ?? '';
+$squareJsUrl = $squareJsUrl ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
 ?>
+
+<?php if ($squareAppId): ?>
+<script src="<?= htmlspecialchars($squareJsUrl) ?>"></script>
+<?php endif; ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script>
+    window.__squareAppId = <?= json_encode($squareAppId) ?>;
+    window.__squareLocationId = <?= json_encode($squareLocationId) ?>;
+</script>
 
 <div x-data="schedulePage()" x-init="load()">
     <!-- Page Header (hidden in calendar-only mode) -->
@@ -139,7 +151,7 @@
                                         <span x-show="cfg.show_hot_deal_badge !== '0' && cls.hot_deal" class="flex-shrink-0 px-1 py-0.5 text-[8px] font-bold bg-red-500 text-white rounded-full animate-pulse">HOT</span>
                                         <span x-show="cfg.show_early_bird_badge !== '0' && cls.early_bird" class="flex-shrink-0 px-1 py-0.5 text-[8px] font-bold bg-blue-500 text-white rounded-full">EARLY</span>
                                     </div>
-                                    <div x-show="cfg.show_description !== '0' && cls.description" class="text-[10px] text-slate-500 mt-0.5 line-clamp-2" x-text="cls.description"></div>
+                                    <div x-show="cfg.show_description !== '0' && cls.description" class="text-[10px] text-slate-500 mt-0.5 line-clamp-2 [&_*]:m-0 [&_*]:p-0 [&_*]:text-inherit [&_*]:text-[10px]" x-html="purify(cls.description)"></div>
                                     <div x-show="cfg.show_coach !== '0' && cls.coach_name" class="text-[10px] text-slate-400 mt-0.5" x-text="cls.coach_name"></div>
                                     <div x-show="cfg.show_courts !== '0' && cls.courts_display" class="text-[10px] text-slate-500 mt-0.5" x-text="cls.courts_display"></div>
                                     <template x-for="cr in cardResources" :key="cr.id">
@@ -191,7 +203,7 @@
                                 <span x-show="cfg.show_hot_deal_badge !== '0' && cls.hot_deal" class="px-1.5 py-0.5 text-[9px] font-bold bg-red-500 text-white rounded-full animate-pulse">HOT DEAL</span>
                                 <span x-show="cfg.show_early_bird_badge !== '0' && cls.early_bird" class="px-1.5 py-0.5 text-[9px] font-bold bg-blue-500 text-white rounded-full">EARLY BIRD</span>
                             </div>
-                            <div x-show="cfg.show_description !== '0' && cls.description" class="text-[11px] text-slate-500 mt-1 line-clamp-2" x-text="cls.description"></div>
+                            <div x-show="cfg.show_description !== '0' && cls.description" class="text-[11px] text-slate-500 mt-1 line-clamp-2 [&_*]:m-0 [&_*]:p-0 [&_*]:text-inherit [&_*]:text-[11px]" x-html="purify(cls.description)"></div>
                             <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                 <span x-show="cfg.show_category !== '0'" class="text-[11px] px-2 py-0.5 rounded-full font-medium text-white/80" :style="'background:' + (cls.category_color || '#d4af37')" x-text="cls.category_name"></span>
                                 <template x-for="cr in cardResources" :key="cr.id">
@@ -252,7 +264,7 @@
                                         <span x-show="cfg.show_hot_deal_badge !== '0' && cls.hot_deal" class="px-1.5 py-0.5 text-[9px] font-bold bg-red-500 text-white rounded-full">HOT DEAL</span>
                                         <span x-show="cfg.show_early_bird_badge !== '0' && cls.early_bird" class="px-1.5 py-0.5 text-[9px] font-bold bg-blue-500 text-white rounded-full">EARLY BIRD</span>
                                     </div>
-                                    <div x-show="cfg.show_description !== '0' && cls.description" class="text-[10px] text-slate-500 mt-0.5 line-clamp-2" x-text="cls.description"></div>
+                                    <div x-show="cfg.show_description !== '0' && cls.description" class="text-[10px] text-slate-500 mt-0.5 line-clamp-2 [&_*]:m-0 [&_*]:p-0 [&_*]:text-inherit [&_*]:text-[10px]" x-html="purify(cls.description)"></div>
                                     <div class="flex items-center gap-2 mt-1 flex-wrap">
                                         <span x-show="cfg.show_category !== '0'" class="text-[10px] px-2 py-0.5 rounded-full font-medium text-white/80" :style="'background:' + (cls.category_color || '#d4af37')" x-text="cls.category_name"></span>
                                         <template x-for="cr in cardResources" :key="cr.id">
@@ -353,10 +365,17 @@
                             <span x-show="bookingClass?.category_name" class="text-[11px] px-2 py-0.5 rounded-full font-medium text-white/80" :style="'background:' + (bookingClass?.category_color || '#d4af37')" x-text="bookingClass?.category_name"></span>
                             <span class="text-xs font-semibold" :class="bookingDetail?.is_full ? 'text-red-400' : 'text-emerald-400'" x-text="bookingDetail?.is_full ? 'Class Full' : (bookingDetail?.spots_left || 0) + ' spots left'"></span>
                         </div>
+                        <div class="flex items-center gap-3 mt-2 flex-wrap">
+                            <span x-show="bookingDetail?.coach_name" class="text-[11px] text-slate-400 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <span x-text="bookingDetail?.coach_name"></span>
+                            </span>
+                            <span x-show="bookingDetail?.duration" class="text-[11px] text-slate-400" x-text="bookingDetail?.duration + ' min'"></span>
+                        </div>
                     </div>
                 </div>
                 <!-- Description -->
-                <div x-show="cfg.show_description !== '0' && bookingDetail?.description" class="mt-3 text-sm text-slate-400 line-clamp-3" x-text="bookingDetail?.description"></div>
+                <div x-show="cfg.show_description !== '0' && bookingDetail?.description" class="mt-3 text-sm text-slate-400 line-clamp-3 [&_*]:m-0 [&_*]:p-0 [&_*]:text-inherit" x-html="purify(bookingDetail?.description)"></div>
                 <!-- Courts -->
                 <div x-show="cfg.show_courts !== '0' && bookingDetail?.courts?.length" class="mt-2 flex flex-wrap gap-1">
                     <template x-for="court in bookingDetail?.courts || []" :key="court.name">
@@ -446,7 +465,7 @@
 
                 <!-- Payment method tabs -->
                 <div class="flex flex-wrap gap-1 mb-4 bg-navy-800 rounded-lg p-1">
-                    <button x-show="paymentMethodsEnabled.card" @click="paymentTab = 'card'" class="flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-all" :class="paymentTab === 'card' ? 'gradient-gold-bg text-navy-950' : 'text-slate-400 hover:text-white'">
+                    <button x-show="paymentMethodsEnabled.card" @click="paymentTab = 'card'; $nextTick(() => initSquareCard())" class="flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-all" :class="paymentTab === 'card' ? 'gradient-gold-bg text-navy-950' : 'text-slate-400 hover:text-white'">
                         <svg class="w-4 h-4 mx-auto mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                         Card
                     </button>
@@ -537,6 +556,10 @@
                     <div x-show="giftCodeValid && paymentTab === 'gift_certificate'" class="flex justify-between text-sm mt-1">
                         <span class="text-emerald-400">Gift Certificate</span>
                         <span class="text-emerald-400 font-bold" x-text="'-$' + Math.min(giftCodeBalance, computedPrice()).toFixed(2)"></span>
+                    </div>
+                    <div x-show="computedTax() > 0" class="flex justify-between text-sm mt-1">
+                        <span class="text-slate-400" x-text="'Tax (' + (bookingDetail?.tax_rate || 0) + '%)'"></span>
+                        <span class="text-white font-bold" x-text="'$' + computedTax().toFixed(2)"></span>
                     </div>
                     <div class="flex justify-between text-sm mt-2 pt-2 border-t border-navy-700">
                         <span class="text-slate-300 font-bold">Total</span>
@@ -894,12 +917,21 @@ function schedulePage() {
             if (this.sqCard) { try { this.sqCard.destroy(); } catch(e) {} this.sqCard = null; }
         },
 
+        purify(html) {
+            if (!html) return '';
+            if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b','strong','i','em','u','br','p','span','ul','ol','li','a'], ALLOWED_ATTR: ['href','target','class'] });
+            const tmp = document.createElement('div'); tmp.textContent = html; return tmp.innerHTML;
+        },
+
         async initSquareCard() {
             if (this.sqCard) return;
             try {
-                const appId = typeof SQUARE_APP_ID !== 'undefined' ? SQUARE_APP_ID : null;
-                const locId = typeof SQUARE_LOCATION_ID !== 'undefined' ? SQUARE_LOCATION_ID : null;
-                if (!appId || !locId || !window.Square) return;
+                const appId = window.__squareAppId || null;
+                const locId = window.__squareLocationId || null;
+                if (!appId || !locId || !window.Square) {
+                    console.warn('Square not available:', { appId: !!appId, locId: !!locId, sdk: !!window.Square });
+                    return;
+                }
                 const payments = window.Square.payments(appId, locId);
                 this.sqCard = await payments.card();
                 await this.sqCard.attach('#sq-card-container');
@@ -924,7 +956,13 @@ function schedulePage() {
             return parseFloat(this.bookingDetail.price) || 0;
         },
 
-        computedTotal() {
+        computedTax() {
+            if (!this.bookingDetail?.is_taxable || !this.bookingDetail?.tax_rate) return 0;
+            const subtotal = this.computedSubtotal();
+            return Math.round(subtotal * (parseFloat(this.bookingDetail.tax_rate) / 100) * 100) / 100;
+        },
+
+        computedSubtotal() {
             let price = this.computedPrice();
             if (this.paymentTab === 'credit_code' && this.creditCodeValid) {
                 price = Math.max(0, price - this.creditCodeBalance);
@@ -933,6 +971,10 @@ function schedulePage() {
                 price = Math.max(0, price - this.giftCodeBalance);
             }
             return price;
+        },
+
+        computedTotal() {
+            return this.computedSubtotal() + this.computedTax();
         },
 
         async validateCreditCode() {
@@ -990,11 +1032,15 @@ function schedulePage() {
 
                 const price = this.computedPrice();
                 const total = this.computedTotal();
+                const taxAmount = this.computedTax();
+                const taxRate = this.bookingDetail?.tax_rate || 0;
                 const body = {
                     first_name: 'Guest',
                     payment_method: total <= 0 ? 'free' : this.paymentTab,
                     quote_amount: price,
                     amount_paid: total,
+                    tax_amount: taxAmount,
+                    tax_rate: taxRate,
                     status: 'registered',
                     send_email: true,
                 };
@@ -1033,11 +1079,11 @@ function schedulePage() {
                 } else if (this.paymentTab === 'credit_code' && this.creditCodeValid) {
                     body.credit_code = this.creditCode.trim();
                     body.credit_amount = Math.min(this.creditCodeBalance, price);
-                    body.payment_method = body.credit_amount >= price ? 'free' : 'card';
+                    body.payment_method = body.credit_amount >= price ? 'free' : 'manual';
                 } else if (this.paymentTab === 'gift_certificate' && this.giftCodeValid) {
                     body.gift_code = this.giftCode.trim();
                     body.gift_amount = Math.min(this.giftCodeBalance, price);
-                    body.payment_method = body.gift_amount >= price ? 'free' : 'card';
+                    body.payment_method = body.gift_amount >= price ? 'free' : 'manual';
                 } else if (this.paymentTab === 'other') {
                     body.payment_method = 'manual';
                 }
