@@ -70,7 +70,7 @@ function facilityForm() {
             },
             dayLabels: dayLabels,
             use_own_smtp: false, smtp_email: '', smtp_password: '',
-            instagram_url: '', facebook_url: '', youtube_url: '',
+            instagram_url: '', facebook_url: '', youtube_url: '', hero_video_url: '',
             twilio_enabled: false, twilio_sid: '', twilio_auth_token: '', twilio_from_number: '',
             description: ''
         },
@@ -133,6 +133,7 @@ function facilityForm() {
                     instagram_url: this.form.instagram_url || null,
                     facebook_url: this.form.facebook_url || null,
                     youtube_url: this.form.youtube_url || null,
+                    hero_video_url: this.form.hero_video_url || null,
                     twilio_enabled: this.form.twilio_enabled ? 1 : 0,
                     twilio_sid: this.form.twilio_enabled ? this.form.twilio_sid : null,
                     twilio_auth_token: this.form.twilio_enabled ? this.form.twilio_auth_token : null,
