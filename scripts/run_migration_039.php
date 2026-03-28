@@ -69,8 +69,8 @@ try {
 
     // Record migration
     $pdo->exec("INSERT INTO `schema_migrations` (`migration`, `batch`, `executed_at`, `status`)
-                VALUES ('039_move_sport_type_to_facilities', 39, NOW(), 'completed')
-                ON DUPLICATE KEY UPDATE `status` = 'completed'");
+                VALUES ('039_move_sport_type_to_facilities', 39, NOW(), 'success')
+                ON DUPLICATE KEY UPDATE `status` = 'success'");
 
     echo "\nMigration 039 complete!\n";
 } catch (Exception $e) {
