@@ -249,17 +249,20 @@ class PublicApiController extends Controller
         $sql = "SELECT cls.`id`, cls.`session_type_id`,
                        cls.`scheduled_at` AS `start_time`,
                        DATE_ADD(cls.`scheduled_at`, INTERVAL st.`duration` MINUTE) AS `end_time`,
+                       st.`duration`,
                        cls.`slots` AS `max_participants`,
                        st.`title` AS `session_type_name`, st.`standard_price` AS `price`,
                        sd.`description`,
                        cat.`name` as `category_name`, cat.`color` as `category_color`,
                        sd.`session_name`, sd.`picture`,
+                       CONCAT_WS(' ', coach.`first_name`, coach.`last_name`) AS `coach_name`,
                        (SELECT COUNT(*) FROM `st_class_attendees` a
                         WHERE a.`class_id` = cls.`id` AND a.`status` IN ('registered','reserved')) as `booked_count`
                 FROM `st_classes` cls
                 JOIN `session_types` st ON st.`id` = cls.`session_type_id`
                 LEFT JOIN `categories` cat ON cat.`id` = st.`category_id`
                 LEFT JOIN `sessions` sd ON sd.`id` = st.`session_id`
+                LEFT JOIN `users` coach ON coach.`id` = cls.`coach_id`
                 WHERE st.`organization_id` = ?
                   AND st.`facility_id` = ?
                   AND cls.`scheduled_at` >= ?
@@ -302,6 +305,28 @@ class PublicApiController extends Controller
         }
         foreach ($classes as &$cls) {
             $cls['resources'] = $resourceMap[$cls['session_type_id']] ?? [];
+        }
+        unset($cls);
+
+        // Batch-load courts for all classes
+        $classIds = array_column($classes, 'id');
+        $courtsMap = []; // class_id => "Court1, Court2"
+        if (!empty($classIds)) {
+            $ph = implode(',', array_fill(0, count($classIds), '?'));
+            $courtRows = $this->db->fetchAll(
+                "SELECT cc.`class_id`, c.`name`
+                 FROM `st_class_courts` cc
+                 JOIN `courts` c ON c.`id` = cc.`court_id`
+                 WHERE cc.`class_id` IN ({$ph})",
+                array_values($classIds)
+            );
+            foreach ($courtRows as $row) {
+                $courtsMap[$row['class_id']][] = $row['name'];
+            }
+        }
+        foreach ($classes as &$cls) {
+            $names = $courtsMap[$cls['id']] ?? [];
+            $cls['courts_display'] = !empty($names) ? implode(', ', $names) : null;
         }
         unset($cls);
 

@@ -130,9 +130,21 @@
                         <div class="space-y-2">
                             <template x-for="cls in filteredClassesForDay(day)" :key="cls.id">
                                 <div @click="openBooking(cls)" class="block p-2.5 rounded-lg bg-navy-800/50 border border-navy-700/50 hover:border-gold-500/30 hover:bg-navy-800 transition-all group cursor-pointer">
-                                    <div x-show="cfg.show_time !== '0'" class="text-[11px] font-medium text-gold-400" x-text="formatTime(cls.start_time)"></div>
-                                    <div x-show="cfg.show_title !== '0'" class="text-xs font-bold text-white group-hover:text-gold-400 transition-colors mt-0.5 line-clamp-2" x-text="cls.session_type_name || cls.session_name || 'Session'"></div>
+                                    <div x-show="cfg.show_time !== '0'" class="text-[11px] font-medium text-gold-400">
+                                        <span x-text="formatTime(cls.start_time)"></span>
+                                        <span x-show="cfg.show_duration !== '0' && cls.duration" class="text-slate-500 ml-1" x-text="'(' + cls.duration + ' min)'"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 mt-0.5">
+                                        <div x-show="cfg.show_title !== '0'" class="text-xs font-bold text-white group-hover:text-gold-400 transition-colors line-clamp-2" x-text="cls.session_type_name || cls.session_name || 'Session'"></div>
+                                        <span x-show="cfg.show_hot_deal_badge !== '0' && cls.hot_deal" class="flex-shrink-0 px-1 py-0.5 text-[8px] font-bold bg-red-500 text-white rounded-full animate-pulse">HOT</span>
+                                        <span x-show="cfg.show_early_bird_badge !== '0' && cls.early_bird" class="flex-shrink-0 px-1 py-0.5 text-[8px] font-bold bg-blue-500 text-white rounded-full">EARLY</span>
+                                    </div>
+                                    <div x-show="cfg.show_description !== '0' && cls.description" class="text-[10px] text-slate-500 mt-0.5 line-clamp-2" x-text="cls.description"></div>
                                     <div x-show="cfg.show_coach !== '0' && cls.coach_name" class="text-[10px] text-slate-400 mt-0.5" x-text="cls.coach_name"></div>
+                                    <div x-show="cfg.show_courts !== '0' && cls.courts_display" class="text-[10px] text-slate-500 mt-0.5" x-text="cls.courts_display"></div>
+                                    <template x-for="cr in cardResources" :key="cr.id">
+                                        <span x-show="cfg.show_resources !== '0' && cls.resources && cls.resources[cr.id]" class="text-[10px] text-slate-500 block mt-0.5" x-text="cr.name + ': ' + (cls.resources && cls.resources[cr.id] ? cls.resources[cr.id].values.join(', ') : '')"></span>
+                                    </template>
                                     <div class="flex items-center justify-between mt-1.5">
                                         <span x-show="cfg.show_category !== '0'" class="text-[10px] px-1.5 py-0.5 rounded font-medium text-white/80" :style="'background:' + (cls.category_color || '#d4af37')" x-text="cls.category_name || ''"></span>
                                         <span x-show="cfg.show_spots !== '0'" class="text-[10px] font-bold" :class="cls.is_full ? 'text-red-400' : 'text-emerald-400'" x-text="cls.is_full ? 'Full' : cls.spots_left + ' left'"></span>
@@ -179,6 +191,7 @@
                                 <span x-show="cfg.show_hot_deal_badge !== '0' && cls.hot_deal" class="px-1.5 py-0.5 text-[9px] font-bold bg-red-500 text-white rounded-full animate-pulse">HOT DEAL</span>
                                 <span x-show="cfg.show_early_bird_badge !== '0' && cls.early_bird" class="px-1.5 py-0.5 text-[9px] font-bold bg-blue-500 text-white rounded-full">EARLY BIRD</span>
                             </div>
+                            <div x-show="cfg.show_description !== '0' && cls.description" class="text-[11px] text-slate-500 mt-1 line-clamp-2" x-text="cls.description"></div>
                             <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                 <span x-show="cfg.show_category !== '0'" class="text-[11px] px-2 py-0.5 rounded-full font-medium text-white/80" :style="'background:' + (cls.category_color || '#d4af37')" x-text="cls.category_name"></span>
                                 <template x-for="cr in cardResources" :key="cr.id">
@@ -230,6 +243,7 @@
                                 <div class="flex-shrink-0 w-16 text-center">
                                     <div x-show="cfg.show_time !== '0'" class="text-sm font-bold text-gold-400" x-text="formatTime(cls.start_time)"></div>
                                     <div x-show="cfg.show_time !== '0'" class="text-[10px] text-slate-500" x-text="formatTime(cls.end_time)"></div>
+                                    <div x-show="cfg.show_duration !== '0' && cls.duration" class="text-[10px] text-slate-600 mt-0.5" x-text="cls.duration + ' min'"></div>
                                 </div>
                                 <div class="w-0.5 h-10 rounded-full" :style="'background:' + (cls.category_color || '#d4af37')"></div>
                                 <div class="flex-1 min-w-0">
@@ -238,12 +252,14 @@
                                         <span x-show="cfg.show_hot_deal_badge !== '0' && cls.hot_deal" class="px-1.5 py-0.5 text-[9px] font-bold bg-red-500 text-white rounded-full">HOT DEAL</span>
                                         <span x-show="cfg.show_early_bird_badge !== '0' && cls.early_bird" class="px-1.5 py-0.5 text-[9px] font-bold bg-blue-500 text-white rounded-full">EARLY BIRD</span>
                                     </div>
+                                    <div x-show="cfg.show_description !== '0' && cls.description" class="text-[10px] text-slate-500 mt-0.5 line-clamp-2" x-text="cls.description"></div>
                                     <div class="flex items-center gap-2 mt-1 flex-wrap">
                                         <span x-show="cfg.show_category !== '0'" class="text-[10px] px-2 py-0.5 rounded-full font-medium text-white/80" :style="'background:' + (cls.category_color || '#d4af37')" x-text="cls.category_name"></span>
                                         <template x-for="cr in cardResources" :key="cr.id">
                                             <span x-show="cfg.show_resources !== '0' && cls.resources && cls.resources[cr.id]" class="text-[10px] text-slate-500" x-text="cr.name + ': ' + (cls.resources && cls.resources[cr.id] ? cls.resources[cr.id].values.join(', ') : '')"></span>
                                         </template>
                                         <span x-show="cfg.show_coach !== '0' && cls.coach_name" class="text-[10px] text-slate-400" x-text="cls.coach_name"></span>
+                                        <span x-show="cfg.show_courts !== '0' && cls.courts_display" class="text-[10px] text-slate-500" x-text="cls.courts_display"></span>
                                     </div>
                                 </div>
                                 <div class="flex-shrink-0 text-right">
