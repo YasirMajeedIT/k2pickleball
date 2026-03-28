@@ -306,7 +306,6 @@ ob_start();
                             <div x-show="s.show_title === '1' || s.show_title === true" class="text-sm font-bold text-surface-800 dark:text-surface-100">Intermediate Clinic</div>
                             <div class="flex flex-wrap items-center gap-1.5">
                                 <span x-show="s.show_category === '1' || s.show_category === true" class="text-[10px] px-2 py-0.5 rounded-full font-medium text-white bg-indigo-500">Clinics</span>
-                                <span x-show="s.show_skill_level === '1' || s.show_skill_level === true" class="text-[10px] px-2 py-0.5 rounded-full bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300">3.0-3.5</span>
                                 <span x-show="s.show_hot_deal_badge === '1' || s.show_hot_deal_badge === true" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500 text-white font-bold">🔥</span>
                                 <span x-show="s.show_early_bird_badge === '1' || s.show_early_bird_badge === true" class="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500 text-white font-bold">🐦</span>
                             </div>
@@ -323,10 +322,17 @@ ob_start();
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 90 min
                             </div>
-                            <div x-show="s.show_resources === '1' || s.show_resources === true" class="text-[10px] text-surface-500 flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
-                                Skill Level: 3.0-3.5 · Age: Adults
-                            </div>
+                            <!-- Resources on card (shows selected resources dynamically) -->
+                            <template x-if="(s.show_resources === '1' || s.show_resources === true) && resources.length > 0">
+                                <div class="space-y-0.5">
+                                    <template x-for="res in resources.filter(r => cardResourceIds.includes(String(r.id)) || cardResourceIds.includes(r.id))" :key="res.id">
+                                        <div class="text-[10px] text-surface-500 flex items-center gap-1">
+                                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+                                            <span x-text="res.name + ': ' + (res.values && res.values.length ? res.values.map(v => v.name).slice(0,3).join(', ') : '—')"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
                             <div x-show="s.show_session_number === '1' || s.show_session_number === true" class="text-[10px] text-surface-500">Session 3 of 8</div>
                             <div class="flex items-center justify-between pt-1 border-t border-surface-200 dark:border-surface-700 mt-2">
                                 <span x-show="s.show_price === '1' || s.show_price === true" class="text-sm font-extrabold text-surface-800 dark:text-surface-100">$25.00</span>
@@ -371,7 +377,6 @@ function schedulePageSettings() {
             { key: 'show_description', label: 'Description', desc: 'Session description snippet' },
             { key: 'show_courts', label: 'Courts', desc: 'Assigned court names' },
             { key: 'show_duration', label: 'Duration', desc: 'Length in minutes' },
-            { key: 'show_skill_level', label: 'Skill Level', desc: 'From resources (e.g. 3.0-3.5)' },
             { key: 'show_session_number', label: 'Series Session #', desc: 'For series: "Session 3 of 8"' },
             { key: 'show_hot_deal_badge', label: 'Hot Deal Badge', desc: 'Show special deal indicator' },
             { key: 'show_early_bird_badge', label: 'Early Bird Badge', desc: 'Show early-bird discount indicator' },
@@ -411,7 +416,6 @@ function schedulePageSettings() {
                         show_courts: String(raw.show_courts ?? '0'),
                         show_duration: String(raw.show_duration ?? '0'),
                         show_resources: String(raw.show_resources ?? '0'),
-                        show_skill_level: String(raw.show_skill_level ?? '0'),
 
                         show_session_number: String(raw.show_session_number ?? '0'),
                         show_hot_deal_badge: String(raw.show_hot_deal_badge ?? '1'),
