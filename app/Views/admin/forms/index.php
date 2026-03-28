@@ -99,7 +99,7 @@ function formsIndex() {
         async load() {
             this.loading = true;
             try {
-                const res = await fetch('/api/custom-forms', { headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }});
+                const res = await authFetch('/api/custom-forms');
                 const json = await res.json();
                 this.forms = json.data || [];
             } catch(e) { this.forms = []; }
@@ -108,9 +108,8 @@ function formsIndex() {
         async deleteForm(f) {
             if (!confirm('Delete "' + f.title + '"? All submissions will be lost.')) return;
             try {
-                await fetch('/api/custom-forms/' + f.id, {
-                    method: 'DELETE',
-                    headers: { 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') }
+                await authFetch('/api/custom-forms/' + f.id, {
+                    method: 'DELETE'
                 });
                 this.forms = this.forms.filter(x => x.id !== f.id);
                 this.showToast('Form deleted');

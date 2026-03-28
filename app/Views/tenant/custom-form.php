@@ -28,7 +28,7 @@ $slug = htmlspecialchars($formSlug ?? '', ENT_QUOTES, 'UTF-8');
             <div class="absolute inset-0 hero-glow"></div>
             <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-white" x-text="formData.title"></h1>
-                <p x-show="formData.description" class="mt-4 text-lg text-slate-400 max-w-2xl mx-auto" x-text="formData.description"></p>
+                <p x-show="formData.description" class="mt-4 text-lg text-slate-400 max-w-2xl mx-auto" x-html="formData.description"></p>
             </div>
         </section>
 
@@ -201,7 +201,14 @@ function customFormView() {
                     method: 'POST', headers, body: JSON.stringify(data)
                 });
                 const json = await res.json();
-                if (!res.ok) throw new Error(json.error || 'Submission failed');
+                if (!res.ok) {
+                    // Handle validation errors
+                    if (json.errors) {
+                        const msgs = Object.values(json.errors).flat();
+                        throw new Error(msgs.join('. '));
+                    }
+                    throw new Error(json.message || 'Submission failed');
+                }
                 this.submitted = true;
             } catch(e) {
                 this.error = e.message;

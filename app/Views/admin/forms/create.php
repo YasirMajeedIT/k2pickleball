@@ -3,6 +3,18 @@ $title = 'Create Form';
 $breadcrumbs = [['label' => 'Content', 'url' => '#'], ['label' => 'Forms', 'url' => '/admin/forms'], ['label' => 'Create']];
 ob_start();
 ?>
+<style>
+    .form-quill-editor .ql-container { border-radius: 0 0 0.75rem 0.75rem; min-height: 120px; font-size: 0.875rem; }
+    .form-quill-editor .ql-toolbar { border-radius: 0.75rem 0.75rem 0 0; }
+    .form-quill-editor .ql-editor { min-height: 120px; }
+    .dark .form-quill-editor .ql-toolbar { background: #1e293b; border-color: #334155; }
+    .dark .form-quill-editor .ql-container { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+    .dark .form-quill-editor .ql-toolbar button .ql-stroke { stroke: #94a3b8; }
+    .dark .form-quill-editor .ql-toolbar button .ql-fill { fill: #94a3b8; }
+    .dark .form-quill-editor .ql-toolbar button:hover .ql-stroke { stroke: #e2e8f0; }
+    .dark .form-quill-editor .ql-toolbar .ql-picker-label { color: #94a3b8; }
+    .dark .form-quill-editor .ql-toolbar .ql-picker-options { background: #1e293b; border-color: #334155; }
+</style>
 <div x-data="formBuilder()" x-init="init()">
     <div class="mb-6 flex items-center justify-between">
         <div>
@@ -40,9 +52,9 @@ ob_start();
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-1.5">Description</label>
-                    <textarea x-model="form.description" rows="2"
-                              class="w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                              placeholder="Brief description shown at the top of the form"></textarea>
+                    <div class="form-quill-editor rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
+                        <div id="create-description-editor"></div>
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
@@ -61,7 +73,7 @@ ob_start();
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-1.5">Closes At</label>
-                        <input type="datetime-local" x-model="form.closes_at"
+                        <input type="text" x-ref="closesAtCreate" x-model="form.closes_at" placeholder="Select date & time"
                                class="w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm text-surface-900 dark:border-surface-700 dark:bg-surface-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
                     </div>
                 </div>
@@ -220,7 +232,40 @@ function formBuilder() {
         fields: [],
         saving: false,
         toast: { show:false, type:'success', message:'' },
-        init() {},
+        quillEditor: null,
+        flatpickrInstance: null,
+        init() {
+            this.$nextTick(() => {
+                this.initQuill();
+                this.initFlatpickr();
+            });
+        },
+        initQuill() {
+            const editorEl = document.getElementById('create-description-editor');
+            if (!editorEl) return;
+            this.quillEditor = new Quill(editorEl, {
+                theme: 'snow',
+                placeholder: 'Brief description shown at the top of the form...',
+                modules: {
+                    toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['link'],
+                        ['clean'],
+                    ],
+                },
+            });
+        },
+        initFlatpickr() {
+            if (this.$refs.closesAtCreate && typeof flatpickr !== 'undefined') {
+                this.flatpickrInstance = flatpickr(this.$refs.closesAtCreate, {
+                    enableTime: true,
+                    dateFormat: 'Y-m-d H:i',
+                    onChange: (selectedDates, dateStr) => { this.form.closes_at = dateStr; },
+                });
+            }
+        },
         autoSlug() {
             this.form.slug = this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         },
@@ -245,11 +290,16 @@ function formBuilder() {
             if (this.saving) return;
             if (this.fields.length === 0) { this.showToast('Add at least one field', 'error'); return; }
             this.saving = true;
+            // Sync Quill content
+            if (this.quillEditor) {
+                this.form.description = this.quillEditor.root.innerHTML;
+                if (this.form.description === '<p><br></p>') this.form.description = '';
+            }
             const payload = {
                 ...this.form,
                 requires_auth: this.form.requires_auth ? 1 : 0,
                 show_in_nav:   this.form.show_in_nav   ? 1 : 0,
-                closes_at: this.form.closes_at ? this.form.closes_at.replace('T', ' ') + ':00' : null,
+                closes_at: this.form.closes_at ? this.form.closes_at.replace('T', ' ').substring(0, 19) : null,
                 max_submissions: (this.form.max_submissions !== '' && this.form.max_submissions !== null) ? (parseInt(this.form.max_submissions) || null) : null,
             };
             payload.fields = this.fields.map((f, i) => ({
@@ -259,9 +309,9 @@ function formBuilder() {
                 width: f.width, sort_order: i
             }));
             try {
-                const res = await fetch('/api/custom-forms', {
+                const res = await authFetch('/api/custom-forms', {
                     method: 'POST',
-                    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+(localStorage.getItem('access_token')||'') },
+                    headers: { 'Content-Type':'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const json = await res.json();

@@ -82,7 +82,7 @@ final class CustomFormController extends Controller
             $id = $this->repo->createForm((int) ($orgId ?? 0), [
                 'title'           => $title,
                 'slug'            => $slug,
-                'description'     => Sanitizer::string($input['description'] ?? ''),
+                'description'     => Sanitizer::html($input['description'] ?? ''),
                 'status'          => $input['status'] ?? 'draft',
                 'success_message' => Sanitizer::string($input['success_message'] ?? ''),
                 'redirect_url'    => $input['redirect_url'] ?? null,
@@ -121,7 +121,7 @@ final class CustomFormController extends Controller
         // Sanitize
         if (isset($data['title'])) $data['title'] = Sanitizer::string($data['title']);
         if (isset($data['slug']))  $data['slug']  = Sanitizer::slug($data['slug']);
-        if (isset($data['description'])) $data['description'] = Sanitizer::string($data['description']);
+        if (isset($data['description'])) $data['description'] = Sanitizer::html($data['description']);
         if (isset($data['success_message'])) $data['success_message'] = Sanitizer::string($data['success_message']);
 
         // Normalize empty strings to null for typed DB columns
