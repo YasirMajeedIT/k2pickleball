@@ -60,6 +60,7 @@ final class FileController extends Controller
         $mimeType = $finfo->file($file['tmp_name']);
         $allowedMimes = Config::get('app.upload.allowed_mimes', [
             'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp',
+            'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
             'application/pdf',
             'text/csv',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -67,13 +68,16 @@ final class FileController extends Controller
         ]);
 
         if (!in_array($mimeType, $allowedMimes, true)) {
-            return $this->validationError(['file' => ['File type not allowed: ' . $mimeType]]);
+            return $this->validationError(['file' => ['File type not allowed: ' . $mimeType . '. Allowed: images, videos (MP4/WebM), PDF, CSV, Excel, Word.']]);
         }
 
-        // Validate file size
-        $maxSize = Config::get('app.upload.max_size', 10 * 1024 * 1024); // 10MB
+        // Validate file size — video gets a higher limit
+        $isVideo = str_starts_with($mimeType, 'video/');
+        $maxSize = $isVideo
+            ? Config::get('app.upload.max_video_size', 50 * 1024 * 1024)
+            : Config::get('app.upload.max_size', 10 * 1024 * 1024);
         if ($file['size'] > $maxSize) {
-            return $this->validationError(['file' => ['File exceeds maximum size of ' . ($maxSize / 1024 / 1024) . 'MB']]);
+            return $this->validationError(['file' => ['File exceeds maximum size of ' . round($maxSize / 1024 / 1024) . 'MB']]);
         }
 
         $orgId = $request->organizationId();

@@ -24,7 +24,7 @@ ob_start();
                     Browse Files
                     <input type="file" @change="handleFileSelect($event)" class="hidden">
                 </label>
-                <p class="text-xs text-surface-400 mt-3">Max file size: 10MB</p>
+                <p class="text-xs text-surface-400 mt-3">Images, PDF, CSV, Excel, Word: up to 10 MB — Videos (MP4, WebM): up to 50 MB</p>
             </div>
 
             <!-- Selected File Preview -->
@@ -110,11 +110,20 @@ function fileUploader() {
                 xhr.onload = () => {
                     this.uploading = false;
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'File uploaded', type: 'success' } }));
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'File uploaded successfully', type: 'success' } }));
                         setTimeout(() => window.location.href = APP_BASE + '/admin/files', 500);
                     } else {
-                        const json = JSON.parse(xhr.responseText);
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Upload failed', type: 'error' } }));
+                        try {
+                            const json = JSON.parse(xhr.responseText);
+                            let msg = json.message || 'Upload failed';
+                            if (json.errors) {
+                                const details = Object.values(json.errors).flat().join('. ');
+                                if (details) msg = details;
+                            }
+                            window.dispatchEvent(new CustomEvent('toast', { detail: { message: msg, type: 'error' } }));
+                        } catch(e) {
+                            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Upload failed (HTTP ' + xhr.status + ')', type: 'error' } }));
+                        }
                     }
                 };
                 xhr.onerror = () => {

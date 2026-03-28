@@ -24,12 +24,42 @@ return function (Router $router): void {
         }
         $mime = mime_content_type($realPath) ?: 'application/octet-stream';
         $size = filesize($realPath);
+
+        // HTTP Range support for video streaming
+        $rangeHeader = $_SERVER['HTTP_RANGE'] ?? null;
+        if ($rangeHeader && str_starts_with($mime, 'video/')) {
+            preg_match('/bytes=(\d+)-(\d*)/', $rangeHeader, $m);
+            $start = (int) ($m[1] ?? 0);
+            $end = ($m[2] ?? '') !== '' ? (int) $m[2] : $size - 1;
+            if ($start > $end || $start >= $size) {
+                return new \App\Core\Http\Response('', 416, [
+                    'Content-Range' => "bytes */$size",
+                ]);
+            }
+            $length = $end - $start + 1;
+            $fh = fopen($realPath, 'rb');
+            fseek($fh, $start);
+            $content = fread($fh, $length);
+            fclose($fh);
+            return new \App\Core\Http\Response($content, 206, [
+                'Content-Type'   => $mime,
+                'Content-Length' => (string) $length,
+                'Content-Range'  => "bytes $start-$end/$size",
+                'Accept-Ranges'  => 'bytes',
+                'Cache-Control'  => 'public, max-age=86400',
+            ]);
+        }
+
         $content = file_get_contents($realPath);
-        return new \App\Core\Http\Response($content, 200, [
+        $headers = [
             'Content-Type'   => $mime,
             'Content-Length' => (string) $size,
             'Cache-Control'  => 'public, max-age=86400',
-        ]);
+        ];
+        if (str_starts_with($mime, 'video/') || str_starts_with($mime, 'image/')) {
+            $headers['Accept-Ranges'] = 'bytes';
+        }
+        return new \App\Core\Http\Response($content, 200, $headers);
     });
 
     // Health check
