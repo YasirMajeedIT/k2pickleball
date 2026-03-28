@@ -60,6 +60,8 @@ final class AuthService
                 throw new AuthenticationException('Your account is currently inactive. Please contact the administrator.');
             case 'suspended':
                 throw new AuthenticationException('Your account has been suspended. Please contact the administrator for assistance.');
+            case 'pending':
+                throw new AuthenticationException('Your account is pending activation. Please check your email for the invitation link to set your password.');
             default:
                 throw new AuthenticationException('Your account is currently inactive. Please contact the administrator.');
         }
@@ -476,6 +478,77 @@ final class AuthService
         $this->sendVerificationEmail($email, $user['first_name'] ?? '', $token);
     }
 
+    // ---- Invitation Flow ----
+
+    /**
+     * Send an invitation email so the user can set a password and activate.
+     * Creates a verification token and sends the invitation template.
+     */
+    public function sendInvitation(string $email, string $firstName): void
+    {
+        $token = $this->createEmailVerificationToken($email);
+        $this->sendInvitationEmail($email, $firstName, $token);
+    }
+
+    /**
+     * Accept an invitation: validate token, set password, activate user.
+     */
+    public function acceptInvitation(string $token, string $newPassword): array
+    {
+        $tokenHash = hash('sha256', $token);
+
+        $record = $this->db->fetch(
+            "SELECT * FROM `email_verifications` WHERE `token_hash` = ? AND `used_at` IS NULL AND `expires_at` > NOW() LIMIT 1",
+            [$tokenHash]
+        );
+
+        if ($record === null) {
+            throw new AuthenticationException('Invalid or expired invitation link. Please ask your administrator to resend the invite.');
+        }
+
+        $user = $this->db->fetch(
+            "SELECT * FROM `users` WHERE `email` = ? LIMIT 1",
+            [$record['email']]
+        );
+
+        if ($user === null) {
+            throw new AuthenticationException('No account found for this invitation.');
+        }
+
+        if (!empty($user['email_verified_at'])) {
+            throw new AuthenticationException('This account has already been activated. Please log in.');
+        }
+
+        // Mark token as used
+        $this->db->query(
+            "UPDATE `email_verifications` SET `used_at` = NOW() WHERE `id` = ?",
+            [$record['id']]
+        );
+
+        // Set password, verify email, activate
+        $passwordHash = password_hash($newPassword, PASSWORD_BCRYPT, [
+            'cost' => Config::get('auth.password.bcrypt_cost', 12),
+        ]);
+
+        $this->db->query(
+            "UPDATE `users` SET `password_hash` = ?, `email_verified_at` = NOW(), `status` = 'active', `updated_at` = NOW() WHERE `id` = ?",
+            [$passwordHash, $user['id']]
+        );
+
+        // Send welcome email
+        try {
+            $this->sendWelcomeEmail(
+                $user['email'],
+                $user['first_name'] ?? '',
+                $user['last_name'] ?? ''
+            );
+        } catch (\Throwable $e) {
+            error_log('[Mailer] Welcome email failed after invite accept: ' . $e->getMessage());
+        }
+
+        return $this->db->fetch("SELECT * FROM `users` WHERE `id` = ? LIMIT 1", [$user['id']]);
+    }
+
     // ---- Email Helpers ----
 
     private function getAppUrl(): string
@@ -523,6 +596,26 @@ final class AuthService
             'subject'        => 'Welcome to K2 Pickleball!',
         ]);
         $mailer->send($email, $firstName . ' ' . $lastName, 'Welcome to K2 Pickleball!', $html);
+    }
+
+    private function sendInvitationEmail(string $email, string $firstName, string $token): void
+    {
+        try {
+            $appUrl    = $this->getAppUrl();
+            $inviteUrl = $appUrl . '/accept-invite?token=' . urlencode($token);
+            $mailer    = Mailer::getInstance();
+            $html      = $mailer->renderTemplate('invitation', [
+                'firstName'      => $firstName,
+                'inviteUrl'      => $inviteUrl,
+                'appUrl'         => $appUrl,
+                'recipientEmail' => $email,
+                'expiresIn'      => '24 hours',
+                'subject'        => "You're invited to K2 Pickleball!",
+            ]);
+            $mailer->send($email, $firstName, "You're invited to K2 Pickleball!", $html);
+        } catch (\Throwable $e) {
+            error_log('[Mailer] Invitation email failed to ' . $email . ': ' . $e->getMessage());
+        }
     }
 
     private function sendPasswordResetEmail(string $email, string $firstName, string $token): void

@@ -68,6 +68,7 @@ return function (Router $router): void {
     $router->get('/register',           [TenantController::class, 'handleRequest']);
     $router->get('/forgot-password',    [TenantController::class, 'handleRequest']);
     $router->get('/reset-password',     [TenantController::class, 'handleRequest']);
+    $router->get('/accept-invite',      [TenantController::class, 'handleRequest']);
 
     // Player dashboard (auth guard on client-side)
     $router->get('/dashboard',              [TenantController::class, 'handleRequest']);

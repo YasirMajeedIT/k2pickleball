@@ -26,6 +26,15 @@ ob_start();
             </div>
         </div>
         <div class="flex items-center gap-3">
+            <template x-if="user.status === 'pending' && !user.email_verified_at">
+                <button @click="resendInvite()"
+                    :disabled="resending"
+                    class="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors shadow-soft disabled:opacity-50">
+                    <svg x-show="resending" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    <svg x-show="!resending" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Resend Invite
+                </button>
+            </template>
             <a href="<?= htmlspecialchars($backUrl) ?>"
                class="inline-flex items-center gap-2 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors shadow-soft">
                 Back
@@ -202,6 +211,7 @@ function userShow() {
     return {
         user: {},
         loading: true,
+        resending: false,
         async init() {
             try {
                 const res = await authFetch(apiUrl);
@@ -237,6 +247,22 @@ function userShow() {
                 pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'
             };
             return '<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ' + (map[status] || 'bg-surface-100 text-surface-600') + '">' + (status || '-') + '</span>';
+        },
+        async resendInvite() {
+            this.resending = true;
+            try {
+                const res = await authFetch(apiUrl + '/resend-invite', { method: 'POST' });
+                const json = await res.json();
+                if (res.ok) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Invitation resent', type: 'success' } }));
+                } else {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Failed to resend invitation', type: 'error' } }));
+                }
+            } catch (e) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } }));
+            } finally {
+                this.resending = false;
+            }
         }
     }
 }

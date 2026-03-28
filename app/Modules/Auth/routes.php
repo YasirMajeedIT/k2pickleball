@@ -17,6 +17,7 @@ return function (Router $router): void {
         $router->post('/forgot-password', ['App\\Modules\\Auth\\AuthController', 'forgotPassword']);
         $router->post('/reset-password', ['App\\Modules\\Auth\\AuthController', 'resetPassword']);
         $router->get('/verify-email', ['App\\Modules\\Auth\\AuthController', 'verifyEmail']);
+        $router->post('/accept-invite', ['App\\Modules\\Auth\\AuthController', 'acceptInvite']);
         $router->post('/resend-verification', ['App\\Modules\\Auth\\AuthController', 'resendVerification']);
         $router->post('/google', ['App\\Modules\\Auth\\GoogleAuthController', 'handleGoogleToken']);
 

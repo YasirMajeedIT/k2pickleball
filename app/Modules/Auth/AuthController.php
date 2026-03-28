@@ -169,6 +169,24 @@ final class AuthController extends Controller
     }
 
     /**
+     * POST /api/auth/accept-invite
+     * Accept an invitation: set password and activate account.
+     */
+    public function acceptInvite(Request $request): Response
+    {
+        $data = Validator::validate($request->all(), [
+            'token' => 'required|string',
+            'password' => 'required|password|confirmed',
+        ]);
+
+        $user = $this->auth->acceptInvitation($data['token'], $data['password']);
+
+        return $this->success([
+            'email' => $user['email'],
+        ], 'Account activated! You can now sign in.');
+    }
+
+    /**
      * POST /api/auth/resend-verification
      */
     public function resendVerification(Request $request): Response

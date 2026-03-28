@@ -12,12 +12,11 @@ $fields = [
     ['name' => 'last_name', 'label' => 'Last Name', 'required' => true, 'cols' => 'half'],
     ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => true],
     ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel'],
-    ['name' => 'password', 'label' => 'Password', 'type' => 'password', 'required' => true, 'help' => 'Minimum 8 characters'],
-    ['name' => 'password_confirmation', 'label' => 'Confirm Password', 'type' => 'password', 'required' => true],
+    ['name' => 'send_invite', 'label' => 'Send Invitation Email', 'type' => 'checkbox', 'help' => 'User will receive an email to set their own password and activate their account'],
     ['name' => 'role_id', 'label' => 'Role', 'type' => 'select', 'options' => []],
     ['name' => 'facility_ids', 'label' => 'Assigned Facilities', 'type' => 'multiselect', 'help' => 'Select one or more facilities this user belongs to'],
     ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'required' => true, 'options' => [
-        'active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended',
+        'active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended', 'pending' => 'Pending (invitation)',
     ]],
 
     ['name' => 'section_professional', 'label' => 'Professional Details', 'type' => 'section', 'help' => 'Sports club staff profile, credentials, and experience.'],
@@ -51,8 +50,7 @@ function userForm() {
             emergency_contact_name: '',
             emergency_contact_phone: '',
             bio: '',
-            password: '',
-            password_confirmation: '',
+            send_invite: true,
             role_id: '',
             facility_ids: [],
             status: 'active'
@@ -88,7 +86,7 @@ function userForm() {
                 });
                 const json = await res.json();
                 if (res.ok) {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'User created', type: 'success' } }));
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'User created', type: 'success' } }));
                     setTimeout(() => window.location.href = '<?= $backUrl ?>', 500);
                 } else { this.errors = json.errors || {}; window.dispatchEvent(new CustomEvent('toast', { detail: { message: json.message || 'Validation failed', type: 'error' } })); }
             } catch (e) { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Network error', type: 'error' } })); }

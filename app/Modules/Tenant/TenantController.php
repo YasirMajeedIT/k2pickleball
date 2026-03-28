@@ -50,6 +50,7 @@ class TenantController extends Controller
         'register'          => 'tenant/auth/register.php',
         'forgot-password'   => 'tenant/auth/forgot-password.php',
         'reset-password'    => 'tenant/auth/reset-password.php',
+        'accept-invite'     => 'tenant/auth/accept-invite.php',
 
         // Player dashboard
         'dashboard'             => 'tenant/dashboard/index.php',
@@ -64,6 +65,7 @@ class TenantController extends Controller
         'tenant/auth/register.php',
         'tenant/auth/forgot-password.php',
         'tenant/auth/reset-password.php',
+        'tenant/auth/accept-invite.php',
     ];
 
     /** Dashboard pages (uses dashboard layout) */

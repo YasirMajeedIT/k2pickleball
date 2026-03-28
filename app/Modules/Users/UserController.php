@@ -12,6 +12,8 @@ use App\Core\Security\Validator;
 use App\Core\Database\Connection;
 use App\Core\Exceptions\NotFoundException;
 use App\Core\Services\Config;
+use App\Core\Auth\AuthService;
+use App\Core\Services\Container;
 use App\Modules\AuditLogs\AuditLogRepository;
 
 final class UserController extends Controller
@@ -63,10 +65,10 @@ final class UserController extends Controller
     public function store(Request $request): Response
     {
         $facilityIds = array_filter(array_map('intval', (array) ($request->input('facility_ids', []))));
+        $sendInvite = (bool) ($request->input('send_invite', true));
 
-        $data = Validator::validate($request->all(), [
+        $rules = [
             'email' => 'required|email|max:255',
-            'password' => 'required|password',
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'phone' => 'nullable|phone',
@@ -77,9 +79,16 @@ final class UserController extends Controller
             'emergency_contact_name' => 'nullable|string|max:150',
             'emergency_contact_phone' => 'nullable|phone',
             'bio' => 'nullable|string|max:5000',
-            'status' => 'nullable|in:active,inactive,suspended',
+            'status' => 'nullable|in:active,inactive,suspended,pending',
             'role_id' => 'nullable|integer',
-        ]);
+        ];
+
+        // Password is optional — if omitted, user gets an invitation email
+        if ($request->input('password')) {
+            $rules['password'] = 'required|password';
+        }
+
+        $data = Validator::validate($request->all(), $rules);
 
         $data['email'] = Sanitizer::email($data['email']);
         $data['first_name'] = Sanitizer::string($data['first_name']);
@@ -108,23 +117,42 @@ final class UserController extends Controller
 
         $data['uuid'] = $this->generateUuid();
         $data['organization_id'] = $orgId;
-        $data['password_hash'] = password_hash($data['password'], PASSWORD_BCRYPT, [
-            'cost' => Config::get('auth.password.bcrypt_cost', 12),
-        ]);
+
+        // If password provided, hash it and mark active; otherwise invitation flow
+        $isInvitation = empty($data['password']);
+        if (!$isInvitation) {
+            $data['password_hash'] = password_hash($data['password'], PASSWORD_BCRYPT, [
+                'cost' => Config::get('auth.password.bcrypt_cost', 12),
+            ]);
+            $data['status'] = $data['status'] ?? 'active';
+            $data['email_verified_at'] = gmdate('Y-m-d H:i:s');
+        } else {
+            $data['password_hash'] = '';
+            $data['status'] = 'pending';
+        }
         unset($data['password']);
-        $data['status'] = $data['status'] ?? 'active';
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
 
         $id = $this->repo->create($data);
 
         if ($roleId) {
-            // orgId may be null for super-admin users (no org context)
             $this->repo->assignRole($id, $roleId, $orgId);
         }
 
         if (!empty($facilityIds) && $orgId) {
             $this->repo->syncFacilities($id, $facilityIds, $orgId);
+        }
+
+        // Send invitation email for password-less users
+        if ($isInvitation && $sendInvite) {
+            try {
+                $container = Container::getInstance();
+                $authService = $container->make(AuthService::class);
+                $authService->sendInvitation($data['email'], $data['first_name']);
+            } catch (\Throwable $e) {
+                error_log('[Invite] Failed to send invitation to ' . $data['email'] . ': ' . $e->getMessage());
+            }
         }
 
         $user = $this->repo->findWithRoles($id);
@@ -141,7 +169,45 @@ final class UserController extends Controller
             $request->header('User-Agent')
         );
 
-        return $this->created($user, 'User created');
+        return $this->created($user, $isInvitation ? 'User created — invitation email sent' : 'User created');
+    }
+
+    /**
+     * POST /api/users/{id}/resend-invite
+     * Resend invitation email to a pending user.
+     */
+    public function resendInvite(Request $request, int $id): Response
+    {
+        $user = $this->repo->findById($id);
+        if (!$user) {
+            throw new NotFoundException('User not found');
+        }
+
+        if (!empty($user['email_verified_at'])) {
+            return $this->error('User has already accepted their invitation.', 422);
+        }
+
+        try {
+            $container = Container::getInstance();
+            $authService = $container->make(AuthService::class);
+            $authService->sendInvitation($user['email'], $user['first_name']);
+        } catch (\Throwable $e) {
+            return $this->error('Failed to send invitation: ' . $e->getMessage(), 500);
+        }
+
+        $this->auditLog->log(
+            $request->organizationId(),
+            $request->userId(),
+            'resent_invite',
+            'user',
+            $id,
+            null,
+            ['email' => $user['email']],
+            $request->ip(),
+            $request->header('User-Agent')
+        );
+
+        return $this->success(null, 'Invitation email resent');
     }
 
     public function update(Request $request, int $id): Response
