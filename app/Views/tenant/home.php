@@ -18,8 +18,15 @@ foreach ($facilities as $fac) {
 if (!$heroVideo && !empty($branding['hero_video'])) {
     $heroVideo = $branding['hero_video'];
 }
+
+// Ensure relative storage paths work on tenant subdomains
+if ($heroVideo && !preg_match('#^https?://#i', $heroVideo)) {
+    // It's a relative path — prepend the current origin
+    $heroVideo = rtrim($baseUrl ?? '', '/') . '/' . ltrim($heroVideo, '/');
+}
 ?>
 
+<!-- DEBUG: heroVideo=<?= htmlspecialchars($heroVideo ?? 'NULL') ?> facilityCount=<?= count($facilities) ?> -->
 <!-- ═══ HERO SECTION ═══ -->
 <section class="relative overflow-hidden min-h-[85vh] flex items-center">
     <div class="absolute inset-0 bg-navy-950"></div>
@@ -32,14 +39,18 @@ if (!$heroVideo && !empty($branding['hero_video'])) {
         <video
             autoplay muted loop playsinline
             preload="auto"
-            poster="<?= htmlspecialchars($heroImage ?? '') ?>"
-            class="absolute inset-0 w-full h-full object-cover opacity-20"
-            oncanplay="this.style.opacity='0.20'"
+            <?php if ($heroImage): ?>poster="<?= htmlspecialchars($heroImage) ?>"<?php endif; ?>
+            class="absolute inset-0 w-full h-full object-cover"
+            style="opacity: 0;"
+            onloadeddata="this.style.opacity='0.35'"
+            onerror="this.parentElement.style.display='none'"
         >
-            <source src="<?= htmlspecialchars($heroVideo) ?>" type="video/mp4">
+            <source src="<?= htmlspecialchars($heroVideo) ?>"<?php
+                $ext = strtolower(pathinfo($heroVideo, PATHINFO_EXTENSION));
+                $videoTypes = ['mp4' => 'video/mp4', 'webm' => 'video/webm', 'ogg' => 'video/ogg', 'mov' => 'video/quicktime'];
+                if (isset($videoTypes[$ext])): ?> type="<?= $videoTypes[$ext] ?>"<?php endif; ?>>
         </video>
-        <div class="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/85 to-navy-950/50"></div>
-        <div class="absolute inset-0 bg-navy-950/30"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/80 to-navy-950/40"></div>
     </div>
     <?php elseif ($heroImage): ?>
     <div class="absolute inset-0">
