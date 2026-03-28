@@ -63,6 +63,7 @@ final class AuthMiddleware implements MiddlewareInterface
         '/schedule',
         '/facilities',
         '/book-court',
+        '/forms/',
         '/dashboard',
         // Uploaded files served via PHP (storage outside docroot)
         '/storage/',
