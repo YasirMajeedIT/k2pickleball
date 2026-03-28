@@ -65,16 +65,10 @@ ob_start();
                 </div>
                 <div class="grid grid-cols-2 gap-0">
                     <div class="px-6 py-4">
-                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Sport Type</dt>
-                        <dd class="mt-1 text-sm text-surface-600 dark:text-surface-300 capitalize" x-text="court.sport_type || '—'"></dd>
-                    </div>
-                    <div class="px-6 py-4 border-l border-surface-100 dark:border-surface-800">
                         <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Surface Type</dt>
                         <dd class="mt-1 text-sm text-surface-600 dark:text-surface-300 capitalize" x-text="court.surface_type || '—'"></dd>
                     </div>
-                </div>
-                <div class="grid grid-cols-2 gap-0">
-                    <div class="px-6 py-4">
+                    <div class="px-6 py-4 border-l border-surface-100 dark:border-surface-800">
                         <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Status</dt>
                         <dd class="mt-1">
                             <span :class="{
@@ -84,10 +78,6 @@ ob_start();
                                 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400': court.status === 'reserved'
                             }" class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium" x-text="court.status || '—'"></span>
                         </dd>
-                    </div>
-                    <div class="px-6 py-4 border-l border-surface-100 dark:border-surface-800">
-                        <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Hourly Rate</dt>
-                        <dd class="mt-1 text-sm font-medium text-surface-800 dark:text-surface-100" x-text="court.hourly_rate ? '$' + parseFloat(court.hourly_rate).toFixed(2) : '—'"></dd>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-0">

@@ -7,6 +7,8 @@ $apiUrl = ($baseUrl ?? '') . '/api/facilities';
 $columns = [
     ['key' => 'id', 'label' => 'ID', 'sortable' => true],
     ['key' => 'name', 'label' => 'Name', 'sortable' => true],
+    ['key' => 'facility_type', 'label' => 'Type', 'render' => "function(row) { return (row.facility_type || '-').replace(/_/g, ' ').replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }); }"],
+    ['key' => 'sport_type', 'label' => 'Sport', 'render' => "function(row) { var st = row.sport_type === 'other' && row.custom_sport_type ? row.custom_sport_type : (row.sport_type || '-'); return st.replace(/_/g, ' ').replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }); }"],
     ['key' => 'city', 'label' => 'City', 'sortable' => true],
     ['key' => 'state', 'label' => 'State'],
     ['key' => 'status', 'label' => 'Status', 'render' => "function(row) {

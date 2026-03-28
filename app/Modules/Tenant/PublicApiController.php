@@ -104,7 +104,7 @@ class PublicApiController extends Controller
 
         // Load courts
         $facility['courts'] = $this->db->fetchAll(
-            "SELECT `id`, `name`, `sport_type`, `is_indoor`, `is_lighted`, `court_number`, `max_players`
+            "SELECT `id`, `name`, `is_indoor`, `is_lighted`, `court_number`, `max_players`
              FROM `courts` WHERE `facility_id` = ? AND `status` = 'active' ORDER BY `court_number` ASC",
             [$facility['id']]
         );
@@ -373,7 +373,7 @@ class PublicApiController extends Controller
 
         // Courts
         $class['courts'] = $this->db->fetchAll(
-            "SELECT c.`name`, c.`sport_type`, c.`is_indoor`
+            "SELECT c.`name`, c.`is_indoor`
              FROM `st_class_courts` cc
              JOIN `courts` c ON c.`id` = cc.`court_id`
              WHERE cc.`class_id` = ?",
@@ -500,12 +500,20 @@ class PublicApiController extends Controller
 
         // Load facility with settings (operating hours)
         $facility = $this->db->fetch(
-            "SELECT `id`, `name`, `settings` FROM `facilities`
+            "SELECT `id`, `name`, `settings`, `sport_type`, `custom_sport_type` FROM `facilities`
              WHERE `id` = ? AND `organization_id` = ? AND `status` = 'active'",
             [$facilityId, $orgId]
         );
         if (!$facility) {
             return $this->error('Facility not found', 404);
+        }
+
+        // If sport_type filter requested, check against facility's sport_type
+        if ($sportType !== '') {
+            $facilitySport = $facility['sport_type'] === 'other' ? ($facility['custom_sport_type'] ?? '') : $facility['sport_type'];
+            if ($facilitySport !== $sportType && $facility['sport_type'] !== 'multi') {
+                return $this->success(['facility' => $facility['name'], 'date' => $date, 'courts' => []]);
+            }
         }
 
         $settings = json_decode($facility['settings'] ?? '{}', true) ?: [];
@@ -521,15 +529,11 @@ class PublicApiController extends Controller
         [$openTime, $closeTime] = explode('-', $dayHours);
 
         // Load courts
-        $courtSql = "SELECT `id`, `name`, `sport_type`, `is_indoor`, `is_lighted`, `court_number`,
-                            `hourly_rate`, `max_players`, `surface_type`
+        $courtSql = "SELECT `id`, `name`, `is_indoor`, `is_lighted`, `court_number`,
+                            `max_players`, `surface_type`
                      FROM `courts`
                      WHERE `facility_id` = ? AND `status` = 'active'";
         $courtParams = [$facilityId];
-        if ($sportType !== '') {
-            $courtSql .= " AND `sport_type` = ?";
-            $courtParams[] = $sportType;
-        }
         $courtSql .= " ORDER BY `court_number` ASC";
         $courts = $this->db->fetchAll($courtSql, $courtParams);
 
@@ -665,7 +669,7 @@ class PublicApiController extends Controller
 
         // Validate court belongs to facility and org
         $court = $this->db->fetch(
-            "SELECT c.`id`, c.`hourly_rate`, c.`max_players`, c.`name`
+            "SELECT c.`id`, c.`max_players`, c.`name`
              FROM `courts` c
              JOIN `facilities` f ON f.`id` = c.`facility_id`
              WHERE c.`id` = ? AND c.`facility_id` = ? AND f.`organization_id` = ?
@@ -691,8 +695,7 @@ class PublicApiController extends Controller
             return $this->error('Duration must be between 30 minutes and 4 hours', 422);
         }
 
-        $hourlyRate = (float) $court['hourly_rate'];
-        $totalPrice = round($hourlyRate * ($durationMinutes / 60), 2);
+        $totalPrice = 0.00;
 
         $startTimeFull = $startTime . ':00';
         $endTimeFull = $endTime . ':00';

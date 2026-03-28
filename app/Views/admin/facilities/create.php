@@ -10,6 +10,13 @@ $fields = [
     ['name' => 'name', 'label' => 'Facility Name', 'required' => true, 'placeholder' => 'Main Sports Complex'],
     ['name' => 'tagline', 'label' => 'Tagline', 'placeholder' => 'Premier pickleball destination', 'help' => 'A short description shown to players'],
     ['name' => 'slug', 'label' => 'Slug', 'required' => true, 'placeholder' => 'main-sports-complex', 'help' => 'URL-friendly identifier'],
+    ['name' => 'facility_type', 'label' => 'Facility Type', 'type' => 'select', 'required' => true, 'options' => [
+        'sports_facility' => 'Sports Facility', 'recreational_center' => 'Recreational Center',
+        'fitness_center' => 'Fitness Center', 'community_center' => 'Community Center',
+        'country_club' => 'Country Club', 'resort' => 'Resort', 'school' => 'School',
+        'park' => 'Park', 'other' => 'Other',
+    ]],
+    ['name' => 'sport_type', 'label' => 'Sport Type', 'type' => 'custom'],
     ['name' => 'address_line1', 'label' => 'Address Line 1', 'required' => true, 'placeholder' => '123 Main Street'],
     ['name' => 'address_line2', 'label' => 'Address Line 2', 'placeholder' => 'Suite 100'],
     ['name' => 'city', 'label' => 'City', 'required' => true, 'cols' => 'half'],
@@ -56,6 +63,8 @@ function facilityForm() {
             name: '', tagline: '', slug: '', address_line1: '', address_line2: '',
             city: '', state: '', zip: '', country: 'US', phone: '', email: '',
             timezone: 'America/New_York', status: 'active', tax_rate: '0.00',
+            sport_type: 'pickleball', custom_sport_type: '',
+            facility_type: 'sports_facility',
             facility_image: '', _file_facility_image: null, _preview_facility_image: '',
             amenities: [], _custom_amenities: [],
             operating_hours: '',
@@ -125,6 +134,9 @@ function facilityForm() {
 
                 const body = {
                     name: this.form.name, tagline: this.form.tagline, slug: this.form.slug,
+                    sport_type: this.form.sport_type,
+                    custom_sport_type: this.form.sport_type === 'other' ? this.form.custom_sport_type : null,
+                    facility_type: this.form.facility_type,
                     address_line1: this.form.address_line1, address_line2: this.form.address_line2,
                     city: this.form.city, state: this.form.state, zip_code: this.form.zip,
                     country: this.form.country, phone: this.form.phone, email: this.form.email,

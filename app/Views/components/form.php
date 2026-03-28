@@ -284,6 +284,29 @@ $backUrl = $backUrl ?? (($baseUrl ?? '') . '/admin');
                             </label>
                         </div>
 
+                    <?php elseif ($type === 'custom' && $name === 'sport_type'): ?>
+                        <!-- Sport Type: Select with predefined options + Other for custom input -->
+                        <div class="space-y-3">
+                            <select x-model="form.sport_type"
+                                    class="w-full rounded-xl border border-surface-200 bg-white px-4 py-3 text-sm dark:border-surface-700 dark:bg-surface-800 dark:text-white focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors">
+                                <option value="pickleball">Pickleball</option>
+                                <option value="tennis">Tennis</option>
+                                <option value="badminton">Badminton</option>
+                                <option value="basketball">Basketball</option>
+                                <option value="volleyball">Volleyball</option>
+                                <option value="soccer">Soccer</option>
+                                <option value="swimming">Swimming</option>
+                                <option value="fishing">Fishing</option>
+                                <option value="multi">Multi-Sport</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div x-show="form.sport_type === 'other'" x-transition class="mt-2">
+                                <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-1.5">Custom Sport Type</label>
+                                <input type="text" x-model="form.custom_sport_type" placeholder="Enter sport type"
+                                       class="w-full rounded-xl border border-surface-200 bg-white px-4 py-3 text-sm dark:border-surface-700 dark:bg-surface-800 dark:text-white focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors">
+                            </div>
+                        </div>
+
                     <?php elseif ($type === 'custom' && $name === 'operating_hours'): ?>
                         <!-- Operating Hours: Day-by-day time picker -->
                         <div class="space-y-3">

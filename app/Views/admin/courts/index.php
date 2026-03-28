@@ -8,9 +8,7 @@ $columns = [
     ['key' => 'id', 'label' => 'ID', 'sortable' => true],
     ['key' => 'name', 'label' => 'Name', 'sortable' => true],
     ['key' => 'facility_name', 'label' => 'Facility'],
-    ['key' => 'sport_type', 'label' => 'Type'],
     ['key' => 'surface_type', 'label' => 'Surface'],
-    ['key' => 'hourly_rate', 'label' => 'Rate/hr', 'render' => "function(row) { return row.hourly_rate ? '$' + parseFloat(row.hourly_rate).toFixed(2) : '-'; }"],
     ['key' => 'status', 'label' => 'Status', 'render' => "function(row) {
         const colors = { active: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400', inactive: 'bg-surface-100 text-surface-600', maintenance: 'bg-yellow-100 text-yellow-700', reserved: 'bg-blue-100 text-blue-700' };
         return '<span class=\"inline-block rounded-full px-2 py-0.5 text-xs font-medium ' + (colors[row.status] || 'bg-surface-100 text-surface-600') + '\">' + (row.status || '-') + '</span>';

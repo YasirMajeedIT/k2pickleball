@@ -54,12 +54,10 @@ final class CourtController extends Controller
             'facility_id' => 'required|integer',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
-            'sport_type' => 'required|in:pickleball,tennis,badminton,basketball,volleyball,multi',
             'surface_type' => 'nullable|in:concrete,asphalt,wood,synthetic,clay,grass',
             'is_indoor' => 'nullable|boolean',
             'is_lighted' => 'nullable|boolean',
             'court_number' => 'nullable|integer|min:0',
-            'hourly_rate' => 'nullable|numeric|min:0',
             'max_players' => 'nullable|integer|min:1',
             'status' => 'nullable|in:active,inactive,maintenance,reserved',
         ]);
@@ -90,12 +88,10 @@ final class CourtController extends Controller
         $data = Validator::validate($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
-            'sport_type' => 'required|in:pickleball,tennis,badminton,basketball,volleyball,multi',
             'surface_type' => 'nullable|in:concrete,asphalt,wood,synthetic,clay,grass',
             'is_indoor' => 'nullable|boolean',
             'is_lighted' => 'nullable|boolean',
             'court_number' => 'nullable|integer|min:0',
-            'hourly_rate' => 'nullable|numeric|min:0',
             'max_players' => 'nullable|integer|min:1',
             'status' => 'nullable|in:active,inactive,maintenance,reserved',
         ]);

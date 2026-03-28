@@ -56,6 +56,9 @@ final class FacilityController extends Controller
             'tagline'         => 'nullable|string|max:255',
             'slug'            => 'required|string|max:255',
             'description'     => 'nullable|string|max:2000',
+            'sport_type'      => 'required|string|max:100',
+            'custom_sport_type' => 'nullable|string|max:100',
+            'facility_type'   => 'required|string|max:100',
             'address_line1'   => 'nullable|string|max:255',
             'address_line2'   => 'nullable|string|max:255',
             'city'            => 'nullable|string|max:100',
@@ -84,6 +87,9 @@ final class FacilityController extends Controller
         $data['name']            = Sanitizer::string($data['name']);
         $data['slug']            = Sanitizer::string($data['slug']);
         if (isset($data['tagline'])) $data['tagline'] = Sanitizer::string($data['tagline']);
+        $data['sport_type']      = Sanitizer::string($data['sport_type'] ?? 'pickleball');
+        $data['custom_sport_type'] = isset($data['custom_sport_type']) ? Sanitizer::string($data['custom_sport_type']) : null;
+        $data['facility_type']   = Sanitizer::string($data['facility_type'] ?? 'sports_facility');
         $data['zip']             = $data['zip_code'] ?? null;
         unset($data['zip_code']);
         $data['tax_rate']        = isset($data['tax_rate']) ? round((float) $data['tax_rate'], 2) : 0.00;
@@ -129,6 +135,9 @@ final class FacilityController extends Controller
             'tagline'         => 'nullable|string|max:255',
             'slug'            => 'required|string|max:255',
             'description'     => 'nullable|string|max:2000',
+            'sport_type'      => 'nullable|string|max:100',
+            'custom_sport_type' => 'nullable|string|max:100',
+            'facility_type'   => 'nullable|string|max:100',
             'address_line1'   => 'nullable|string|max:255',
             'address_line2'   => 'nullable|string|max:255',
             'city'            => 'nullable|string|max:100',
@@ -157,6 +166,9 @@ final class FacilityController extends Controller
         $data['name'] = Sanitizer::string($data['name']);
         $data['slug'] = Sanitizer::string($data['slug']);
         if (isset($data['tagline'])) $data['tagline'] = Sanitizer::string($data['tagline']);
+        if (isset($data['sport_type'])) $data['sport_type'] = Sanitizer::string($data['sport_type']);
+        if (isset($data['custom_sport_type'])) $data['custom_sport_type'] = Sanitizer::string($data['custom_sport_type']);
+        if (isset($data['facility_type'])) $data['facility_type'] = Sanitizer::string($data['facility_type']);
         $data['zip']  = $data['zip_code'] ?? null;
         unset($data['zip_code']);
         $data['tax_rate'] = isset($data['tax_rate']) ? round((float) $data['tax_rate'], 2) : 0.00;

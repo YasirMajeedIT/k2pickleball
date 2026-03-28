@@ -92,6 +92,16 @@ ob_start();
                     </div>
                     <div class="grid grid-cols-2 gap-0">
                         <div class="px-6 py-4">
+                            <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Facility Type</dt>
+                            <dd class="mt-1 text-sm text-surface-600 dark:text-surface-300 capitalize" x-text="(facility.facility_type || '—').replace(/_/g, ' ')"></dd>
+                        </div>
+                        <div class="px-6 py-4 border-l border-surface-100 dark:border-surface-800">
+                            <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Sport Type</dt>
+                            <dd class="mt-1 text-sm text-surface-600 dark:text-surface-300 capitalize" x-text="facility.sport_type === 'other' && facility.custom_sport_type ? facility.custom_sport_type : (facility.sport_type || '—').replace(/_/g, ' ')"></dd>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-0">
+                        <div class="px-6 py-4">
                             <dt class="text-xs font-semibold uppercase tracking-wider text-surface-400">Tax Rate</dt>
                             <dd class="mt-1 text-sm text-surface-700 dark:text-surface-300" x-text="facility.tax_rate ? facility.tax_rate + '%' : '0%'"></dd>
                         </div>

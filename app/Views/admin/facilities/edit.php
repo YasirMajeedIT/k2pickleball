@@ -10,6 +10,13 @@ $fields = [
     ['name' => 'name', 'label' => 'Facility Name', 'required' => true],
     ['name' => 'tagline', 'label' => 'Tagline', 'placeholder' => 'Premier pickleball destination', 'help' => 'A short description shown to players'],
     ['name' => 'slug', 'label' => 'Slug', 'required' => true, 'help' => 'URL-friendly identifier'],
+    ['name' => 'facility_type', 'label' => 'Facility Type', 'type' => 'select', 'required' => true, 'options' => [
+        'sports_facility' => 'Sports Facility', 'recreational_center' => 'Recreational Center',
+        'fitness_center' => 'Fitness Center', 'community_center' => 'Community Center',
+        'country_club' => 'Country Club', 'resort' => 'Resort', 'school' => 'School',
+        'park' => 'Park', 'other' => 'Other',
+    ]],
+    ['name' => 'sport_type', 'label' => 'Sport Type', 'type' => 'custom'],
     ['name' => 'address_line1', 'label' => 'Address Line 1', 'required' => true],
     ['name' => 'address_line2', 'label' => 'Address Line 2'],
     ['name' => 'city', 'label' => 'City', 'required' => true, 'cols' => 'half'],
@@ -59,6 +66,8 @@ function facilityEditForm() {
             name: '', tagline: '', slug: '', address_line1: '', address_line2: '',
             city: '', state: '', zip: '', country: '', phone: '', email: '',
             timezone: '', status: '', tax_rate: '0.00',
+            sport_type: 'pickleball', custom_sport_type: '',
+            facility_type: 'sports_facility',
             facility_image: '', _file_facility_image: null, _preview_facility_image: '', _existing_image_url: '',
             amenities: [], _custom_amenities: [],
             operating_hours: '',
@@ -123,6 +132,9 @@ function facilityEditForm() {
                     this.form = {
                         ...this.form,
                         name: d.name || '', tagline: d.tagline || '', slug: d.slug || '',
+                        sport_type: d.sport_type || 'pickleball',
+                        custom_sport_type: d.custom_sport_type || '',
+                        facility_type: d.facility_type || 'sports_facility',
                         address_line1: d.address_line1 || '', address_line2: d.address_line2 || '',
                         city: d.city || '', state: d.state || '', zip: d.zip || '',
                         country: d.country || '', phone: d.phone || '', email: d.email || '',
@@ -162,6 +174,9 @@ function facilityEditForm() {
 
                 const body = {
                     name: this.form.name, tagline: this.form.tagline, slug: this.form.slug,
+                    sport_type: this.form.sport_type,
+                    custom_sport_type: this.form.sport_type === 'other' ? this.form.custom_sport_type : null,
+                    facility_type: this.form.facility_type,
                     address_line1: this.form.address_line1, address_line2: this.form.address_line2,
                     city: this.form.city, state: this.form.state, zip_code: this.form.zip,
                     country: this.form.country, phone: this.form.phone, email: this.form.email,

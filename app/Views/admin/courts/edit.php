@@ -9,10 +9,6 @@ $backUrl = ($baseUrl ?? '') . '/admin/courts';
 $fields = [
     ['name' => 'facility_id', 'label' => 'Facility', 'type' => 'select', 'required' => true, 'options' => []],
     ['name' => 'name', 'label' => 'Court Name', 'required' => true],
-    ['name' => 'sport_type', 'label' => 'Sport Type', 'type' => 'select', 'required' => true, 'options' => [
-        'pickleball' => 'Pickleball', 'tennis' => 'Tennis', 'badminton' => 'Badminton',
-        'basketball' => 'Basketball', 'volleyball' => 'Volleyball', 'multi' => 'Multi-Sport',
-    ]],
     ['name' => 'surface_type', 'label' => 'Surface Type', 'type' => 'select', 'options' => [
         'concrete' => 'Concrete', 'asphalt' => 'Asphalt', 'wood' => 'Wood',
         'synthetic' => 'Synthetic', 'clay' => 'Clay', 'grass' => 'Grass',
@@ -20,7 +16,6 @@ $fields = [
     ['name' => 'is_indoor', 'label' => 'Indoor Court', 'type' => 'select', 'options' => ['0' => 'No', '1' => 'Yes'], 'cols' => 'half'],
     ['name' => 'is_lighted', 'label' => 'Lighted', 'type' => 'select', 'options' => ['0' => 'No', '1' => 'Yes'], 'cols' => 'half'],
     ['name' => 'court_number', 'label' => 'Court Number', 'cols' => 'half'],
-    ['name' => 'hourly_rate', 'label' => 'Hourly Rate ($)', 'type' => 'number', 'step' => '0.01', 'min' => '0', 'cols' => 'half'],
     ['name' => 'max_players', 'label' => 'Max Players', 'type' => 'number', 'min' => '1', 'cols' => 'half'],
     ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'required' => true, 'options' => [
         'active' => 'Active', 'inactive' => 'Inactive', 'maintenance' => 'Maintenance', 'reserved' => 'Reserved',
@@ -37,7 +32,7 @@ function courtEditForm() {
     const id = pathParts[pathParts.indexOf('courts') + 1];
 
     return {
-        form: { facility_id: '', name: '', sport_type: '', surface_type: '', is_indoor: '0', is_lighted: '0', court_number: '', hourly_rate: '', max_players: '', status: '', description: '' },
+        form: { facility_id: '', name: '', surface_type: '', is_indoor: '0', is_lighted: '0', court_number: '', max_players: '', status: '', description: '' },
         errors: {},
         submitting: false,
         async init() {
@@ -56,10 +51,10 @@ function courtEditForm() {
                     const d = json.data;
                     this.form = {
                         facility_id: d.facility_id || '', name: d.name || '',
-                        sport_type: d.sport_type || '', surface_type: d.surface_type || '',
+                        surface_type: d.surface_type || '',
                         is_indoor: String(d.is_indoor || 0), is_lighted: String(d.is_lighted || 0),
                         court_number: d.court_number || '',
-                        hourly_rate: d.hourly_rate || '', max_players: d.max_players || '',
+                        max_players: d.max_players || '',
                         status: d.status || '',
                         description: d.description || ''
                     };
@@ -70,7 +65,6 @@ function courtEditForm() {
             this.submitting = true; this.errors = {};
             try {
                 const body = { ...this.form };
-                if (body.hourly_rate) body.hourly_rate = parseFloat(body.hourly_rate);
                 if (body.max_players) body.max_players = parseInt(body.max_players);
                 body.is_indoor = parseInt(body.is_indoor);
                 body.is_lighted = parseInt(body.is_lighted);
