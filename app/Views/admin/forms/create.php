@@ -85,7 +85,7 @@ ob_start();
                 </div>
                 <div class="flex flex-wrap gap-6">
                     <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" x-model="form.requires_auth" :true-value="1" :false-value="0"
+                        <input type="checkbox" :checked="form.requires_auth == 1" @change="form.requires_auth = $event.target.checked ? 1 : 0"
                                class="rounded border-surface-300 text-primary-600 focus:ring-primary-500">
                         <div>
                             <span class="text-sm font-medium text-surface-700 dark:text-surface-300">Require Login</span>
@@ -93,7 +93,7 @@ ob_start();
                         </div>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" x-model="form.show_in_nav" :true-value="1" :false-value="0"
+                        <input type="checkbox" :checked="form.show_in_nav == 1" @change="form.show_in_nav = $event.target.checked ? 1 : 0"
                                class="rounded border-surface-300 text-primary-600 focus:ring-primary-500">
                         <div>
                             <span class="text-sm font-medium text-surface-700 dark:text-surface-300">Show in Navigation</span>
@@ -179,7 +179,7 @@ ob_start();
                             </div>
                             <div class="flex flex-wrap items-center gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" x-model="field.is_required" :true-value="1" :false-value="0"
+                                    <input type="checkbox" :checked="field.is_required == 1" @change="field.is_required = $event.target.checked ? 1 : 0"
                                            class="rounded border-surface-300 text-primary-600 focus:ring-primary-500">
                                     <span class="text-xs font-medium text-surface-600 dark:text-surface-400">Required</span>
                                 </label>

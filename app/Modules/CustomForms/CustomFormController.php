@@ -321,11 +321,12 @@ final class CustomFormController extends Controller
         unset($f);
 
         return $this->success([
-            'title'         => $form['title'],
-            'slug'          => $form['slug'],
-            'description'   => $form['description'],
-            'requires_auth' => (bool) $form['requires_auth'],
-            'fields'        => $fields,
+            'title'           => $form['title'],
+            'slug'            => $form['slug'],
+            'description'     => $form['description'],
+            'success_message' => $form['success_message'] ?? '',
+            'requires_auth'   => (bool) $form['requires_auth'],
+            'fields'          => $fields,
         ]);
     }
 
