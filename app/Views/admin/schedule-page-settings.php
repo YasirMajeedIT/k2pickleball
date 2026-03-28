@@ -351,7 +351,7 @@ function schedulePageSettings() {
         cardResourceIds: [],
         resources: [],
         categories: [],
-        previewUrl: ''
+        previewUrl: '',
 
         allViews: [
             { key: 'month', label: 'Month', desc: 'Full monthly calendar grid' },
