@@ -122,7 +122,7 @@ ob_start();
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <template x-for="field in cardFields" :key="field.key">
                             <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all"
-                                   :class="s[field.key]
+                                   :class="s[field.key] === '1'
                                        ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-300 dark:border-emerald-800'
                                        : 'border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50'">
                                 <input type="checkbox" x-model="s[field.key]" :true-value="'1'" :false-value="'0'" class="rounded border-surface-300 text-emerald-500 focus:ring-emerald-500/20 mt-0.5 flex-shrink-0">
@@ -140,7 +140,7 @@ ob_start();
                              ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-300 dark:border-emerald-800'
                              : 'border-surface-100 dark:border-surface-800'">
                         <label class="flex items-start gap-3 p-3 cursor-pointer">
-                            <input type="checkbox" x-model="s.show_resources" true-value="'1'" false-value="'0'" class="rounded border-surface-300 text-emerald-500 focus:ring-emerald-500/20 mt-0.5 flex-shrink-0">
+                            <input type="checkbox" x-model="s.show_resources" :true-value="'1'" :false-value="'0'" class="rounded border-surface-300 text-emerald-500 focus:ring-emerald-500/20 mt-0.5 flex-shrink-0">
                             <div class="min-w-0">
                                 <span class="text-sm font-medium text-surface-700 dark:text-surface-200 block">Resources</span>
                                 <p class="text-[10px] text-surface-400 leading-relaxed mt-0.5">Show selected resources on each card (e.g. Skill Level, Age Group, Equipment).</p>
@@ -190,14 +190,14 @@ ob_start();
                 </div>
                 <div class="p-6 space-y-4">
                     <label class="flex items-center gap-3 p-3 rounded-xl border border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 cursor-pointer transition-all">
-                        <input type="checkbox" x-model="s.show_category_filter" true-value="1" false-value="0" class="rounded border-surface-300 text-amber-500 focus:ring-amber-500/20">
+                        <input type="checkbox" x-model="s.show_category_filter" :true-value="'1'" :false-value="'0'" class="rounded border-surface-300 text-amber-500 focus:ring-amber-500/20">
                         <div>
                             <span class="text-sm font-medium text-surface-700 dark:text-surface-200">Category Filter</span>
                             <p class="text-[10px] text-surface-400 mt-0.5">Show category filter pills (e.g. Clinics, Leagues, Open Play).</p>
                         </div>
                     </label>
                     <label class="flex items-center gap-3 p-3 rounded-xl border border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 cursor-pointer transition-all">
-                        <input type="checkbox" x-model="s.show_resource_filters" true-value="1" false-value="0" class="rounded border-surface-300 text-amber-500 focus:ring-amber-500/20">
+                        <input type="checkbox" x-model="s.show_resource_filters" :true-value="'1'" :false-value="'0'" class="rounded border-surface-300 text-amber-500 focus:ring-amber-500/20">
                         <div>
                             <span class="text-sm font-medium text-surface-700 dark:text-surface-200">Resource Filters</span>
                             <p class="text-[10px] text-surface-400 mt-0.5">Show custom resource filters (e.g. Skill Level, Age Group from Resources table).</p>
@@ -245,14 +245,14 @@ ob_start();
                 </div>
                 <div class="p-6 space-y-4">
                     <label class="flex items-start gap-3 p-3 rounded-xl border border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 cursor-pointer transition-all">
-                        <input type="checkbox" x-model="s.inline_booking" true-value="1" false-value="0" class="rounded border-surface-300 text-blue-500 focus:ring-blue-500/20 mt-0.5">
+                        <input type="checkbox" x-model="s.inline_booking" :true-value="'1'" :false-value="'0'" class="rounded border-surface-300 text-blue-500 focus:ring-blue-500/20 mt-0.5">
                         <div>
                             <span class="text-sm font-medium text-surface-700 dark:text-surface-200">Inline Click-to-Book</span>
                             <p class="text-[10px] text-surface-400 mt-0.5">Allow visitors to book directly from the schedule via a popup modal instead of navigating to a detail page.</p>
                         </div>
                     </label>
                     <label class="flex items-start gap-3 p-3 rounded-xl border border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 cursor-pointer transition-all">
-                        <input type="checkbox" x-model="s.require_login" true-value="1" false-value="0" class="rounded border-surface-300 text-blue-500 focus:ring-blue-500/20 mt-0.5">
+                        <input type="checkbox" x-model="s.require_login" :true-value="'1'" :false-value="'0'" class="rounded border-surface-300 text-blue-500 focus:ring-blue-500/20 mt-0.5">
                         <div>
                             <span class="text-sm font-medium text-surface-700 dark:text-surface-200">Require Login</span>
                             <p class="text-[10px] text-surface-400 mt-0.5">Visitors must be logged in before they can make a booking or payment.</p>
@@ -401,29 +401,32 @@ function schedulePageSettings() {
                     this.categories = json.data.categories || [];
                     const raw = json.data.settings || {};
 
+                    // Normalize boolean-like values to '1'/'0' strings
+                    // (DB may store type=boolean which PHP casts to true/false)
+                    const b = (v, d='1') => (v === true || v === 1 || v === '1' || v === 'true' || (v == null && d === '1')) ? '1' : '0';
+
                     // Normalize settings
                     this.s = {
                         page_title: raw.page_title || 'Class Schedule',
                         page_subtitle: raw.page_subtitle || 'Browse upcoming classes and reserve your spot.',
                         default_view: raw.default_view || 'week',
-                        show_time: String(raw.show_time ?? '1'),
-                        show_title: String(raw.show_title ?? '1'),
-                        show_category: String(raw.show_category ?? '1'),
-                        show_spots: String(raw.show_spots ?? '1'),
-                        show_price: String(raw.show_price ?? '1'),
-                        show_coach: String(raw.show_coach ?? '0'),
-                        show_description: String(raw.show_description ?? '0'),
-                        show_courts: String(raw.show_courts ?? '0'),
-                        show_duration: String(raw.show_duration ?? '0'),
-                        show_resources: String(raw.show_resources ?? '0'),
-
-                        show_session_number: String(raw.show_session_number ?? '0'),
-                        show_hot_deal_badge: String(raw.show_hot_deal_badge ?? '1'),
-                        show_early_bird_badge: String(raw.show_early_bird_badge ?? '1'),
-                        show_category_filter: String(raw.show_category_filter ?? '1'),
-                        show_resource_filters: String(raw.show_resource_filters ?? '0'),
-                        inline_booking: String(raw.inline_booking ?? '1'),
-                        require_login: String(raw.require_login ?? '0'),
+                        show_time: b(raw.show_time, '1'),
+                        show_title: b(raw.show_title, '1'),
+                        show_category: b(raw.show_category, '1'),
+                        show_spots: b(raw.show_spots, '1'),
+                        show_price: b(raw.show_price, '1'),
+                        show_coach: b(raw.show_coach, '0'),
+                        show_description: b(raw.show_description, '0'),
+                        show_courts: b(raw.show_courts, '0'),
+                        show_duration: b(raw.show_duration, '0'),
+                        show_resources: b(raw.show_resources, '0'),
+                        show_session_number: b(raw.show_session_number, '0'),
+                        show_hot_deal_badge: b(raw.show_hot_deal_badge, '1'),
+                        show_early_bird_badge: b(raw.show_early_bird_badge, '1'),
+                        show_category_filter: b(raw.show_category_filter, '1'),
+                        show_resource_filters: b(raw.show_resource_filters, '0'),
+                        inline_booking: b(raw.inline_booking, '1'),
+                        require_login: b(raw.require_login, '0'),
                         color_scheme: raw.color_scheme || 'default',
                     };
 

@@ -181,7 +181,9 @@
                             </div>
                             <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                 <span x-show="cfg.show_category !== '0'" class="text-[11px] px-2 py-0.5 rounded-full font-medium text-white/80" :style="'background:' + (cls.category_color || '#d4af37')" x-text="cls.category_name"></span>
-                                <span x-show="cfg.show_skill_level !== '0' && cls.skill_levels" class="text-[11px] text-slate-500" x-text="cls.skill_levels"></span>
+                                <template x-for="cr in cardResources" :key="cr.id">
+                                    <span x-show="cfg.show_resources !== '0' && cls.resources && cls.resources[cr.id]" class="text-[11px] text-slate-500" x-text="cr.name + ': ' + (cls.resources && cls.resources[cr.id] ? cls.resources[cr.id].values.join(', ') : '')"></span>
+                                </template>
                                 <span x-show="cfg.show_coach !== '0' && cls.coach_name" class="text-[11px] text-slate-400">
                                     <svg class="w-3 h-3 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                     <span x-text="cls.coach_name"></span>
@@ -238,7 +240,9 @@
                                     </div>
                                     <div class="flex items-center gap-2 mt-1 flex-wrap">
                                         <span x-show="cfg.show_category !== '0'" class="text-[10px] px-2 py-0.5 rounded-full font-medium text-white/80" :style="'background:' + (cls.category_color || '#d4af37')" x-text="cls.category_name"></span>
-                                        <span x-show="cfg.show_skill_level !== '0' && cls.skill_levels" class="text-[10px] text-slate-500" x-text="cls.skill_levels"></span>
+                                        <template x-for="cr in cardResources" :key="cr.id">
+                                            <span x-show="cfg.show_resources !== '0' && cls.resources && cls.resources[cr.id]" class="text-[10px] text-slate-500" x-text="cr.name + ': ' + (cls.resources && cls.resources[cr.id] ? cls.resources[cr.id].values.join(', ') : '')"></span>
+                                        </template>
                                         <span x-show="cfg.show_coach !== '0' && cls.coach_name" class="text-[10px] text-slate-400" x-text="cls.coach_name"></span>
                                     </div>
                                 </div>
@@ -567,6 +571,7 @@ function schedulePage() {
         cfg: {},
         enabledViews: [],
         resourceFilters: [],
+        cardResources: [],
         activeResourceFilters: {},
 
         // Booking modal state
@@ -616,6 +621,7 @@ function schedulePage() {
                 if (json.data) {
                     this.cfg = json.data.settings || {};
                     this.resourceFilters = json.data.resource_filters || [];
+                    this.cardResources = json.data.card_resources || [];
 
                     // Determine enabled views
                     let views = [];
@@ -677,9 +683,11 @@ function schedulePage() {
                 list = list.filter(cls => {
                     for (const rid of activeKeys) {
                         const filterVal = this.activeResourceFilters[rid];
-                        if (filterVal && cls.resource_values) {
-                            const match = cls.resource_values.split(',').map(v => v.trim()).includes(filterVal);
+                        if (filterVal && cls.resources && cls.resources[rid]) {
+                            const match = cls.resources[rid].values.includes(filterVal);
                             if (!match) return false;
+                        } else if (filterVal) {
+                            return false; // class has no values for this resource
                         }
                     }
                     return true;

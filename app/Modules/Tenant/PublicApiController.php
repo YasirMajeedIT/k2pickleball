@@ -282,6 +282,29 @@ class PublicApiController extends Controller
             $cls['is_full'] = $cls['spots_left'] <= 0;
         }
 
+        // Enrich classes with resource values (batch)
+        $stIds = array_unique(array_column($classes, 'session_type_id'));
+        $resourceMap = []; // session_type_id => [ resource_id => [value_name, ...] ]
+        if (!empty($stIds)) {
+            $ph = implode(',', array_fill(0, count($stIds), '?'));
+            $rvRows = $this->db->fetchAll(
+                "SELECT strv.`session_type_id`, r.`id` AS `resource_id`, r.`name` AS `resource_name`, rv.`name` AS `value_name`
+                 FROM `session_type_resource_values` strv
+                 JOIN `resource_values` rv ON rv.`id` = strv.`resource_value_id`
+                 JOIN `resources` r ON r.`id` = rv.`resource_id`
+                 WHERE strv.`session_type_id` IN ({$ph})",
+                array_values($stIds)
+            );
+            foreach ($rvRows as $row) {
+                $resourceMap[$row['session_type_id']][$row['resource_id']]['name'] = $row['resource_name'];
+                $resourceMap[$row['session_type_id']][$row['resource_id']]['values'][] = $row['value_name'];
+            }
+        }
+        foreach ($classes as &$cls) {
+            $cls['resources'] = $resourceMap[$cls['session_type_id']] ?? [];
+        }
+        unset($cls);
+
         return $this->success($classes);
     }
 
@@ -931,7 +954,7 @@ class PublicApiController extends Controller
                 $placeholders = implode(',', array_fill(0, count($filterIds), '?'));
                 $resources = $this->db->fetchAll(
                     "SELECT `id`, `name`, `field_type` FROM `resources`
-                     WHERE `id` IN ({$placeholders}) AND `organization_id` = ? AND `is_active` = 1",
+                     WHERE `id` IN ({$placeholders}) AND `organization_id` = ?",
                     [...$filterIds, $orgId]
                 );
                 foreach ($resources as $res) {
@@ -950,9 +973,39 @@ class PublicApiController extends Controller
             }
         }
 
+        // Load card resources if enabled
+        $cardResources = [];
+        if (($settings['show_resources'] ?? '0') === '1') {
+            $cardIds = [];
+            try { $cardIds = json_decode($settings['card_resource_ids'] ?? '[]', true) ?: []; } catch (\Exception $e) {}
+
+            if (!empty($cardIds)) {
+                $placeholders = implode(',', array_fill(0, count($cardIds), '?'));
+                $resources = $this->db->fetchAll(
+                    "SELECT `id`, `name`, `field_type` FROM `resources`
+                     WHERE `id` IN ({$placeholders}) AND `organization_id` = ?",
+                    [...$cardIds, $orgId]
+                );
+                foreach ($resources as $res) {
+                    $values = $this->db->fetchAll(
+                        "SELECT `id`, `name` FROM `resource_values`
+                         WHERE `resource_id` = ? ORDER BY `sort_order` ASC, `name` ASC",
+                        [$res['id']]
+                    );
+                    $cardResources[] = [
+                        'id' => (int) $res['id'],
+                        'name' => $res['name'],
+                        'field_type' => $res['field_type'],
+                        'values' => $values,
+                    ];
+                }
+            }
+        }
+
         return $this->success([
             'settings' => $settings,
             'resource_filters' => $resourceFilters,
+            'card_resources' => $cardResources,
         ]);
     }
 
