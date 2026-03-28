@@ -6,7 +6,9 @@
 $orgName = htmlspecialchars($org['name'] ?? 'Sports Club');
 $tagline = htmlspecialchars($branding['tagline'] ?? 'Book. Play. Compete.');
 $heroImage = $branding['hero_image'] ?? null;
-
+?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<?php
 // Resolve hero background video: facility-specific → branding setting → null
 $heroVideo = null;
 foreach ($facilities as $fac) {
@@ -173,18 +175,30 @@ if ($heroVideo) {
                             <span x-text="formatDate(s.start_time)"></span>
                             <span class="text-navy-600">·</span>
                             <span x-text="formatTime(s.start_time) + ' - ' + formatTime(s.end_time)"></span>
+                            <span x-show="cfg.show_duration !== '0' && s.duration" class="text-slate-600" x-text="'(' + s.duration + ' min)'"></span>
                         </div>
                         <h3 class="text-lg font-bold text-white group-hover:text-gold-400 transition-colors" x-text="s.session_type_name || s.session_name || 'Session'"></h3>
-                        <div class="flex items-center gap-2 mt-3">
+                        <div x-show="cfg.show_description !== '0' && s.description" class="text-xs text-slate-500 mt-1.5 line-clamp-2 [&_*]:m-0 [&_*]:p-0 [&_*]:text-inherit [&_*]:text-xs" x-html="purify(s.description)"></div>
+                        <div class="flex items-center gap-2 mt-3 flex-wrap">
                             <span class="text-xs px-2.5 py-0.5 rounded-full font-medium text-white/90" :style="'background:' + (s.category_color || '#d4af37')" x-text="s.category_name || 'General'"></span>
                             <span x-show="s.skill_levels" class="text-xs px-2.5 py-0.5 rounded-full bg-navy-800 text-slate-400 font-medium border border-navy-700" x-text="s.skill_levels"></span>
                         </div>
+                        <div class="flex items-center gap-3 mt-2 flex-wrap">
+                            <span x-show="cfg.show_coach !== '0' && s.coach_name" class="text-[11px] text-slate-400 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <span x-text="s.coach_name"></span>
+                            </span>
+                            <span x-show="cfg.show_courts !== '0' && s.courts_display" class="text-[11px] text-slate-500" x-text="s.courts_display"></span>
+                            <template x-for="cr in cardResources" :key="cr.id">
+                                <span x-show="cfg.show_resources !== '0' && s.resources && s.resources[cr.id]" class="text-[11px] text-slate-500" x-text="cr.name + ': ' + (s.resources && s.resources[cr.id] ? s.resources[cr.id].values.join(', ') : '')"></span>
+                            </template>
+                        </div>
                         <div class="flex items-end justify-between mt-5 pt-4 border-t border-navy-700/50">
-                            <div>
+                            <div x-show="cfg.show_price !== '0'">
                                 <div x-show="s.price > 0" class="text-2xl font-extrabold text-white" x-text="'$' + parseFloat(s.price).toFixed(2)"></div>
                                 <div x-show="!s.price || s.price == 0" class="text-2xl font-extrabold gradient-gold">Free</div>
                             </div>
-                            <div class="text-right">
+                            <div x-show="cfg.show_spots !== '0'" class="text-right">
                                 <div class="text-sm font-bold" :class="s.is_full ? 'text-red-400' : 'text-emerald-400'" x-text="s.is_full ? 'Full' : s.spots_left + ' spots left'"></div>
                                 <div class="text-[10px] text-slate-600" x-text="s.booked_count + ' registered'"></div>
                             </div>
@@ -257,12 +271,16 @@ if ($heroVideo) {
 function upcomingSessions() {
     return {
         sessions: [], categories: [], loading: true, filterCategory: null,
+        cfg: {}, cardResources: [],
         async load() {
             this.loading = true;
             try {
                 if (!this.categories.length) {
                     const catRes = await fetch(baseApi + '/api/public/categories');
                     this.categories = (await catRes.json()).data || [];
+                }
+                if (!Object.keys(this.cfg).length) {
+                    await this.loadSettings();
                 }
                 let url = baseApi + '/api/public/schedule?start=' + this.today() + '&end=' + this.futureDate(14);
                 const fac = window.tenantApp?.selectedFacility || JSON.parse(localStorage.getItem('selected_facility') || 'null');
@@ -273,6 +291,21 @@ function upcomingSessions() {
                 this.sessions = (await res.json()).data || [];
             } catch(e) { this.sessions = []; }
             this.loading = false;
+        },
+        async loadSettings() {
+            try {
+                const resp = await fetch(baseApi + '/api/public/schedule-settings');
+                const json = await resp.json();
+                if (json.data) {
+                    this.cfg = json.data.settings || {};
+                    this.cardResources = json.data.card_resources || [];
+                }
+            } catch(e) { /* defaults */ }
+        },
+        purify(html) {
+            if (!html) return '';
+            if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b','strong','i','em','u','br','p','span','ul','ol','li','a'], ALLOWED_ATTR: ['href','target','class'] });
+            const tmp = document.createElement('div'); tmp.textContent = html; return tmp.innerHTML;
         },
         today() { return new Date().toISOString().split('T')[0]; },
         futureDate(days) { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().split('T')[0]; },
