@@ -104,7 +104,7 @@ final class NavigationRepository extends Repository
         // Top-level items (no parent)
         $topLevel = [
             ['label' => 'Home',       'url' => '/',           'type' => 'link',     'system_key' => 'home',        'sort_order' => 10],
-            ['label' => 'Schedule',    'url' => '/schedule',   'type' => 'dropdown', 'system_key' => 'schedule',    'sort_order' => 20],
+            ['label' => 'Schedule',    'url' => '/schedule',   'type' => 'link',     'system_key' => 'schedule',    'sort_order' => 20],
             ['label' => 'Facilities',  'url' => '/facilities', 'type' => 'link',     'system_key' => 'facilities',  'sort_order' => 30, 'is_visible' => 0],
             ['label' => 'Memberships', 'url' => '/memberships','type' => 'link',     'system_key' => 'memberships', 'sort_order' => 40, 'visibility_rule' => 'has_memberships'],
             ['label' => 'About',       'url' => '/about',      'type' => 'link',     'system_key' => 'about',       'sort_order' => 50],

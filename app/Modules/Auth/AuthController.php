@@ -61,7 +61,7 @@ final class AuthController extends Controller
             'password' => 'required|password|confirmed',
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'phone' => 'required|phone',
+            'phone' => 'nullable|phone',
             'organization_id' => 'nullable|integer',
             'role_slug' => 'nullable|string|max:50',
             'organization_name' => 'nullable|string|max:255',

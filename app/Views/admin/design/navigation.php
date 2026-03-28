@@ -152,9 +152,7 @@ function navEditor() {
         async load() {
             this.loading = true;
             try {
-                const res = await fetch('/api/navigation', {
-                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '') }
-                });
+                const res = await authFetch('/api/navigation');
                 const json = await res.json();
                 this.items = (json.data || []).map(i => ({ ...i }));
                 // Detect preview URL from org subdomain
@@ -212,12 +210,8 @@ function navEditor() {
                 sort_order: (i + 1) * 10,
             }));
             try {
-                const res = await fetch('/api/navigation', {
+                const res = await authFetch('/api/navigation', {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || ''),
-                    },
                     body: JSON.stringify({ items: payload }),
                 });
                 const json = await res.json();

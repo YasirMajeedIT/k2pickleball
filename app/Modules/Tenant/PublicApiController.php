@@ -685,14 +685,6 @@ class PublicApiController extends Controller
             [$orgId]
         )['cnt'] ?? 0) > 0;
 
-        // Load categories for "Schedule" dropdown children (all active categories including court)
-        $categories = $this->db->fetchAll(
-            "SELECT `id`, `name`, `slug`, `color` FROM `categories`
-             WHERE `organization_id` = ? AND `is_active` = 1
-             ORDER BY `sort_order` ASC, `name` ASC",
-            [$orgId]
-        );
-
         // Filter by visibility rules
         $filtered = [];
         foreach ($items as $item) {
@@ -715,18 +707,10 @@ class PublicApiController extends Controller
         }
         foreach ($tree as &$node) {
             $node['children'] = $childMap[$node['id']] ?? [];
-            // For schedule dropdown, attach categories as virtual children
-            if ($node['system_key'] === 'schedule' && $node['type'] === 'dropdown') {
-                foreach ($categories as $cat) {
-                    $node['children'][] = [
-                        'id'          => 'cat-' . $cat['id'],
-                        'label'       => $cat['name'],
-                        'url'         => '/schedule/category/' . ($cat['slug'] ?: $cat['id']),
-                        'type'        => 'category',
-                        'category_id' => (int) $cat['id'],
-                        'color'       => $cat['color'],
-                    ];
-                }
+            // Schedule shows as a simple link to /schedule ("All Schedule")
+            if ($node['system_key'] === 'schedule') {
+                $node['type'] = 'link';
+                $node['children'] = [];
             }
         }
         unset($node);

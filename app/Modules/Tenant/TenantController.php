@@ -112,10 +112,16 @@ class TenantController extends Controller
             return Response::html($this->renderNotFound(), 404);
         }
 
+        $payCfg = require dirname(__DIR__, 3) . '/config/payments.php';
+        $squareEnv = $payCfg['square']['environment'] ?? 'sandbox';
+
         return $this->renderView('tenant/schedule-detail.php', [
             'org' => $org,
             'branding' => $org['branding'] ?? [],
             'classId' => $id,
+            'squareAppId' => $payCfg['square']['application_id'] ?? '',
+            'squareLocationId' => $payCfg['square']['location_id'] ?? '',
+            'squareJsUrl' => $payCfg[$squareEnv]['web_payments_url'] ?? $payCfg['sandbox']['web_payments_url'],
         ]);
     }
 

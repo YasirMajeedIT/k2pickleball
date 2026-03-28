@@ -106,7 +106,7 @@ $logoUrl = $branding['logo_url'] ?? '';
                         body: JSON.stringify({ token: this.token, password: this.password, password_confirmation: this.passwordConfirm })
                     });
                     const json = await resp.json();
-                    if (json.success) { this.done = true; }
+                    if (json.status === 'success') { this.done = true; }
                     else { this.error = json.message || 'Failed to reset password.'; }
                 } catch(e) { this.error = 'Network error. Please try again.'; }
                 finally { this.loading = false; }

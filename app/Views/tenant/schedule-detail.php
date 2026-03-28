@@ -1,10 +1,21 @@
 <?php
 /**
  * Tenant Schedule Detail / Class Booking Page — K2 Navy/Gold Theme
- * Fully functional: class detail, pricing tiers, discount codes, booking with auth.
+ * Fully functional: class detail, pricing tiers, discount codes, Square payment, booking with auth.
  */
 $classId = $classId ?? 0;
+$squareAppId = $squareAppId ?? '';
+$squareLocationId = $squareLocationId ?? '';
+$squareJsUrl = $squareJsUrl ?? 'https://sandbox.web.squarecdn.com/v1/square.js';
 ?>
+
+<?php if ($squareAppId): ?>
+<script src="<?= htmlspecialchars($squareJsUrl) ?>"></script>
+<?php endif; ?>
+<script>
+    window.__squareAppId = <?= json_encode($squareAppId) ?>;
+    window.__squareLocationId = <?= json_encode($squareLocationId) ?>;
+</script>
 
 <div x-data="classDetailPage()" x-init="load()">
     <!-- Loading -->
@@ -149,9 +160,21 @@ $classId = $classId ?? 0;
                                     </div>
 
                                     <div class="space-y-3">
-                                        <input type="text" x-model="form.name" placeholder="Full Name *" class="w-full px-4 py-3 bg-navy-800 border border-navy-700 text-white placeholder-slate-500 rounded-xl text-sm focus:border-gold-500/50 outline-none transition-all">
+                                        <input type="text" x-model="form.first_name" placeholder="First Name *" class="w-full px-4 py-3 bg-navy-800 border border-navy-700 text-white placeholder-slate-500 rounded-xl text-sm focus:border-gold-500/50 outline-none transition-all">
+                                        <input type="text" x-model="form.last_name" placeholder="Last Name" class="w-full px-4 py-3 bg-navy-800 border border-navy-700 text-white placeholder-slate-500 rounded-xl text-sm focus:border-gold-500/50 outline-none transition-all">
                                         <input type="email" x-model="form.email" placeholder="Email Address *" class="w-full px-4 py-3 bg-navy-800 border border-navy-700 text-white placeholder-slate-500 rounded-xl text-sm focus:border-gold-500/50 outline-none transition-all">
                                         <input type="tel" x-model="form.phone" placeholder="Phone (optional)" class="w-full px-4 py-3 bg-navy-800 border border-navy-700 text-white placeholder-slate-500 rounded-xl text-sm focus:border-gold-500/50 outline-none transition-all">
+                                    </div>
+
+                                    <!-- Square Card Payment -->
+                                    <div x-show="effectivePrice() > 0" class="mt-4">
+                                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Payment</label>
+                                        <div id="card-container" class="rounded-xl overflow-hidden border border-navy-700 bg-navy-800 p-1 min-h-[54px]"></div>
+                                        <div x-show="cardError" class="mt-1.5 text-xs text-red-400" x-text="cardError"></div>
+                                        <div class="flex items-center gap-1.5 mt-2">
+                                            <svg class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                            <span class="text-[11px] text-slate-500">Secure payment powered by Square. Card details never touch our servers.</span>
+                                        </div>
                                     </div>
 
                                     <div x-show="bookingError" class="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400" x-text="bookingError"></div>
@@ -199,7 +222,10 @@ function classDetailPage() {
         cls: null, loading: true, selectedPackage: 'single',
         showDiscount: false, discountMsg: '', discountValid: false, discountAmt: 0,
         bookingLoading: false, bookingError: '', bookingSuccess: false,
-        form: { name: '', email: '', phone: '', discount_code: '' },
+        form: { first_name: '', last_name: '', email: '', phone: '', discount_code: '' },
+        cardError: '',
+        _squareCard: null,
+        _squareReady: false,
 
         async load() {
             this.loading = true;
@@ -212,12 +238,32 @@ function classDetailPage() {
                 const app = document.querySelector('[x-data]')?.__x;
                 const player = window.tenantApp?.player || app?.$data?.player;
                 if (player) {
-                    this.form.name = (player.first_name || '') + ' ' + (player.last_name || '');
+                    this.form.first_name = player.first_name || '';
+                    this.form.last_name = player.last_name || '';
                     this.form.email = player.email || '';
                     this.form.phone = player.phone || '';
                 }
+                // Initialize Square card input if price > 0 and Square is configured
+                if (this.cls && parseFloat(this.cls.price || 0) > 0) {
+                    this.$nextTick(() => this.initSquareCard());
+                }
             } catch(e) { this.cls = null; }
             this.loading = false;
+        },
+
+        async initSquareCard() {
+            const appId = window.__squareAppId;
+            const locationId = window.__squareLocationId;
+            if (!appId || typeof window.Square === 'undefined') return;
+            try {
+                const payments = window.Square.payments(appId, locationId);
+                this._squareCard = await payments.card();
+                await this._squareCard.attach('#card-container');
+                this._squareReady = true;
+            } catch(e) {
+                console.error('Square init error:', e);
+                this.cardError = 'Could not load payment form. Please refresh.';
+            }
         },
 
         effectivePrice() {
@@ -263,7 +309,38 @@ function classDetailPage() {
 
         async book() {
             this.bookingError = '';
-            if (!this.form.name.trim() || !this.form.email.trim()) { this.bookingError = 'Name and email are required.'; return; }
+            this.cardError = '';
+            if (!this.form.first_name.trim() || !this.form.email.trim()) { this.bookingError = 'First name and email are required.'; return; }
+
+            const price = this.effectivePrice();
+            let sourceId = null;
+            let paymentMethod = 'free';
+
+            // Tokenize card if payment required
+            if (price > 0) {
+                if (!this._squareReady || !this._squareCard) {
+                    this.bookingError = 'Payment form not ready. Please refresh and try again.';
+                    return;
+                }
+                this.bookingLoading = true;
+                try {
+                    const result = await this._squareCard.tokenize();
+                    if (result.status === 'OK') {
+                        sourceId = result.token;
+                        paymentMethod = 'card';
+                    } else {
+                        const errs = result.errors?.map(e => e.message).join(', ') || 'Card verification failed.';
+                        this.cardError = errs;
+                        this.bookingLoading = false;
+                        return;
+                    }
+                } catch(e) {
+                    this.cardError = 'Could not process card. Please check your details.';
+                    this.bookingLoading = false;
+                    return;
+                }
+            }
+
             this.bookingLoading = true;
             try {
                 const url = baseApi + '/api/session-types/' + this.cls.session_type_id + '/classes/' + this.cls.id + '/book';
@@ -271,12 +348,18 @@ function classDetailPage() {
                 const headers = { 'Content-Type': 'application/json' };
                 if (token) headers['Authorization'] = 'Bearer ' + token;
                 const body = {
-                    name: this.form.name, email: this.form.email, phone: this.form.phone,
+                    first_name: this.form.first_name, last_name: this.form.last_name,
+                    email: this.form.email, phone: this.form.phone,
                     package: this.selectedPackage, discount_code: this.form.discount_code || undefined,
+                    payment_method: paymentMethod,
+                    source_id: sourceId,
+                    amount_paid: price,
+                    quote_amount: this.selectedBasePrice(),
+                    discount_amount: this.discountValid ? this.discountAmt : 0,
                 };
                 const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
                 const json = await res.json();
-                if (res.ok) {
+                if (res.ok && json.status === 'success') {
                     this.bookingSuccess = true;
                     if (window.tenantApp) window.tenantApp.showToast('Booking confirmed!', 'success', 'Check your email for details.');
                 } else {

@@ -492,8 +492,7 @@ $facilities = $org['facilities'] ?? [];
                     // Fallback: use static nav if API fails
                     this.navItems = [
                         { id: 'f-home', label: 'Home', url: '/', type: 'link' },
-                        { id: 'f-schedule', label: 'Schedule', url: '/schedule', type: 'link', children: [] },
-                        { id: 'f-facilities', label: 'Facilities', url: '/facilities', type: 'link' },
+                        { id: 'f-schedule', label: 'Schedule', url: '/schedule', type: 'link' },
                         { id: 'f-about', label: 'About', url: '/about', type: 'link' },
                         { id: 'f-contact', label: 'Contact', url: '/contact', type: 'link' },
                     ];
