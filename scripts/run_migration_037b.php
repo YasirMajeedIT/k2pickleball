@@ -4,14 +4,43 @@
  *
  * Usage: php scripts/run_migration_037b.php
  */
-require_once __DIR__ . '/../vendor/autoload.php';
 
-$dbCfg = require __DIR__ . '/../config/database.php';
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
 
-$dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbCfg['host'], $dbCfg['port'] ?? 3306, $dbCfg['name']);
-$pdo = new PDO($dsn, $dbCfg['user'], $dbCfg['pass'], [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-]);
+echo "=== Migration 037b: Add hero_video_url to facilities ===\n\n";
+
+$envFile = __DIR__ . '/.env';
+if (!file_exists($envFile)) {
+    $envFile = dirname(__DIR__) . '/.env';
+}
+if (!file_exists($envFile)) {
+    die("ERROR: .env file not found\n");
+}
+
+$env = [];
+foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+    $line = trim($line);
+    if ($line === '' || $line[0] === '#') continue;
+    if (strpos($line, '=') === false) continue;
+    [$key, $val] = explode('=', $line, 2);
+    $env[trim($key)] = trim($val, " \t\n\r\0\x0B\"'");
+}
+
+$host   = $env['DB_HOST'] ?? '127.0.0.1';
+$port   = $env['DB_PORT'] ?? '3306';
+$dbName = $env['DB_NAME'] ?? 'k2pickleball';
+$user   = $env['DB_USER'] ?? 'root';
+$pass   = $env['DB_PASS'] ?? '';
+
+try {
+    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$dbName};charset=utf8mb4", $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    ]);
+    echo "Connected to DB: {$dbName}\n\n";
+} catch (PDOException $e) {
+    die("DB Connection failed: " . $e->getMessage() . "\n");
+}
 
 $sql = file_get_contents(__DIR__ . '/../database/migrations/037_facility_hero_video.sql');
 
