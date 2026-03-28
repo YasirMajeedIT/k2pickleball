@@ -216,6 +216,7 @@ HTML;
         'client/auth/forgot-password.php',
         'client/auth/reset-password.php',
         'client/auth/verify-email.php',
+        'tenant/auth/accept-invite.php',
     ];
 
     /** Views that use the portal layout */
