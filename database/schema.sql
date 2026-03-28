@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `facilities` (
     `status` ENUM('active','inactive','maintenance') NOT NULL DEFAULT 'active',
     `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
     `image_url` VARCHAR(500) DEFAULT NULL,
+    `hero_video_url` VARCHAR(500) DEFAULT NULL,
     `instagram_url` VARCHAR(500) DEFAULT NULL,
     `facebook_url` VARCHAR(500) DEFAULT NULL,
     `youtube_url` VARCHAR(500) DEFAULT NULL,

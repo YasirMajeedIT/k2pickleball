@@ -227,7 +227,7 @@ class TenantController extends Controller
 
         // Load facilities for location switcher
         $org['facilities'] = $this->db->fetchAll(
-            "SELECT `id`, `name`, `slug`, `city`, `state` FROM `facilities`
+            "SELECT `id`, `name`, `slug`, `city`, `state`, `hero_video_url` FROM `facilities`
              WHERE `organization_id` = ? AND `status` = 'active' ORDER BY `name`",
             [$orgId]
         );

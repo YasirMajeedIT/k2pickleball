@@ -256,6 +256,7 @@ function formEdit() {
             this.loading = false;
         },
         initQuill() {
+            if (this.quillEditor) return;
             const editorEl = document.getElementById('edit-description-editor');
             if (!editorEl) return;
             this.quillEditor = new Quill(editorEl, {

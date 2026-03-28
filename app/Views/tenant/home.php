@@ -6,6 +6,18 @@
 $orgName = htmlspecialchars($org['name'] ?? 'Sports Club');
 $tagline = htmlspecialchars($branding['tagline'] ?? 'Book. Play. Compete.');
 $heroImage = $branding['hero_image'] ?? null;
+
+// Resolve hero background video: facility-specific → branding setting → null
+$heroVideo = null;
+foreach ($facilities as $fac) {
+    if (!empty($fac['hero_video_url'])) {
+        $heroVideo = $fac['hero_video_url'];
+        break;
+    }
+}
+if (!$heroVideo && !empty($branding['hero_video'])) {
+    $heroVideo = $branding['hero_video'];
+}
 ?>
 
 <!-- ═══ HERO SECTION ═══ -->
@@ -13,7 +25,23 @@ $heroImage = $branding['hero_image'] ?? null;
     <div class="absolute inset-0 bg-navy-950"></div>
     <div class="absolute inset-0 grid-bg"></div>
     <div class="absolute inset-0 hero-glow"></div>
-    <?php if ($heroImage): ?>
+
+    <?php if ($heroVideo): ?>
+    <!-- Background Video -->
+    <div class="absolute inset-0 overflow-hidden">
+        <video
+            autoplay muted loop playsinline
+            preload="auto"
+            poster="<?= htmlspecialchars($heroImage ?? '') ?>"
+            class="absolute inset-0 w-full h-full object-cover opacity-20"
+            oncanplay="this.style.opacity='0.20'"
+        >
+            <source src="<?= htmlspecialchars($heroVideo) ?>" type="video/mp4">
+        </video>
+        <div class="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/85 to-navy-950/50"></div>
+        <div class="absolute inset-0 bg-navy-950/30"></div>
+    </div>
+    <?php elseif ($heroImage): ?>
     <div class="absolute inset-0">
         <img src="<?= htmlspecialchars($heroImage) ?>" alt="" class="w-full h-full object-cover opacity-15">
         <div class="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/80 to-navy-950/40"></div>

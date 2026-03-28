@@ -241,6 +241,7 @@ function formBuilder() {
             });
         },
         initQuill() {
+            if (this.quillEditor) return;
             const editorEl = document.getElementById('create-description-editor');
             if (!editorEl) return;
             this.quillEditor = new Quill(editorEl, {

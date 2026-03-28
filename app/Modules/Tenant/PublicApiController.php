@@ -70,7 +70,7 @@ class PublicApiController extends Controller
         $facilities = $this->db->fetchAll(
             "SELECT `id`, `name`, `slug`, `tagline`, `description`, `address_line1`, `address_line2`,
                     `city`, `state`, `zip_code`, `country`, `phone`, `email`,
-                    `latitude`, `longitude`, `timezone`, `image_url`, `status`
+                    `latitude`, `longitude`, `timezone`, `image_url`, `hero_video_url`, `status`
              FROM `facilities`
              WHERE `organization_id` = ? AND `status` = 'active'
              ORDER BY `name` ASC",
@@ -92,7 +92,7 @@ class PublicApiController extends Controller
         $facility = $this->db->fetch(
             "SELECT `id`, `name`, `slug`, `tagline`, `description`, `address_line1`, `address_line2`,
                     `city`, `state`, `zip_code`, `country`, `phone`, `email`,
-                    `latitude`, `longitude`, `timezone`, `image_url`, `status`
+                    `latitude`, `longitude`, `timezone`, `image_url`, `hero_video_url`, `status`
              FROM `facilities`
              WHERE `organization_id` = ? AND `slug` = ? AND `status` = 'active'",
             [$orgId, $slug]
