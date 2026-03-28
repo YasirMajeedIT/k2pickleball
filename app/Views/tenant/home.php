@@ -20,15 +20,17 @@ if (!$heroVideo && !empty($branding['hero_video'])) {
 }
 
 // Ensure relative storage paths work on tenant subdomains
-if ($heroVideo && !preg_match('#^https?://#i', $heroVideo)) {
-    // It's a relative path — prepend the current origin
-    $heroVideo = rtrim($baseUrl ?? '', '/') . '/' . ltrim($heroVideo, '/');
+if ($heroVideo) {
+    // Strip any absolute URL pointing to k2pickleball.com domains → keep just the /storage/... path
+    $heroVideo = preg_replace('#^https?://[^/]*k2pickleball\.com#i', '', $heroVideo);
+    // Ensure it starts with /
+    if (!str_starts_with($heroVideo, '/') && !preg_match('#^https?://#i', $heroVideo)) {
+        $heroVideo = '/' . $heroVideo;
+    }
 }
 ?>
 
-<!-- DEBUG: heroVideo=<?= htmlspecialchars($heroVideo ?? 'NULL') ?> facilityCount=<?= count($facilities) ?> -->
-<!-- ═══ HERO SECTION ═══ -->
-<section class="relative overflow-hidden min-h-[85vh] flex items-center">
+<!-- ion class="relative overflow-hidden min-h-[85vh] flex items-center">
     <div class="absolute inset-0 bg-navy-950"></div>
     <div class="absolute inset-0 grid-bg"></div>
     <div class="absolute inset-0 hero-glow"></div>
