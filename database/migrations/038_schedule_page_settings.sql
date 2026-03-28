@@ -88,6 +88,10 @@ SELECT o.`id`, 'schedule_page', 'resource_filter_ids', '[]', 'json', 'Resource I
 FROM `organizations` o WHERE o.`status` IN ('active','trial');
 
 INSERT IGNORE INTO `settings` (`organization_id`, `group_name`, `key_name`, `value`, `type`, `description`, `created_at`, `updated_at`)
+SELECT o.`id`, 'schedule_page', 'card_resource_ids', '[]', 'json', 'Resource IDs to display on calendar cards', NOW(), NOW()
+FROM `organizations` o WHERE o.`status` IN ('active','trial');
+
+INSERT IGNORE INTO `settings` (`organization_id`, `group_name`, `key_name`, `value`, `type`, `description`, `created_at`, `updated_at`)
 SELECT o.`id`, 'schedule_page', 'inline_booking', '1', 'boolean', 'Allow click-to-book directly from schedule (inline modal)', NOW(), NOW()
 FROM `organizations` o WHERE o.`status` IN ('active','trial');
 

@@ -133,6 +133,49 @@ ob_start();
                             </label>
                         </template>
                     </div>
+
+                    <!-- Resources on Card — expandable resource picker -->
+                    <div class="mt-3 rounded-xl border transition-all"
+                         :class="s.show_resources === '1' || s.show_resources === true
+                             ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-300 dark:border-emerald-800'
+                             : 'border-surface-100 dark:border-surface-800'">
+                        <label class="flex items-start gap-3 p-3 cursor-pointer">
+                            <input type="checkbox" x-model="s.show_resources" true-value="'1'" false-value="'0'" class="rounded border-surface-300 text-emerald-500 focus:ring-emerald-500/20 mt-0.5 flex-shrink-0">
+                            <div class="min-w-0">
+                                <span class="text-sm font-medium text-surface-700 dark:text-surface-200 block">Resources</span>
+                                <p class="text-[10px] text-surface-400 leading-relaxed mt-0.5">Show selected resources on each card (e.g. Skill Level, Age Group, Equipment).</p>
+                            </div>
+                        </label>
+                        <!-- Resource picker expands when toggled on -->
+                        <div x-show="s.show_resources === '1' || s.show_resources === true" x-cloak
+                             class="border-t border-emerald-200 dark:border-emerald-800 px-4 pb-4 pt-3">
+                            <p class="text-xs font-semibold text-surface-600 dark:text-surface-400 mb-2">Select which resources to display on each card:</p>
+                            <div x-show="resources.length > 0" class="space-y-1.5">
+                                <template x-for="res in resources" :key="res.id">
+                                    <label class="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all"
+                                           :class="cardResourceIds.includes(String(res.id)) || cardResourceIds.includes(res.id)
+                                               ? 'bg-white dark:bg-surface-900 border-emerald-400 dark:border-emerald-600'
+                                               : 'border-surface-200 dark:border-surface-700 hover:bg-white dark:hover:bg-surface-800'">
+                                        <input type="checkbox" :value="res.id" x-model="cardResourceIds" class="rounded border-surface-300 text-emerald-500 focus:ring-emerald-500/20">
+                                        <div class="flex-1 min-w-0">
+                                            <span class="text-sm font-medium text-surface-700 dark:text-surface-200" x-text="res.name"></span>
+                                            <span class="text-[10px] text-surface-400 ml-1.5" x-text="res.field_type + (res.values?.length ? ' · ' + res.values.length + ' values' : '')"></span>
+                                        </div>
+                                        <!-- Show values as preview chips -->
+                                        <div class="flex flex-wrap gap-1 ml-2" x-show="res.values && res.values.length > 0">
+                                            <template x-for="val in (res.values || []).slice(0, 4)" :key="val.id">
+                                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" x-text="val.name"></span>
+                                            </template>
+                                            <span x-show="res.values && res.values.length > 4" class="text-[10px] text-surface-400" x-text="'+' + (res.values.length - 4) + ' more'"></span>
+                                        </div>
+                                    </label>
+                                </template>
+                            </div>
+                            <p x-show="!resources.length" class="text-xs text-surface-400 px-1">
+                                No resources found. <a :href="(window.APP_BASE || '') + '/admin/resources'" class="text-emerald-600 underline">Create resources first</a>.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -305,9 +348,10 @@ function schedulePageSettings() {
         enabledViews: [],
         paymentMethods: [],
         resourceFilterIds: [],
+        cardResourceIds: [],
         resources: [],
         categories: [],
-        previewUrl: '',
+        previewUrl: ''
 
         allViews: [
             { key: 'month', label: 'Month', desc: 'Full monthly calendar grid' },
@@ -327,7 +371,6 @@ function schedulePageSettings() {
             { key: 'show_description', label: 'Description', desc: 'Session description snippet' },
             { key: 'show_courts', label: 'Courts', desc: 'Assigned court names' },
             { key: 'show_duration', label: 'Duration', desc: 'Length in minutes' },
-            { key: 'show_resources', label: 'Resources', desc: 'Assigned resources (e.g. Skill Level, Age Group, Equipment)' },
             { key: 'show_skill_level', label: 'Skill Level', desc: 'From resources (e.g. 3.0-3.5)' },
             { key: 'show_session_number', label: 'Series Session #', desc: 'For series: "Session 3 of 8"' },
             { key: 'show_hot_deal_badge', label: 'Hot Deal Badge', desc: 'Show special deal indicator' },
@@ -344,11 +387,9 @@ function schedulePageSettings() {
         async load() {
             this.loading = true;
             try {
-                const base = window.BASE_URL || '';
-                const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-                const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+                const base = window.APP_BASE || '';
 
-                const res = await fetch(base + '/api/schedule-settings/preview', { headers });
+                const res = await authFetch(base + '/api/schedule-settings/preview');
                 const json = await res.json();
                 if (json.status === 'success') {
                     this.resources = json.data.resources || [];
@@ -371,6 +412,7 @@ function schedulePageSettings() {
                         show_duration: String(raw.show_duration ?? '0'),
                         show_resources: String(raw.show_resources ?? '0'),
                         show_skill_level: String(raw.show_skill_level ?? '0'),
+
                         show_session_number: String(raw.show_session_number ?? '0'),
                         show_hot_deal_badge: String(raw.show_hot_deal_badge ?? '1'),
                         show_early_bird_badge: String(raw.show_early_bird_badge ?? '1'),
@@ -385,8 +427,9 @@ function schedulePageSettings() {
                     try { this.enabledViews = typeof raw.enabled_views === 'string' ? JSON.parse(raw.enabled_views) : (raw.enabled_views || ['month','week','today','list','calendar']); } catch(e) { this.enabledViews = ['month','week','today','list','calendar']; }
                     try { this.paymentMethods = typeof raw.payment_methods === 'string' ? JSON.parse(raw.payment_methods) : (raw.payment_methods || ['card','credit_code','gift_certificate']); } catch(e) { this.paymentMethods = ['card','credit_code','gift_certificate']; }
                     try { this.resourceFilterIds = typeof raw.resource_filter_ids === 'string' ? JSON.parse(raw.resource_filter_ids) : (raw.resource_filter_ids || []); } catch(e) { this.resourceFilterIds = []; }
+                    try { this.cardResourceIds = typeof raw.card_resource_ids === 'string' ? JSON.parse(raw.card_resource_ids) : (raw.card_resource_ids || []); } catch(e) { this.cardResourceIds = []; }
 
-                    this.previewUrl = (window.ORG?.domain || '') + '/schedule';
+                    this.previewUrl = base + '/schedule';
                 }
             } catch(e) { console.error('Failed to load schedule settings', e); }
             this.loading = false;
@@ -395,20 +438,16 @@ function schedulePageSettings() {
         async save() {
             this.saving = true;
             try {
-                const base = window.BASE_URL || '';
-                const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
+                const base = window.APP_BASE || '';
                 const payload = {
                     ...this.s,
                     enabled_views: JSON.stringify(this.enabledViews),
                     payment_methods: JSON.stringify(this.paymentMethods),
                     resource_filter_ids: JSON.stringify(this.resourceFilterIds.map(Number)),
+                    card_resource_ids: JSON.stringify(this.cardResourceIds.map(Number)),
                 };
-                const res = await fetch(base + '/api/schedule-settings', {
+                const res = await authFetch(base + '/api/schedule-settings', {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
-                    },
                     body: JSON.stringify(payload),
                 });
                 const json = await res.json();

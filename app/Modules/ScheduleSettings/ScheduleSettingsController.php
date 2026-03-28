@@ -58,7 +58,8 @@ final class ScheduleSettingsController extends Controller
             'show_resources', 'show_skill_level', 'show_session_number',
             'show_hot_deal_badge', 'show_early_bird_badge',
             'show_category_filter', 'show_resource_filters',
-            'resource_filter_ids', 'inline_booking', 'require_login',
+            'resource_filter_ids', 'card_resource_ids',
+            'inline_booking', 'require_login',
             'payment_methods', 'color_scheme',
         ];
 

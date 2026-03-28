@@ -1,6 +1,6 @@
 <?php
 /**
- * Seed show_resources setting for existing organizations.
+ * Seed show_resources and card_resource_ids settings for existing organizations.
  * Safe to run multiple times (INSERT IGNORE).
  */
 $envFile = dirname(__DIR__) . '/.env';
@@ -20,10 +20,20 @@ $pdo = new PDO(
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
 
-$stmt = $pdo->prepare(
-    "INSERT IGNORE INTO `settings` (`organization_id`, `group_name`, `key_name`, `value`, `type`, `description`, `created_at`, `updated_at`)
-     SELECT o.`id`, 'schedule_page', 'show_resources', '0', 'boolean', 'Show assigned resources on calendar cards', NOW(), NOW()
-     FROM `organizations` o WHERE o.`status` IN ('active','trial')"
-);
-$stmt->execute();
-echo "Inserted show_resources setting for " . $stmt->rowCount() . " org(s)\n";
+$seeds = [
+    ['show_resources',   '0',  'boolean', 'Show assigned resources on calendar cards'],
+    ['card_resource_ids', '[]', 'json',    'Resource IDs to display on calendar cards'],
+];
+
+foreach ($seeds as [$key, $val, $type, $desc]) {
+    $stmt = $pdo->prepare(
+        "INSERT IGNORE INTO `settings` (`organization_id`, `group_name`, `key_name`, `value`, `type`, `description`, `created_at`, `updated_at`)
+         SELECT o.`id`, 'schedule_page', ?, ?, ?, ?, NOW(), NOW()
+         FROM `organizations` o WHERE o.`status` IN ('active','trial')"
+    );
+    $stmt->execute([$key, $val, $type, $desc]);
+    echo "  $key: " . $stmt->rowCount() . " org(s)\n";
+}
+
+$total = $pdo->query("SELECT COUNT(*) FROM resources")->fetchColumn();
+echo "Total resources in DB: $total\n";
