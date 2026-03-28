@@ -37,6 +37,7 @@ class ClientController extends Controller
         'forgot-password'       => 'client/auth/forgot-password.php',
         'reset-password'        => 'client/auth/reset-password.php',
         'verify-email'          => 'client/auth/verify-email.php',
+        'accept-invite'         => 'tenant/auth/accept-invite.php',
 
         // Customer portal
         'portal'                => 'client/portal/dashboard.php',
@@ -56,7 +57,7 @@ class ClientController extends Controller
         }
 
         // Auth/portal routes bypass the maintenance gate
-        $bypassPaths = ['login', 'register', 'forgot-password', 'reset-password', 'verify-email'];
+        $bypassPaths = ['login', 'register', 'forgot-password', 'reset-password', 'verify-email', 'accept-invite'];
         $isPortal = str_starts_with($path, 'portal');
         $isBypass = in_array($path, $bypassPaths, true) || $isPortal;
 

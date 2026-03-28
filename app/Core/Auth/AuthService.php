@@ -563,6 +563,16 @@ final class AuthService
         return $scheme . '://' . $host;
     }
 
+    /**
+     * Build URL from current request host (preserves tenant subdomain).
+     */
+    private function getTenantUrl(): string
+    {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return $scheme . '://' . $host;
+    }
+
     private function sendVerificationEmail(string $email, string $firstName, string $token): void
     {
         try {
@@ -601,7 +611,8 @@ final class AuthService
     private function sendInvitationEmail(string $email, string $firstName, string $token): void
     {
         try {
-            $appUrl    = $this->getAppUrl();
+            // Build URL from current host so it includes the tenant subdomain
+            $appUrl    = $this->getTenantUrl();
             $inviteUrl = $appUrl . '/accept-invite?token=' . urlencode($token);
             $mailer    = Mailer::getInstance();
             $html      = $mailer->renderTemplate('invitation', [
