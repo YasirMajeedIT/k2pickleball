@@ -56,6 +56,10 @@ SELECT o.`id`, 'schedule_page', 'show_duration', '0', 'boolean', 'Show duration 
 FROM `organizations` o WHERE o.`status` IN ('active','trial');
 
 INSERT IGNORE INTO `settings` (`organization_id`, `group_name`, `key_name`, `value`, `type`, `description`, `created_at`, `updated_at`)
+SELECT o.`id`, 'schedule_page', 'show_resources', '0', 'boolean', 'Show assigned resources on calendar cards', NOW(), NOW()
+FROM `organizations` o WHERE o.`status` IN ('active','trial');
+
+INSERT IGNORE INTO `settings` (`organization_id`, `group_name`, `key_name`, `value`, `type`, `description`, `created_at`, `updated_at`)
 SELECT o.`id`, 'schedule_page', 'show_skill_level', '0', 'boolean', 'Show skill level from resources on calendar cards', NOW(), NOW()
 FROM `organizations` o WHERE o.`status` IN ('active','trial');
 

@@ -164,11 +164,23 @@ ob_start();
                         <label class="block text-xs font-semibold text-surface-600 dark:text-surface-400 mb-2">Select Resources to Use as Filters</label>
                         <div class="space-y-2">
                             <template x-for="res in resources" :key="res.id">
-                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 cursor-pointer transition-all">
-                                    <input type="checkbox" :value="res.id" x-model="resourceFilterIds" class="rounded border-surface-300 text-amber-500 focus:ring-amber-500/20">
-                                    <span class="text-sm text-surface-700 dark:text-surface-200" x-text="res.name"></span>
-                                    <span class="text-[10px] text-surface-400 ml-1" x-text="'(' + res.field_type + ', ' + (res.values?.length || 0) + ' values)'"></span>
-                                </label>
+                                <div>
+                                    <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50 cursor-pointer transition-all"
+                                           :class="resourceFilterIds.includes(String(res.id)) || resourceFilterIds.includes(res.id) ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-300 dark:border-amber-700' : ''">
+                                        <input type="checkbox" :value="res.id" x-model="resourceFilterIds" class="rounded border-surface-300 text-amber-500 focus:ring-amber-500/20">
+                                        <span class="text-sm font-medium text-surface-700 dark:text-surface-200" x-text="res.name"></span>
+                                        <span class="text-[10px] text-surface-400 ml-1" x-text="'(' + res.field_type + ', ' + (res.values?.length || 0) + ' values)'"></span>
+                                    </label>
+                                    <!-- Show values when this resource is selected -->
+                                    <div x-show="resourceFilterIds.includes(String(res.id)) || resourceFilterIds.includes(res.id)" x-cloak class="ml-8 mt-1 mb-2">
+                                        <div class="flex flex-wrap gap-1.5">
+                                            <template x-for="val in (res.values || [])" :key="val.id">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[11px] font-medium text-amber-700 dark:text-amber-300" x-text="val.name"></span>
+                                            </template>
+                                            <span x-show="!res.values || res.values.length === 0" class="text-[10px] text-surface-400 italic">No values defined for this resource</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </template>
                             <p x-show="!resources.length" class="text-xs text-surface-400">No resources defined. Create them in Resources section first.</p>
                         </div>
@@ -247,7 +259,7 @@ ob_start();
                     <div class="bg-surface-50 dark:bg-surface-800/50 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
                         <!-- Sample Card -->
                         <div class="space-y-2">
-                            <div x-show="s.show_time === '1' || s.show_time === true" class="text-xs font-medium text-primary-500">9:00 AM</div>
+                            <div x-show="s.show_time === '1' || s.show_time === true" class="text-xs font-medium text-primary-500">9:00 AM – 10:30 AM</div>
                             <div x-show="s.show_title === '1' || s.show_title === true" class="text-sm font-bold text-surface-800 dark:text-surface-100">Intermediate Clinic</div>
                             <div class="flex flex-wrap items-center gap-1.5">
                                 <span x-show="s.show_category === '1' || s.show_category === true" class="text-[10px] px-2 py-0.5 rounded-full font-medium text-white bg-indigo-500">Clinics</span>
@@ -267,6 +279,10 @@ ob_start();
                             <div x-show="s.show_duration === '1' || s.show_duration === true" class="text-[10px] text-surface-500 flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 90 min
+                            </div>
+                            <div x-show="s.show_resources === '1' || s.show_resources === true" class="text-[10px] text-surface-500 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+                                Skill Level: 3.0-3.5 · Age: Adults
                             </div>
                             <div x-show="s.show_session_number === '1' || s.show_session_number === true" class="text-[10px] text-surface-500">Session 3 of 8</div>
                             <div class="flex items-center justify-between pt-1 border-t border-surface-200 dark:border-surface-700 mt-2">
@@ -302,7 +318,7 @@ function schedulePageSettings() {
         ],
 
         cardFields: [
-            { key: 'show_time', label: 'Time', desc: 'Start and end time of the class' },
+            { key: 'show_time', label: 'Session Time', desc: 'Start and end time range (e.g. 9:00 AM – 10:30 AM)' },
             { key: 'show_title', label: 'Session Title', desc: 'Name of the session type' },
             { key: 'show_category', label: 'Category Badge', desc: 'Color-coded category label' },
             { key: 'show_spots', label: 'Availability / Spots', desc: 'Remaining spots or "Full" indicator' },
@@ -311,6 +327,7 @@ function schedulePageSettings() {
             { key: 'show_description', label: 'Description', desc: 'Session description snippet' },
             { key: 'show_courts', label: 'Courts', desc: 'Assigned court names' },
             { key: 'show_duration', label: 'Duration', desc: 'Length in minutes' },
+            { key: 'show_resources', label: 'Resources', desc: 'Assigned resources (e.g. Skill Level, Age Group, Equipment)' },
             { key: 'show_skill_level', label: 'Skill Level', desc: 'From resources (e.g. 3.0-3.5)' },
             { key: 'show_session_number', label: 'Series Session #', desc: 'For series: "Session 3 of 8"' },
             { key: 'show_hot_deal_badge', label: 'Hot Deal Badge', desc: 'Show special deal indicator' },
@@ -352,6 +369,7 @@ function schedulePageSettings() {
                         show_description: String(raw.show_description ?? '0'),
                         show_courts: String(raw.show_courts ?? '0'),
                         show_duration: String(raw.show_duration ?? '0'),
+                        show_resources: String(raw.show_resources ?? '0'),
                         show_skill_level: String(raw.show_skill_level ?? '0'),
                         show_session_number: String(raw.show_session_number ?? '0'),
                         show_hot_deal_badge: String(raw.show_hot_deal_badge ?? '1'),
