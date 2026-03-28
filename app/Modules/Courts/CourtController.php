@@ -11,15 +11,18 @@ use App\Core\Security\Sanitizer;
 use App\Core\Security\Validator;
 use App\Core\Database\Connection;
 use App\Core\Exceptions\NotFoundException;
+use App\Core\Services\PlanLimitService;
 
 final class CourtController extends Controller
 {
     private CourtRepository $repo;
+    private PlanLimitService $planLimits;
 
     public function __construct(Connection $db)
     {
         parent::__construct();
         $this->repo = new CourtRepository($db);
+        $this->planLimits = new PlanLimitService($db);
     }
 
     public function index(Request $request): Response
@@ -50,6 +53,12 @@ final class CourtController extends Controller
 
     public function store(Request $request): Response
     {
+        // Enforce plan limit
+        $check = $this->planLimits->canCreateCourt($request->organizationId());
+        if (!$check['allowed']) {
+            return $this->error($check['message'], 403);
+        }
+
         $data = Validator::validate($request->all(), [
             'facility_id' => 'required|integer',
             'name' => 'required|string|max:255',

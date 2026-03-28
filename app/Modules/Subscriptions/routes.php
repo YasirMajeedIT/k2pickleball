@@ -22,6 +22,7 @@ return function (Router $router): void {
         $router->group(['permission' => 'subscriptions.view'], function (Router $router) {
             $router->get('/', ['App\\Modules\\Subscriptions\\SubscriptionController', 'index']);
             $router->get('/current', ['App\\Modules\\Subscriptions\\SubscriptionController', 'current']);
+            $router->get('/usage', ['App\\Modules\\Subscriptions\\SubscriptionController', 'usage']);
             $router->get('/{id}', ['App\\Modules\\Subscriptions\\SubscriptionController', 'show']);
         });
         $router->group(['permission' => 'subscriptions.manage'], function (Router $router) {

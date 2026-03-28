@@ -14,18 +14,21 @@ use App\Core\Exceptions\NotFoundException;
 use App\Core\Services\Config;
 use App\Core\Auth\AuthService;
 use App\Core\Services\Container;
+use App\Core\Services\PlanLimitService;
 use App\Modules\AuditLogs\AuditLogRepository;
 
 final class UserController extends Controller
 {
     private UserRepository $repo;
     private AuditLogRepository $auditLog;
+    private PlanLimitService $planLimits;
 
     public function __construct(Connection $db)
     {
         parent::__construct();
         $this->repo = new UserRepository($db);
         $this->auditLog = new AuditLogRepository($db);
+        $this->planLimits = new PlanLimitService($db);
     }
 
     public function index(Request $request): Response
@@ -64,6 +67,15 @@ final class UserController extends Controller
 
     public function store(Request $request): Response
     {
+        // Enforce plan limit
+        $orgId = $request->organizationId();
+        if ($orgId) {
+            $check = $this->planLimits->canCreateUser($orgId);
+            if (!$check['allowed']) {
+                return $this->error($check['message'], 403);
+            }
+        }
+
         $facilityIds = array_filter(array_map('intval', (array) ($request->input('facility_ids', []))));
         $sendInvite = (bool) ($request->input('send_invite', true));
 

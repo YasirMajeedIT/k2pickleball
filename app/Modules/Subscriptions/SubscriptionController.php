@@ -11,15 +11,18 @@ use App\Core\Security\Sanitizer;
 use App\Core\Security\Validator;
 use App\Core\Database\Connection;
 use App\Core\Exceptions\NotFoundException;
+use App\Core\Services\PlanLimitService;
 
 final class SubscriptionController extends Controller
 {
     private SubscriptionRepository $repo;
+    private PlanLimitService $planLimits;
 
     public function __construct(Connection $db)
     {
         parent::__construct();
         $this->repo = new SubscriptionRepository($db);
+        $this->planLimits = new PlanLimitService($db);
     }
 
     // -- Plans --
@@ -79,6 +82,17 @@ final class SubscriptionController extends Controller
 
         $sub['plan'] = $this->repo->findPlanById((int) $sub['plan_id']);
         return $this->success($sub);
+    }
+
+    /**
+     * GET /api/subscriptions/usage
+     * Returns current plan usage (facilities, courts, users) vs limits.
+     */
+    public function usage(Request $request): Response
+    {
+        $orgId = $request->organizationId();
+        $summary = $this->planLimits->getUsageSummary($orgId);
+        return $this->success($summary);
     }
 
     public function subscribe(Request $request): Response

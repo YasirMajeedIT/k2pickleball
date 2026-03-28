@@ -11,18 +11,21 @@ use App\Core\Security\Sanitizer;
 use App\Core\Security\Validator;
 use App\Core\Database\Connection;
 use App\Core\Exceptions\NotFoundException;
+use App\Core\Services\PlanLimitService;
 use App\Modules\AuditLogs\AuditLogRepository;
 
 final class FacilityController extends Controller
 {
     private FacilityRepository $repo;
     private AuditLogRepository $auditLog;
+    private PlanLimitService $planLimits;
 
     public function __construct(Connection $db)
     {
         parent::__construct();
         $this->repo = new FacilityRepository($db);
         $this->auditLog = new AuditLogRepository($db);
+        $this->planLimits = new PlanLimitService($db);
     }
 
     public function index(Request $request): Response
@@ -51,6 +54,12 @@ final class FacilityController extends Controller
 
     public function store(Request $request): Response
     {
+        // Enforce plan limit
+        $check = $this->planLimits->canCreateFacility($request->organizationId());
+        if (!$check['allowed']) {
+            return $this->error($check['message'], 403);
+        }
+
         $data = Validator::validate($request->all(), [
             'name'            => 'required|string|max:255',
             'tagline'         => 'nullable|string|max:255',
