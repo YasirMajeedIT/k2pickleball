@@ -1,9 +1,10 @@
 <?php
-/**
- * Admin — Schedule Page Settings
- * Configure what data appears on the public schedule page,
- * which view modes are available, booking behavior, and payment methods.
- */
+$title = 'Schedule Page Settings';
+$breadcrumbs = [
+    ['label' => 'Schedule', 'url' => null],
+    ['label' => 'Schedule Page Settings'],
+];
+ob_start();
 ?>
 <div x-data="schedulePageSettings()" x-init="load()" class="space-y-6">
 
@@ -405,3 +406,6 @@ function schedulePageSettings() {
     };
 }
 </script>
+<?php
+$content = ob_get_clean();
+include __DIR__ . '/../layouts/admin.php';
