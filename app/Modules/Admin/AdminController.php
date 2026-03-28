@@ -141,6 +141,9 @@ class AdminController extends Controller
         'forms/{id}'                => 'admin/forms/show.php',
         'forms/{id}/edit'           => 'admin/forms/edit.php',
 
+        // Schedule Page Settings
+        'schedule-page-settings'    => 'admin/schedule-page-settings.php',
+
         // My Account
         'account'                   => 'admin/account/index.php',
         'my-subscription'           => 'admin/my-subscription/index.php',

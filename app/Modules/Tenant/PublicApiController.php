@@ -895,5 +895,169 @@ class PublicApiController extends Controller
 
         return $this->success($category);
     }
-}
 
+    /* ────────────────────────────────────────────
+     * Schedule Page Settings & Inline Booking (038+)
+     * ──────────────────────────────────────────── */
+
+    /**
+     * GET /api/public/schedule-settings
+     * Returns schedule page configuration (display fields, views, payment methods, resource filters).
+     */
+    public function scheduleSettings(Request $request): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        // Load schedule_page settings
+        $rows = $this->db->fetchAll(
+            "SELECT `key_name`, `value` FROM `settings`
+             WHERE `organization_id` = ? AND `group_name` = 'schedule_page'",
+            [$orgId]
+        );
+
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['key_name']] = $row['value'];
+        }
+
+        // Load resource filters if enabled
+        $resourceFilters = [];
+        if (($settings['show_resource_filters'] ?? '0') === '1') {
+            $filterIds = [];
+            try { $filterIds = json_decode($settings['resource_filter_ids'] ?? '[]', true) ?: []; } catch (\Exception $e) {}
+
+            if (!empty($filterIds)) {
+                $placeholders = implode(',', array_fill(0, count($filterIds), '?'));
+                $resources = $this->db->fetchAll(
+                    "SELECT `id`, `name`, `field_type` FROM `resources`
+                     WHERE `id` IN ({$placeholders}) AND `organization_id` = ? AND `is_active` = 1",
+                    [...$filterIds, $orgId]
+                );
+                foreach ($resources as $res) {
+                    $values = $this->db->fetchAll(
+                        "SELECT `id`, `name` FROM `resource_values`
+                         WHERE `resource_id` = ? ORDER BY `sort_order` ASC, `name` ASC",
+                        [$res['id']]
+                    );
+                    $resourceFilters[] = [
+                        'id' => (int) $res['id'],
+                        'name' => $res['name'],
+                        'field_type' => $res['field_type'],
+                        'values' => $values,
+                    ];
+                }
+            }
+        }
+
+        return $this->success([
+            'settings' => $settings,
+            'resource_filters' => $resourceFilters,
+        ]);
+    }
+
+    /**
+     * GET /api/public/validate-credit-code
+     * Validates a credit code and returns balance.
+     * Query: ?code=XXXX
+     */
+    public function validateCreditCode(Request $request): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        $code = strtoupper(trim((string) $request->input('code', '')));
+        if ($code === '') {
+            return $this->error('Credit code is required', 422);
+        }
+
+        // Credit codes are facility-scoped, get selected facility
+        $facilityId = (int) $request->input('facility_id', 0);
+        if ($facilityId <= 0) {
+            // Try to get the first facility for the org
+            $fac = $this->db->fetch(
+                "SELECT `id` FROM `facilities` WHERE `organization_id` = ? AND `status` = 'active' LIMIT 1",
+                [$orgId]
+            );
+            $facilityId = $fac ? (int) $fac['id'] : 0;
+        }
+
+        $creditCode = $this->db->fetch(
+            "SELECT `id`, `code`, `balance`, `original_value`, `active`, `issued_to`
+             FROM `credit_codes`
+             WHERE `code` = ? AND `active` = 1 AND `facility_id` = ?",
+            [$code, $facilityId]
+        );
+
+        if (!$creditCode) {
+            return $this->success(['valid' => false], 'Invalid or inactive credit code');
+        }
+
+        return $this->success([
+            'valid' => true,
+            'balance' => (float) $creditCode['balance'],
+            'code' => $creditCode['code'],
+        ]);
+    }
+
+    /**
+     * GET /api/public/validate-gift-code
+     * Validates a gift certificate and returns balance.
+     * Query: ?code=XXXX
+     */
+    public function validateGiftCode(Request $request): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        $code = strtoupper(trim((string) $request->input('code', '')));
+        if ($code === '') {
+            return $this->error('Gift certificate code is required', 422);
+        }
+
+        $giftCert = $this->db->fetch(
+            "SELECT `id`, `code`, `value`, `status`
+             FROM `gift_certificates`
+             WHERE `code` = ? AND `status` = 'active' AND `organization_id` = ?",
+            [$code, $orgId]
+        );
+
+        if (!$giftCert) {
+            return $this->success(['valid' => false], 'Invalid or inactive gift certificate');
+        }
+
+        return $this->success([
+            'valid' => true,
+            'balance' => (float) $giftCert['value'],
+            'code' => $giftCert['code'],
+        ]);
+    }
+
+    /**
+     * POST /api/public/book-class/{sessionTypeId}/{classId}
+     * Public inline booking endpoint. Delegates to BookingController.
+     */
+    public function bookClass(Request $request, int $sessionTypeId, int $classId): Response
+    {
+        $orgId = $this->requireOrg($request);
+        if ($orgId instanceof Response) return $orgId;
+
+        // Verify class belongs to this org and is active
+        $class = $this->db->fetch(
+            "SELECT cls.`id`, st.`organization_id`, st.`facility_id`
+             FROM `st_classes` cls
+             JOIN `session_types` st ON st.`id` = cls.`session_type_id`
+             WHERE cls.`id` = ? AND st.`id` = ? AND st.`organization_id` = ?
+               AND cls.`is_active` = 1 AND st.`private` = 0",
+            [$classId, $sessionTypeId, $orgId]
+        );
+
+        if (!$class) {
+            return $this->error('Class not found or not available', 404);
+        }
+
+        // Delegate to BookingController
+        $bookingController = new \App\Modules\SessionTypes\BookingController($this->db);
+        return $bookingController->book($request, $sessionTypeId, $classId);
+    }
+}

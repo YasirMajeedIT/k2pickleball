@@ -97,6 +97,9 @@ return function (Router $router): void {
     $router->get('/admin/forms/{id}', [AdminController::class, 'handleRequest']);
     $router->get('/admin/forms/{id}/edit', [AdminController::class, 'handleRequest']);
 
+    // Schedule Page Settings
+    $router->get('/admin/schedule-page-settings', [AdminController::class, 'handleRequest']);
+
     // My Account pages
     $router->get('/admin/account', [AdminController::class, 'handleRequest']);
     $router->get('/admin/my-subscription', [AdminController::class, 'handleRequest']);

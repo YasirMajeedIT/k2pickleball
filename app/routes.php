@@ -131,6 +131,7 @@ return function (Router $router): void {
         'Invoices',
         'Memberships',
         'Navigation',
+        'ScheduleSettings',
         'Consultations',
         'ContactSubmissions',
         'SiteSettings',

@@ -32,6 +32,12 @@ return function (Router $router): void {
         $router->get('/courts/availability',    [PublicApiController::class, 'courtAvailability']);
         $router->post('/courts/book',           [PublicApiController::class, 'bookCourt']);
 
+        // Schedule page settings & inline booking (038+)
+        $router->get('/schedule-settings',      [PublicApiController::class, 'scheduleSettings']);
+        $router->get('/validate-credit-code',   [PublicApiController::class, 'validateCreditCode']);
+        $router->get('/validate-gift-code',     [PublicApiController::class, 'validateGiftCode']);
+        $router->post('/book-class/{sessionTypeId}/{classId}', [PublicApiController::class, 'bookClass']);
+
         // New endpoints (035+)
         $router->get('/navigation',             [PublicApiController::class, 'navigation']);
         $router->get('/membership-plans',       [PublicApiController::class, 'membershipPlans']);

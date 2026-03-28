@@ -22,6 +22,7 @@ $navItems = [
 
 $schedulingItems = [
     ['label' => 'Schedule Dashboard', 'icon' => 'schedule', 'url' => ($baseUrl ?? '') . '/admin/schedule-dashboard', 'match' => '/admin/schedule-dashboard'],
+    ['label' => 'Schedule Page Settings', 'icon' => 'settings', 'url' => ($baseUrl ?? '') . '/admin/schedule-page-settings', 'match' => '/admin/schedule-page-settings'],
     ['label' => 'Categories', 'icon' => 'categories', 'url' => ($baseUrl ?? '') . '/admin/categories', 'match' => '/admin/categories'],
     ['label' => 'Resources', 'icon' => 'resources', 'url' => ($baseUrl ?? '') . '/admin/resources', 'match' => '/admin/resources'],
     ['label' => 'Players', 'icon' => 'players', 'url' => ($baseUrl ?? '') . '/admin/players', 'match' => '/admin/players'],
