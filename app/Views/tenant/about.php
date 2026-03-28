@@ -110,12 +110,9 @@ $orgName = htmlspecialchars($org['name'] ?? 'Our Organization', ENT_QUOTES, 'UTF
         <div class="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center" data-animate>
             <div class="glass-card rounded-2xl p-10 gold-border">
                 <h2 class="text-2xl sm:text-3xl font-display font-extrabold text-white mb-4">Ready to Get Started?</h2>
-                <p class="text-slate-400 mb-8">Browse the schedule or book a court and start playing today.</p>
+                <p class="text-slate-400 mb-8">Browse the schedule and start playing today.</p>
                 <div class="flex flex-col sm:flex-row gap-3 justify-center">
                     <a href="/schedule" class="px-8 py-3 rounded-xl font-bold text-sm gradient-gold-bg text-navy-950 hover:shadow-gold transition-all">View Schedule</a>
-                    <?php if (!empty($org['system_categories']['book-a-court']['is_active'])): ?>
-                    <a href="/book-court" class="px-8 py-3 rounded-xl font-bold text-sm bg-navy-800 border border-navy-700 text-white hover:border-gold-500/30 transition-all"><?= htmlspecialchars($org['system_categories']['book-a-court']['name'] ?? 'Book a Court') ?></a>
-                    <?php endif; ?>
                     <a href="/register" class="px-8 py-3 rounded-xl font-bold text-sm border border-gold-500/30 text-gold-400 hover:bg-gold-500/10 transition-all">Create Account</a>
                 </div>
             </div>

@@ -39,12 +39,7 @@ $heroImage = $branding['hero_image'] ?? null;
                         View Schedule
                         <svg class="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                     </a>
-                    <?php if ($courtCatActive): ?>
-                    <a href="/book-court" class="px-8 py-4 text-base font-semibold text-white border border-gold-500/30 hover:border-gold-500/50 hover:bg-gold-500/5 rounded-xl transition-all duration-300 inline-flex items-center gap-2">
-                        <svg class="w-5 h-5 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <?= $courtCatName ?>
-                    </a>
-                    <?php endif; ?>
+
                 </div>
                 <div class="mt-14 flex flex-wrap gap-8">
                     <?php if (!empty($facilities)): ?>

@@ -100,9 +100,6 @@ $slug = $facilitySlug ?? '';
                             <!-- CTAs -->
                             <div class="flex flex-col sm:flex-row gap-3 mt-6">
                                 <a href="/schedule" class="flex-1 py-3 rounded-xl font-bold text-sm gradient-gold-bg text-navy-950 hover:shadow-gold transition-all text-center">View Schedule</a>
-                                <?php if (!empty($org['system_categories']['book-a-court']['is_active'])): ?>
-                                <a href="/book-court" class="flex-1 py-3 rounded-xl font-bold text-sm bg-navy-800 border border-navy-700 text-white hover:border-gold-500/30 transition-all text-center"><?= htmlspecialchars($org['system_categories']['book-a-court']['name'] ?? 'Book a Court') ?></a>
-                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

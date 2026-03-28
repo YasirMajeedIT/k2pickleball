@@ -192,10 +192,6 @@ $facilities = $org['facilities'] ?? [];
                                     </button>
                                     <div x-show="dropOpen" x-cloak x-transition
                                          class="absolute left-0 top-full mt-2 w-56 bg-navy-900 border border-navy-700 rounded-xl shadow-2xl shadow-navy-950/70 py-2 z-50">
-                                        <a :href="item.url" class="block px-4 py-2.5 text-sm text-slate-300 hover:bg-navy-800 hover:text-white transition-colors font-medium">
-                                            All Schedule
-                                        </a>
-                                        <div class="border-t border-navy-800 my-1"></div>
                                         <template x-for="child in item.children" :key="child.id">
                                             <a :href="child.url" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:bg-navy-800 hover:text-white transition-colors">
                                                 <span x-show="child.color" class="w-2 h-2 rounded-full flex-shrink-0" :style="'background:' + child.color"></span>
